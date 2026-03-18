@@ -51,10 +51,12 @@ Plans:
   3. Component adjacency list structure is specified with JSON Schema
   4. Data binding via JSON Pointer is documented with keyed collection patterns
   5. Protocol manual explains concepts clearly enough for a developer to implement from scratch
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md -- Spec tooling, JSON Schema definitions (common, component, data, message), OpenAPI 3.1 entry point
+- [ ] 02-02-PLAN.md -- Protocol manual (spec/PROTOCOL.md) with transport, messages, data binding, worked examples
+- [ ] 02-03-PLAN.md -- Example YAML files for all message types + human verification of spec rendering
 
 ### Phase 3: Frontend Library
 **Goal**: Complete Marionette Svelte library with all infrastructure, components, and comprehensive tests
@@ -175,7 +177,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Infrastructure | 0/3 | Planning complete | - |
-| 2. Protocol Specification | 0/TBD | Not started | - |
+| 2. Protocol Specification | 0/3 | Planning complete | - |
 | 3. Frontend Library | 0/TBD | Not started | - |
 | 4. Backend Toolkit | 0/TBD | Not started | - |
 | 5. Integration | 0/TBD | Not started | - |
