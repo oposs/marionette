@@ -1,0 +1,10 @@
+# Patch message updating a contact's email and clearing a loading state.
+# Demonstrates: incremental data updates via JSON Pointer paths,
+# multiple operations in a single patch message, correlation ID.
+type: patch
+id: "msg-r7x9"
+patch:
+  - path: "/contacts/c-101/email"
+    value: "alice.new@example.com"
+  - path: "/ui/saving"
+    value: false

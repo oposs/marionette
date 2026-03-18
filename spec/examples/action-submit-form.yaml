@@ -1,0 +1,16 @@
+# Action message submitting a contact form with optimistic update.
+# Demonstrates: client-to-server action, source component reference,
+# payload with form data, and optimistic patches applied immediately
+# by the client for responsive UI.
+type: action
+id: "msg-f3k8"
+name: "save-contact"
+source: "save-btn"
+payload:
+  contact_name: "Alice Johnson"
+  contact_email: "alice@example.com"
+  contact_company: "comp-42"
+optimistic:
+  patch:
+    - path: "/ui/saving"
+      value: true

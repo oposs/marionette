@@ -1,0 +1,5 @@
+# Server hello message sent on WebSocket connect.
+# This is the first message the server sends after a client opens a connection.
+# It communicates the protocol version -- no response is expected from the client.
+type: hello
+version: "1.0.0"

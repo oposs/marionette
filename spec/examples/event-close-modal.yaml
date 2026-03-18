@@ -1,0 +1,6 @@
+# Event message closing a modal surface.
+# Demonstrates: lightweight server-to-client signal targeting a specific
+# surface. No data payload -- the frontend simply closes the modal.
+type: event
+name: "close"
+surface: "modal"

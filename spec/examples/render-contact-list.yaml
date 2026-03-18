@@ -1,0 +1,58 @@
+# Full render of a contact list page using the adjacency list pattern.
+# Demonstrates: surface targeting, root pointer, flat node map with children
+# references, data binding, keyed collections, and component actions.
+type: render
+surface: main
+root: contact-page
+nodes:
+  contact-page:
+    type: page
+    props:
+      title: Contacts
+    children:
+      - page-heading
+      - add-btn
+      - contact-table
+  page-heading:
+    type: heading
+    props:
+      level: 1
+      text: Contact Directory
+  add-btn:
+    type: button
+    props:
+      label: Add Contact
+      variant: primary
+    action:
+      type: navigate
+      target: "/contacts/new"
+  contact-table:
+    type: data-table
+    props:
+      columns:
+        - { key: "name", label: "Name", sortable: true }
+        - { key: "email", label: "Email" }
+        - { key: "company", label: "Company" }
+      keyField: "id"
+    bind: "/contacts"
+    action:
+      type: navigate
+      name: open-contact
+      idPath: "/id"
+data:
+  contacts:
+    "c-101":
+      id: "c-101"
+      name: "Alice Johnson"
+      email: "alice@example.com"
+      company: "Acme Corp"
+    "c-102":
+      id: "c-102"
+      name: "Bob Williams"
+      email: "bob@example.com"
+      company: "Globex Inc"
+  contactOrder:
+    - "c-101"
+    - "c-102"
+  ui:
+    loading: false

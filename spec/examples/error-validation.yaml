@@ -1,0 +1,11 @@
+# Error message with field-level protocol errors.
+# Demonstrates: correlation ID echoed from the triggering action,
+# multiple error entries with JSON Pointer paths identifying the
+# relevant data locations.
+type: error
+id: "msg-f3k8"
+errors:
+  - path: "/form/data/contact_email"
+    message: "Email address is already registered"
+  - path: "/form/data/contact_name"
+    message: "Name must be between 2 and 100 characters"
