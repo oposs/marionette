@@ -1,0 +1,152 @@
+ProtocolMessage:
+  description: Tagged union of all protocol message types
+  oneOf:
+    - $ref: "#/HelloMessage"
+    - $ref: "#/RenderMessage"
+    - $ref: "#/PatchMessage"
+    - $ref: "#/ActionMessage"
+    - $ref: "#/EventMessage"
+    - $ref: "#/ErrorMessage"
+  discriminator:
+    propertyName: type
+    mapping:
+      hello: "#/HelloMessage"
+      render: "#/RenderMessage"
+      patch: "#/PatchMessage"
+      action: "#/ActionMessage"
+      event: "#/EventMessage"
+      error: "#/ErrorMessage"
+
+HelloMessage:
+  type: object
+  required:
+    - type
+    - version
+  properties:
+    type:
+      type: string
+      const: hello
+    version:
+      type: string
+      description: Protocol version (semver)
+      example: "1.0.0"
+  additionalProperties: false
+
+RenderMessage:
+  type: object
+  required:
+    - type
+    - surface
+    - root
+    - nodes
+    - data
+  properties:
+    type:
+      type: string
+      const: render
+    id:
+      $ref: "common.yaml#/MessageId"
+    surface:
+      $ref: "common.yaml#/Surface"
+    root:
+      type: string
+      description: ID of the root node in the adjacency list
+    nodes:
+      type: object
+      additionalProperties:
+        $ref: "component.yaml#/Component"
+      description: Flat map of node ID to component definition
+    data:
+      type: object
+      description: Application state that components bind to
+  additionalProperties: false
+
+PatchMessage:
+  type: object
+  required:
+    - type
+    - patch
+  properties:
+    type:
+      type: string
+      const: patch
+    id:
+      $ref: "common.yaml#/MessageId"
+    patch:
+      type: array
+      items:
+        $ref: "data.yaml#/PatchOperation"
+      description: Array of patch operations to apply
+  additionalProperties: false
+
+ActionMessage:
+  type: object
+  required:
+    - type
+    - name
+  properties:
+    type:
+      type: string
+      const: action
+    id:
+      $ref: "common.yaml#/MessageId"
+    name:
+      type: string
+      description: Action identifier
+    source:
+      type: string
+      description: Component ID that triggered the action
+    payload:
+      type: object
+      additionalProperties: true
+      description: Action-specific data
+    optimistic:
+      type: object
+      required:
+        - patch
+      properties:
+        patch:
+          type: array
+          items:
+            $ref: "data.yaml#/PatchOperation"
+      description: Patches to apply immediately (rolled back on error)
+  additionalProperties: false
+
+EventMessage:
+  type: object
+  required:
+    - type
+    - name
+  properties:
+    type:
+      type: string
+      const: event
+    id:
+      $ref: "common.yaml#/MessageId"
+    name:
+      type: string
+      description: Event identifier
+    surface:
+      $ref: "common.yaml#/Surface"
+    hint:
+      type: object
+      additionalProperties: true
+      description: Event-specific metadata
+  additionalProperties: false
+
+ErrorMessage:
+  type: object
+  required:
+    - type
+    - errors
+  properties:
+    type:
+      type: string
+      const: error
+    id:
+      $ref: "common.yaml#/MessageId"
+    errors:
+      type: array
+      items:
+        $ref: "data.yaml#/ValidationError"
+  additionalProperties: false

@@ -6,7 +6,7 @@
     "@stoplight/spectral-cli": "^6.15.0"
   },
   "scripts": {
-    "lint": "redocly lint openapi.yaml",
-    "bundle": "redocly bundle openapi.yaml -o dist/openapi.yaml"
+    "lint": "redocly lint openapi.yaml --config .redocly.yaml",
+    "bundle": "redocly bundle openapi.yaml --config .redocly.yaml -o dist/openapi.yaml"
   }
 }

@@ -1,0 +1,63 @@
+openapi: "3.1.0"
+info:
+  title: OpenSDUI Protocol
+  version: "1.0.0"
+  description: |
+    Server-Driven UI protocol specification.
+    All communication occurs over a single WebSocket connection at /ws.
+    See spec/PROTOCOL.md for transport details and worked examples.
+  license:
+    name: MIT
+    identifier: MIT
+
+paths: {}
+
+webhooks:
+  onMessage:
+    post:
+      summary: WebSocket message (bidirectional)
+      description: |
+        All messages (both directions) use the ProtocolMessage envelope.
+        This webhook entry documents the message schema;
+        actual transport is WebSocket at /ws.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProtocolMessage"
+      responses:
+        "200":
+          description: Message processed
+
+components:
+  schemas:
+    ProtocolMessage:
+      $ref: "schemas/message.yaml#/ProtocolMessage"
+    HelloMessage:
+      $ref: "schemas/message.yaml#/HelloMessage"
+    RenderMessage:
+      $ref: "schemas/message.yaml#/RenderMessage"
+    PatchMessage:
+      $ref: "schemas/message.yaml#/PatchMessage"
+    ActionMessage:
+      $ref: "schemas/message.yaml#/ActionMessage"
+    EventMessage:
+      $ref: "schemas/message.yaml#/EventMessage"
+    ErrorMessage:
+      $ref: "schemas/message.yaml#/ErrorMessage"
+    Component:
+      $ref: "schemas/component.yaml#/Component"
+    ComponentAction:
+      $ref: "schemas/component.yaml#/ComponentAction"
+    PatchOperation:
+      $ref: "schemas/data.yaml#/PatchOperation"
+    KeyedCollection:
+      $ref: "schemas/data.yaml#/KeyedCollection"
+    ValidationError:
+      $ref: "schemas/data.yaml#/ValidationError"
+    Surface:
+      $ref: "schemas/common.yaml#/Surface"
+    JsonPointer:
+      $ref: "schemas/common.yaml#/JsonPointer"
+    MessageId:
+      $ref: "schemas/common.yaml#/MessageId"

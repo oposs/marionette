@@ -4,3 +4,7 @@ extends:
 rules:
   no-unused-components: error
   spec-components-invalid-map-name: error
+  # WebSocket-only protocol: no servers or REST security needed
+  no-empty-servers: off
+  security-defined: off
+  operation-operationId: off
