@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/marionette-protocol",
+    "crates/marionette-macros",
+    "crates/marionette",
+    "crates/crm-demo",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/oetiker/marionette"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+axum = "0.8"
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
