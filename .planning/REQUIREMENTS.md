@@ -2,6 +2,15 @@
 
 ## v1 Requirements
 
+### Project Infrastructure (INFRA)
+*Build system, CI/CD, and development environment*
+
+- [ ] **INFRA-01**: Makefile with standard targets (dev, build, test, lint, clean)
+- [x] **INFRA-02**: Project directory structure (frontend/, backend/, spec/)
+- [ ] **INFRA-03**: GitHub Actions workflow for CI (test, lint, build on PR)
+- [ ] **INFRA-04**: Development server configuration (frontend + backend concurrent)
+- [ ] **INFRA-05**: Code formatting and linting configuration (Rust + Svelte)
+
 ### Protocol Specification (PROT)
 *The universal contract — what any OpenSDUI implementation must follow*
 
@@ -10,10 +19,10 @@
 - [ ] **PROT-03**: Adjacency list pattern (flat nodes with ID references, root pointer)
 - [ ] **PROT-04**: Data binding via JSON Pointer (RFC 6901)
 - [ ] **PROT-05**: Keyed collections pattern (stable keys, not array indices)
-- [ ] **PROT-06**: Render message type (backend → frontend: components + data)
-- [ ] **PROT-07**: Patch message type (backend → frontend: data updates)
-- [ ] **PROT-08**: Action message type (frontend → backend: user interactions)
-- [ ] **PROT-09**: Event message type (backend → frontend: notifications)
+- [ ] **PROT-06**: Render message type (backend -> frontend: components + data)
+- [ ] **PROT-07**: Patch message type (backend -> frontend: data updates)
+- [ ] **PROT-08**: Action message type (frontend -> backend: user interactions)
+- [ ] **PROT-09**: Event message type (backend -> frontend: notifications)
 - [ ] **PROT-10**: Error format (path + message, errors as data)
 - [ ] **PROT-11**: Surface concept (named render targets)
 - [ ] **PROT-12**: Optimistic update mechanism (action includes optimistic patch)
@@ -49,7 +58,7 @@
 
 **Testing Infrastructure:**
 - [ ] **FRONT-20**: Unit test framework (Vitest) for component logic
-- [ ] **FRONT-21**: Component tests for each component in isolation
+- [ ] **FRONT-21**: Component tests using vitest-browser-svelte + Playwright (real browser)
 - [ ] **FRONT-22**: Data store unit tests (binding, patching, dirty tracking)
 - [ ] **FRONT-23**: Message handling unit tests (action dispatch, render processing)
 - [ ] **FRONT-24**: E2E test framework (Playwright) for user flows
@@ -76,6 +85,13 @@
 - [ ] **BACK-13**: Integration tests for Axum handlers
 - [ ] **BACK-14**: Integration tests for WebSocket session management
 - [ ] **BACK-15**: SeaORM entity tests with test database
+
+### Integration (INTEG)
+*Frontend-backend end-to-end validation*
+
+- [ ] **INTEG-01**: Axum serves built Svelte app as static files
+- [ ] **INTEG-02**: End-to-end message flow (action -> backend -> render -> frontend)
+- [ ] **INTEG-03**: Protocol conformance validation against OpenAPI schemas
 
 ### Demo CRM (CRM)
 *Proof that OpenSDUI + Marionette works for real apps*
@@ -124,11 +140,84 @@
 
 ## Traceability
 
-*Updated by roadmap creation*
-
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| — | — | — |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Pending |
+| PROT-01 | Phase 2 | Pending |
+| PROT-02 | Phase 2 | Pending |
+| PROT-03 | Phase 2 | Pending |
+| PROT-04 | Phase 2 | Pending |
+| PROT-05 | Phase 2 | Pending |
+| PROT-06 | Phase 2 | Pending |
+| PROT-07 | Phase 2 | Pending |
+| PROT-08 | Phase 2 | Pending |
+| PROT-09 | Phase 2 | Pending |
+| PROT-10 | Phase 2 | Pending |
+| PROT-11 | Phase 2 | Pending |
+| PROT-12 | Phase 2 | Pending |
+| PROT-13 | Phase 2 | Pending |
+| PROT-14 | Phase 2 | Pending |
+| DOC-01 | Phase 2 | Pending |
+| DOC-02 | Phase 2 | Pending |
+| FRONT-01 | Phase 3 | Pending |
+| FRONT-02 | Phase 3 | Pending |
+| FRONT-03 | Phase 3 | Pending |
+| FRONT-04 | Phase 3 | Pending |
+| FRONT-05 | Phase 3 | Pending |
+| FRONT-06 | Phase 3 | Pending |
+| FRONT-07 | Phase 3 | Pending |
+| FRONT-08 | Phase 3 | Pending |
+| FRONT-10 | Phase 3 | Pending |
+| FRONT-11 | Phase 3 | Pending |
+| FRONT-12 | Phase 3 | Pending |
+| FRONT-13 | Phase 3 | Pending |
+| FRONT-14 | Phase 3 | Pending |
+| FRONT-15 | Phase 3 | Pending |
+| FRONT-16 | Phase 3 | Pending |
+| FRONT-20 | Phase 3 | Pending |
+| FRONT-21 | Phase 3 | Pending |
+| FRONT-22 | Phase 3 | Pending |
+| FRONT-23 | Phase 3 | Pending |
+| FRONT-24 | Phase 3 | Pending |
+| FRONT-25 | Phase 3 | Pending |
+| FRONT-26 | Phase 3 | Pending |
+| FRONT-27 | Phase 3 | Pending |
+| BACK-01 | Phase 4 | Pending |
+| BACK-02 | Phase 4 | Pending |
+| BACK-03 | Phase 4 | Pending |
+| BACK-04 | Phase 4 | Pending |
+| BACK-05 | Phase 4 | Pending |
+| BACK-06 | Phase 4 | Pending |
+| BACK-07 | Phase 4 | Pending |
+| BACK-10 | Phase 4 | Pending |
+| BACK-11 | Phase 4 | Pending |
+| BACK-12 | Phase 4 | Pending |
+| BACK-13 | Phase 4 | Pending |
+| BACK-14 | Phase 4 | Pending |
+| BACK-15 | Phase 4 | Pending |
+| INTEG-01 | Phase 5 | Pending |
+| INTEG-02 | Phase 5 | Pending |
+| INTEG-03 | Phase 5 | Pending |
+| CRM-12 | Phase 6 | Pending |
+| CRM-13 | Phase 6 | Pending |
+| CRM-14 | Phase 6 | Pending |
+| CRM-01 | Phase 7 | Pending |
+| CRM-02 | Phase 7 | Pending |
+| CRM-03 | Phase 7 | Pending |
+| CRM-04 | Phase 7 | Pending |
+| CRM-05 | Phase 7 | Pending |
+| CRM-06 | Phase 8 | Pending |
+| CRM-07 | Phase 8 | Pending |
+| CRM-08 | Phase 8 | Pending |
+| CRM-09 | Phase 8 | Pending |
+| CRM-10 | Phase 8 | Pending |
+| CRM-11 | Phase 8 | Pending |
+| CRM-15 | Phase 9 | Pending |
+| CRM-16 | Phase 9 | Pending |
 
 ---
-*Last updated: 2026-01-23 after requirements definition*
+*Last updated: 2026-01-24 after roadmap regeneration*
