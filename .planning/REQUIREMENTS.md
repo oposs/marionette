@@ -7,9 +7,9 @@
 
 - [ ] **INFRA-01**: Makefile with standard targets (dev, build, test, lint, clean)
 - [x] **INFRA-02**: Project directory structure (frontend/, backend/, spec/)
-- [ ] **INFRA-03**: GitHub Actions workflow for CI (test, lint, build on PR)
+- [x] **INFRA-03**: GitHub Actions workflow for CI (test, lint, build on PR)
 - [ ] **INFRA-04**: Development server configuration (frontend + backend concurrent)
-- [ ] **INFRA-05**: Code formatting and linting configuration (Rust + Svelte)
+- [x] **INFRA-05**: Code formatting and linting configuration (Rust + Svelte)
 
 ### Protocol Specification (PROT)
 *The universal contract — what any OpenSDUI implementation must follow*
@@ -144,9 +144,9 @@
 |--------|-------|--------|
 | INFRA-01 | Phase 1 | Pending |
 | INFRA-02 | Phase 1 | Complete |
-| INFRA-03 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Pending |
-| INFRA-05 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Complete |
 | PROT-01 | Phase 2 | Pending |
 | PROT-02 | Phase 2 | Pending |
 | PROT-03 | Phase 2 | Pending |
