@@ -13,7 +13,7 @@ This roadmap delivers OpenSDUI protocol and Marionette implementation through 9 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Project Infrastructure** - Makefile, CI/CD workflows, project structure, dev tooling
-- [ ] **Phase 2: Protocol Specification** - OpenAPI 3.1 spec + protocol manual defining messages, components, data binding
+- [x] **Phase 2: Protocol Specification** - OpenAPI 3.1 spec + protocol manual defining messages, components, data binding (completed 2026-03-18)
 - [ ] **Phase 3: Frontend Library** - Svelte 5 + Flowbite infrastructure, components, and tests (Vitest, vitest-browser-svelte, Playwright)
 - [ ] **Phase 4: Backend Toolkit** - Rust + Axum infrastructure, macros, and tests (cargo test)
 - [ ] **Phase 5: Integration** - Axum serves Svelte app, end-to-end protocol validation
@@ -177,7 +177,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Infrastructure | 0/3 | Planning complete | - |
-| 2. Protocol Specification | 0/3 | Planning complete | - |
+| 2. Protocol Specification | 3/3 | Complete   | 2026-03-18 |
 | 3. Frontend Library | 0/TBD | Not started | - |
 | 4. Backend Toolkit | 0/TBD | Not started | - |
 | 5. Integration | 0/TBD | Not started | - |
