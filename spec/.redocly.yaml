@@ -1,0 +1,6 @@
+extends:
+  - recommended
+
+rules:
+  no-unused-components: error
+  spec-components-invalid-map-name: error

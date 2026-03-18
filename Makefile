@@ -1,4 +1,4 @@
-.PHONY: dev build test lint clean format
+.PHONY: dev build test lint lint-spec clean format
 
 dev:
 	@echo "Starting development servers..."
@@ -20,6 +20,10 @@ lint:
 	cd backend && cargo clippy -- -D warnings
 	cd frontend && npm run lint
 	cd frontend && npm run check
+	cd spec && npm run lint
+
+lint-spec:
+	cd spec && npm run lint
 
 format:
 	cd backend && cargo fmt

@@ -1,0 +1,44 @@
+PatchOperation:
+  type: object
+  required:
+    - path
+    - value
+  properties:
+    path:
+      type: string
+      format: json-pointer
+      description: JSON Pointer to the data location to update
+    value:
+      description: New value to set at the path
+  additionalProperties: false
+
+KeyedCollection:
+  type: object
+  description: >-
+    A map of stable string keys to record objects. Collections use string keys
+    (not array indices) so that patches target records by key path
+    (e.g., /users/u-123/name). Display order is maintained in a separate array
+    at the orderPath.
+  additionalProperties:
+    type: object
+  example:
+    u-123:
+      id: "u-123"
+      name: "Alice"
+    u-456:
+      id: "u-456"
+      name: "Bob"
+
+ValidationError:
+  type: object
+  required:
+    - message
+  properties:
+    path:
+      type: string
+      format: json-pointer
+      description: Data path the error relates to (optional for global errors)
+    message:
+      type: string
+      description: Human-readable error message
+  additionalProperties: false

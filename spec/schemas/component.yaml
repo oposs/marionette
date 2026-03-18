@@ -1,0 +1,46 @@
+Component:
+  type: object
+  required:
+    - type
+  properties:
+    type:
+      type: string
+      description: Component type identifier (open set)
+      example: "text-input"
+    props:
+      type: object
+      additionalProperties: true
+      description: Component-specific properties
+    children:
+      type: array
+      items:
+        type: string
+      description: Ordered list of child node IDs
+    bind:
+      type: string
+      format: json-pointer
+      description: JSON Pointer (RFC 6901) to the data this component reads/writes
+    action:
+      $ref: "#/ComponentAction"
+    visible:
+      type: string
+      format: json-pointer
+      description: JSON Pointer to a boolean controlling visibility
+  additionalProperties: false
+
+ComponentAction:
+  type: object
+  required:
+    - type
+  properties:
+    type:
+      type: string
+      description: Action type identifier
+    name:
+      type: string
+    target:
+      type: string
+    idPath:
+      type: string
+      format: json-pointer
+  additionalProperties: true

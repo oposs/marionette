@@ -1,0 +1,23 @@
+Surface:
+  type: string
+  description: Named render target in the frontend layout
+  examples:
+    - main
+    - sidebar
+    - modal
+    - toast
+
+JsonPointer:
+  type: string
+  format: json-pointer
+  description: >-
+    RFC 6901 JSON Pointer path. Used for data binding and patch targeting.
+  pattern: "^(/[^/]*)*$"
+  examples:
+    - "/user/name"
+    - "/users/u-123/email"
+
+MessageId:
+  type: string
+  description: Optional correlation ID set by client, echoed by server
+  example: "msg-a1b2c3"

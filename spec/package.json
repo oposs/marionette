@@ -1,0 +1,12 @@
+{
+  "name": "opensdui-spec",
+  "private": true,
+  "devDependencies": {
+    "@redocly/cli": "^2.24.0",
+    "@stoplight/spectral-cli": "^6.15.0"
+  },
+  "scripts": {
+    "lint": "redocly lint openapi.yaml",
+    "bundle": "redocly bundle openapi.yaml -o dist/openapi.yaml"
+  }
+}
