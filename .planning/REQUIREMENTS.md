@@ -5,10 +5,10 @@
 ### Project Infrastructure (INFRA)
 *Build system, CI/CD, and development environment*
 
-- [ ] **INFRA-01**: Makefile with standard targets (dev, build, test, lint, clean)
+- [x] **INFRA-01**: Makefile with standard targets (dev, build, test, lint, clean)
 - [x] **INFRA-02**: Project directory structure (frontend/, backend/, spec/)
 - [x] **INFRA-03**: GitHub Actions workflow for CI (test, lint, build on PR)
-- [ ] **INFRA-04**: Development server configuration (frontend + backend concurrent)
+- [x] **INFRA-04**: Development server configuration (frontend + backend concurrent)
 - [x] **INFRA-05**: Code formatting and linting configuration (Rust + Svelte)
 
 ### Protocol Specification (PROT)
@@ -142,10 +142,10 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
-| INFRA-04 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 1 | Complete |
 | PROT-01 | Phase 2 | Pending |
 | PROT-02 | Phase 2 | Pending |
