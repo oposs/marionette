@@ -26,13 +26,13 @@
 - [x] **PROT-10**: Error format (path + message, errors as data)
 - [x] **PROT-11**: Surface concept (named render targets)
 - [x] **PROT-12**: Optimistic update mechanism (action includes optimistic patch)
-- [ ] **PROT-13**: REST endpoint definitions
+- [x] **PROT-13**: REST endpoint definitions
 - [x] **PROT-14**: WebSocket transport definition
 
 ### Protocol Documentation (DOC)
 
 - [x] **DOC-01**: OpenAPI 3.1 specification for all protocol messages
-- [ ] **DOC-02**: Protocol manual explaining concepts, patterns, and rationale
+- [x] **DOC-02**: Protocol manual explaining concepts, patterns, and rationale
 
 ### Frontend Library — Marionette Svelte (FRONT)
 *The component vocabulary and rendering engine*
@@ -159,10 +159,10 @@
 | PROT-10 | Phase 2 | Complete |
 | PROT-11 | Phase 2 | Complete |
 | PROT-12 | Phase 2 | Complete |
-| PROT-13 | Phase 2 | Pending |
+| PROT-13 | Phase 2 | Complete |
 | PROT-14 | Phase 2 | Complete |
 | DOC-01 | Phase 2 | Complete |
-| DOC-02 | Phase 2 | Pending |
+| DOC-02 | Phase 2 | Complete |
 | FRONT-01 | Phase 3 | Pending |
 | FRONT-02 | Phase 3 | Pending |
 | FRONT-03 | Phase 3 | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-18T17:04:01.249Z"
-last_activity: 2026-03-18 — Completed 02-01 schema definitions and OpenAPI entry point
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-18T17:08:47.347Z"
+last_activity: 2026-03-18 -- Completed 02-02 protocol manual
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 2 of 9 (Protocol Specification)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-18 — Completed 02-01 schema definitions and OpenAPI entry point
+Last activity: 2026-03-18 -- Completed 02-02 protocol manual
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [███████░░░] 67%
 | Phase 01 P03 | 1min | 2 tasks | 2 files |
 | Phase 01 P02 | 6min | 1 tasks | 3 files |
 | Phase 02 P01 | 4min | 2 tasks | 9 files |
+| Phase 02 P02 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Redocly config requires explicit --config flag in spec/ subdirectory
 - [Phase 02]: Disabled no-empty-servers, security-defined, operation-operationId for WebSocket-only spec
 - [Phase 02]: Schema ref convention: within-file #/TypeName, cross-file filename.yaml#/TypeName, from openapi schemas/filename.yaml#/TypeName
+- [Phase 02]: Fresh examples in PROTOCOL.md (contacts/settings, not CONCEPT.md user management)
+- [Phase 02]: PROT-13 addressed: explicit WebSocket-only statement, no REST endpoints
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T17:04:01.246Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-18T17:08:47.344Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
