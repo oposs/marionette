@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-18T15:39:47.404Z"
-last_activity: 2026-03-18 — Completed 01-03 linting and CI
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-18T17:04:01.249Z"
+last_activity: 2026-03-18 — Completed 02-01 schema definitions and OpenAPI entry point
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 67
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 1 - Project Infrastructure
+**Current focus:** Phase 2 - Protocol Specification
 
 ## Current Position
 
-Phase: 1 of 9 (Project Infrastructure)
-Plan: 3 of 3 in current phase
+Phase: 2 of 9 (Protocol Specification)
+Plan: 1 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-18 — Completed 01-03 linting and CI
+Last activity: 2026-03-18 — Completed 02-01 schema definitions and OpenAPI entry point
 
 Progress: [███████░░░] 67%
 
@@ -53,6 +53,7 @@ Progress: [███████░░░] 67%
 | Phase 01 P01 | 39min | 2 tasks | 22 files |
 | Phase 01 P03 | 1min | 2 tasks | 2 files |
 | Phase 01 P02 | 6min | 1 tasks | 3 files |
+| Phase 02 P01 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Recent decisions affecting current work:
 - [Phase 01]: ESLint 10 flat config with svelteConfig import for preprocessor awareness
 - [Phase 01]: CI jobs run in parallel (frontend and backend independent)
 - [Phase 01]: Added placeholder vitest test file to prevent exit code 1 on empty test suite
+- [Phase 02]: Redocly config requires explicit --config flag in spec/ subdirectory
+- [Phase 02]: Disabled no-empty-servers, security-defined, operation-operationId for WebSocket-only spec
+- [Phase 02]: Schema ref convention: within-file #/TypeName, cross-file filename.yaml#/TypeName, from openapi schemas/filename.yaml#/TypeName
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T15:39:47.401Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-protocol-specification/02-CONTEXT.md
+Last session: 2026-03-18T17:04:01.246Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

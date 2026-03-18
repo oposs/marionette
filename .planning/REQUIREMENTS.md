@@ -14,24 +14,24 @@
 ### Protocol Specification (PROT)
 *The universal contract — what any OpenSDUI implementation must follow*
 
-- [ ] **PROT-01**: Message envelope format (type, payload, correlation ID)
-- [ ] **PROT-02**: Component structure (id, type, props, children, bind, action)
-- [ ] **PROT-03**: Adjacency list pattern (flat nodes with ID references, root pointer)
-- [ ] **PROT-04**: Data binding via JSON Pointer (RFC 6901)
-- [ ] **PROT-05**: Keyed collections pattern (stable keys, not array indices)
-- [ ] **PROT-06**: Render message type (backend -> frontend: components + data)
-- [ ] **PROT-07**: Patch message type (backend -> frontend: data updates)
-- [ ] **PROT-08**: Action message type (frontend -> backend: user interactions)
-- [ ] **PROT-09**: Event message type (backend -> frontend: notifications)
-- [ ] **PROT-10**: Error format (path + message, errors as data)
-- [ ] **PROT-11**: Surface concept (named render targets)
-- [ ] **PROT-12**: Optimistic update mechanism (action includes optimistic patch)
+- [x] **PROT-01**: Message envelope format (type, payload, correlation ID)
+- [x] **PROT-02**: Component structure (id, type, props, children, bind, action)
+- [x] **PROT-03**: Adjacency list pattern (flat nodes with ID references, root pointer)
+- [x] **PROT-04**: Data binding via JSON Pointer (RFC 6901)
+- [x] **PROT-05**: Keyed collections pattern (stable keys, not array indices)
+- [x] **PROT-06**: Render message type (backend -> frontend: components + data)
+- [x] **PROT-07**: Patch message type (backend -> frontend: data updates)
+- [x] **PROT-08**: Action message type (frontend -> backend: user interactions)
+- [x] **PROT-09**: Event message type (backend -> frontend: notifications)
+- [x] **PROT-10**: Error format (path + message, errors as data)
+- [x] **PROT-11**: Surface concept (named render targets)
+- [x] **PROT-12**: Optimistic update mechanism (action includes optimistic patch)
 - [ ] **PROT-13**: REST endpoint definitions
-- [ ] **PROT-14**: WebSocket transport definition
+- [x] **PROT-14**: WebSocket transport definition
 
 ### Protocol Documentation (DOC)
 
-- [ ] **DOC-01**: OpenAPI 3.1 specification for all protocol messages
+- [x] **DOC-01**: OpenAPI 3.1 specification for all protocol messages
 - [ ] **DOC-02**: Protocol manual explaining concepts, patterns, and rationale
 
 ### Frontend Library — Marionette Svelte (FRONT)
@@ -147,21 +147,21 @@
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 1 | Complete |
-| PROT-01 | Phase 2 | Pending |
-| PROT-02 | Phase 2 | Pending |
-| PROT-03 | Phase 2 | Pending |
-| PROT-04 | Phase 2 | Pending |
-| PROT-05 | Phase 2 | Pending |
-| PROT-06 | Phase 2 | Pending |
-| PROT-07 | Phase 2 | Pending |
-| PROT-08 | Phase 2 | Pending |
-| PROT-09 | Phase 2 | Pending |
-| PROT-10 | Phase 2 | Pending |
-| PROT-11 | Phase 2 | Pending |
-| PROT-12 | Phase 2 | Pending |
+| PROT-01 | Phase 2 | Complete |
+| PROT-02 | Phase 2 | Complete |
+| PROT-03 | Phase 2 | Complete |
+| PROT-04 | Phase 2 | Complete |
+| PROT-05 | Phase 2 | Complete |
+| PROT-06 | Phase 2 | Complete |
+| PROT-07 | Phase 2 | Complete |
+| PROT-08 | Phase 2 | Complete |
+| PROT-09 | Phase 2 | Complete |
+| PROT-10 | Phase 2 | Complete |
+| PROT-11 | Phase 2 | Complete |
+| PROT-12 | Phase 2 | Complete |
 | PROT-13 | Phase 2 | Pending |
-| PROT-14 | Phase 2 | Pending |
-| DOC-01 | Phase 2 | Pending |
+| PROT-14 | Phase 2 | Complete |
+| DOC-01 | Phase 2 | Complete |
 | DOC-02 | Phase 2 | Pending |
 | FRONT-01 | Phase 3 | Pending |
 | FRONT-02 | Phase 3 | Pending |
