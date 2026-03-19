@@ -52,7 +52,7 @@ Flowbite Svelte inherits Tailwind's default type scale. Marionette library eleme
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
-| Label | 14px | 500 (medium) | 1.4 |
+| Label | 14px | 600 (semibold) | 1.4 |
 | Heading | 20px | 600 (semibold) | 1.2 |
 | Display | 28px | 600 (semibold) | 1.2 |
 
@@ -91,7 +91,7 @@ Accent reserved for:
 | Element | Copy |
 |---------|------|
 | Primary CTA | Not applicable (library phase -- CTAs are backend-driven via props) |
-| Empty state heading | "No data available" |
+| Empty state heading | "Nothing to display yet" |
 | Empty state body | "This view has no content to display yet." |
 | Error state (component boundary) | "Something went wrong rendering this component. Try refreshing the page." |
 | Error state (WebSocket disconnect) | "Connection lost. Reconnecting..." |
