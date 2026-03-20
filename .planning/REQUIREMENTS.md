@@ -58,13 +58,13 @@
 
 **Testing Infrastructure:**
 - [x] **FRONT-20**: Unit test framework (Vitest) for component logic
-- [ ] **FRONT-21**: Component tests using vitest-browser-svelte + Playwright (real browser)
+- [x] **FRONT-21**: Component tests using vitest-browser-svelte + Playwright (real browser)
 - [x] **FRONT-22**: Data store unit tests (binding, patching, dirty tracking)
 - [x] **FRONT-23**: Message handling unit tests (action dispatch, render processing)
-- [ ] **FRONT-24**: E2E test framework (Playwright) for user flows
-- [ ] **FRONT-25**: Visual regression testing with Playwright screenshots
-- [ ] **FRONT-26**: Component visual snapshots (each component state captured)
-- [ ] **FRONT-27**: Full-page visual snapshots for key screens
+- [x] **FRONT-24**: E2E test framework (Playwright) for user flows
+- [x] **FRONT-25**: Visual regression testing with Playwright screenshots
+- [x] **FRONT-26**: Component visual snapshots (each component state captured)
+- [x] **FRONT-27**: Full-page visual snapshots for key screens
 
 ### Backend Toolkit — Marionette Rust (BACK)
 *The component builders and server infrastructure*
@@ -179,13 +179,13 @@
 | FRONT-15 | Phase 3 | Complete |
 | FRONT-16 | Phase 3 | Complete |
 | FRONT-20 | Phase 3 | Complete |
-| FRONT-21 | Phase 3 | Pending |
+| FRONT-21 | Phase 3 | Complete |
 | FRONT-22 | Phase 3 | Complete |
 | FRONT-23 | Phase 3 | Complete |
-| FRONT-24 | Phase 3 | Pending |
-| FRONT-25 | Phase 3 | Pending |
-| FRONT-26 | Phase 3 | Pending |
-| FRONT-27 | Phase 3 | Pending |
+| FRONT-24 | Phase 3 | Complete |
+| FRONT-25 | Phase 3 | Complete |
+| FRONT-26 | Phase 3 | Complete |
+| FRONT-27 | Phase 3 | Complete |
 | BACK-01 | Phase 4 | Pending |
 | BACK-02 | Phase 4 | Pending |
 | BACK-03 | Phase 4 | Pending |
