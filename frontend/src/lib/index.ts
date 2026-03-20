@@ -12,6 +12,7 @@ export { register, getComponent, registerAll } from './registry/registry';
 export { getData, setData, applyPatch, setFullState, resetStore } from './store/data.svelte';
 export { markDirty, clearDirty, isDirty } from './store/dirty.svelte';
 export { applyOptimistic, confirmOptimistic, rollbackOptimistic } from './store/optimistic.svelte';
+export { setSurfaceTree, getSurfaceTree, clearSurfaceTree } from './store/surfaces.svelte';
 
 // Transport
 export { sendAction } from './transport/dispatcher';

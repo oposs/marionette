@@ -11,4 +11,13 @@ export default defineConfig({
 	projects: [
 		{ name: 'chromium', use: { ...devices['Desktop Chrome'] } },
 	],
+	expect: {
+		toHaveScreenshot: { maxDiffPixels: 100 },
+	},
+	snapshotDir: './tests/__snapshots__',
+	webServer: {
+		command: 'npm run dev',
+		port: 5173,
+		reuseExistingServer: !process.env.CI,
+	},
 });
