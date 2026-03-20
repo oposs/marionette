@@ -10,8 +10,8 @@ progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 4 Backend Toolkit -- Plan 02 complete
+**Current focus:** Phase 4 Backend Toolkit -- Plan 03 complete
 
 ## Current Position
 
 Phase: 4 of 9 (Backend Toolkit)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-20 -- Completed 04-02 macros and builders
+Last activity: 2026-03-20 -- Completed 04-03 action routing
 
-Progress: [████████░░] 82%
+Progress: [████████▓░] 88%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [████████░░] 82%
 | Phase 03 P06 | 6min | 2 tasks | 14 files |
 | Phase 04 P01 | 2min | 2 tasks | 7 files |
 | Phase 04 P02 | 5min | 2 tasks | 13 files |
+| Phase 04 P03 | 6min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 04]: ComponentAction helpers (submit/click/change) in marionette-protocol (orphan rule)
 - [Phase 04]: AuthRequirement enum in marionette-protocol common.rs for cross-crate use
 - [Phase 04]: Fully qualified paths in macro output for edition 2024 compatibility
+- [Phase 04]: Arc<DatabaseConnection> wrapper because sea-orm DatabaseConnection is not Clone
+- [Phase 04]: box_handler function (not macro) for wrapping async handler fns into BoxedHandler
 
 ### Pending Todos
 
@@ -120,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T15:08:00Z
-Stopped at: Completed 04-02-PLAN.md
-Resume file: .planning/phases/04-backend-toolkit/04-02-SUMMARY.md
+Last session: 2026-03-20T15:17:51Z
+Stopped at: Completed 04-03-PLAN.md
+Resume file: .planning/phases/04-backend-toolkit/04-03-SUMMARY.md
