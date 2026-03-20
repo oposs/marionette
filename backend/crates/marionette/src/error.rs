@@ -43,3 +43,59 @@ impl From<ActionError> for Vec<ProtocolMessage> {
 
 /// Result type for action handlers.
 pub type ActionResult = Result<Vec<ProtocolMessage>, ActionError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_converts_to_protocol_unauthorized() {
+        let err = ActionError::Unauthorized("no access".into());
+        let msgs: Vec<ProtocolMessage> = err.into();
+        assert_eq!(msgs.len(), 1);
+        match &msgs[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Unauthorized"));
+                assert!(errors[0].message.contains("no access"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn error_converts_to_protocol_not_found() {
+        let err = ActionError::NotFound("delete-all".into());
+        let msgs: Vec<ProtocolMessage> = err.into();
+        match &msgs[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Action not found"));
+                assert!(errors[0].message.contains("delete-all"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn error_converts_to_protocol_bad_payload() {
+        let err = ActionError::BadPayload("missing field".into());
+        let msgs: Vec<ProtocolMessage> = err.into();
+        match &msgs[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Bad payload"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn error_converts_to_protocol_internal() {
+        let err = ActionError::Internal("db timeout".into());
+        let msgs: Vec<ProtocolMessage> = err.into();
+        match &msgs[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Internal error"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+}

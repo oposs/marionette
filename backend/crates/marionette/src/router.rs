@@ -84,3 +84,140 @@ where
 {
     Box::new(move |ctx| Box::pin(f(ctx)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use marionette_protocol::{ActionMessage, ErrorMessage, PatchMessage, PatchOperation};
+    use sea_orm::{DatabaseBackend, MockDatabase};
+
+    use crate::extractors::Session;
+
+    fn mock_db() -> std::sync::Arc<sea_orm::DatabaseConnection> {
+        std::sync::Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection())
+    }
+
+    fn make_ctx(name: &str, session: Session) -> HandlerContext {
+        HandlerContext {
+            action: ActionMessage {
+                id: None,
+                name: name.into(),
+                source: None,
+                payload: None,
+                optimistic: None,
+            },
+            db: mock_db(),
+            session,
+        }
+    }
+
+    fn anonymous() -> Session {
+        Session {
+            user_id: None,
+            roles: vec![],
+        }
+    }
+
+    fn authed(user_id: &str) -> Session {
+        Session {
+            user_id: Some(user_id.into()),
+            roles: vec![],
+        }
+    }
+
+    fn echo_handler() -> BoxedHandler {
+        box_handler(|_ctx| async move {
+            Ok(vec![ProtocolMessage::Patch(PatchMessage {
+                id: None,
+                patch: vec![PatchOperation {
+                    path: "/test".into(),
+                    value: serde_json::json!("ok"),
+                }],
+            })])
+        })
+    }
+
+    fn error_handler() -> BoxedHandler {
+        box_handler(|_ctx| async move {
+            Err(ActionError::Internal("boom".into()))
+        })
+    }
+
+    #[tokio::test]
+    async fn router_dispatches_to_correct_handler() {
+        let router = ActionRouter::new()
+            .action("echo", echo_handler(), AuthRequirement::None)
+            .action("fail", error_handler(), AuthRequirement::None);
+
+        let result = router.dispatch(make_ctx("echo", anonymous())).await;
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], ProtocolMessage::Patch(_)));
+    }
+
+    #[tokio::test]
+    async fn router_returns_not_found_for_unknown() {
+        let router = ActionRouter::new()
+            .action("echo", echo_handler(), AuthRequirement::None);
+
+        let result = router.dispatch(make_ctx("unknown", anonymous())).await;
+        assert_eq!(result.len(), 1);
+        match &result[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Action not found"));
+                assert!(errors[0].message.contains("unknown"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn router_checks_auth_before_handler() {
+        let router = ActionRouter::new()
+            .action("protected", echo_handler(), AuthRequirement::Authenticated);
+
+        let result = router.dispatch(make_ctx("protected", anonymous())).await;
+        assert_eq!(result.len(), 1);
+        match &result[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Unauthorized"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn router_allows_public_handler() {
+        let router = ActionRouter::new()
+            .action("public", echo_handler(), AuthRequirement::None);
+
+        let result = router.dispatch(make_ctx("public", anonymous())).await;
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], ProtocolMessage::Patch(_)));
+    }
+
+    #[tokio::test]
+    async fn router_allows_authenticated_handler_with_user() {
+        let router = ActionRouter::new()
+            .action("protected", echo_handler(), AuthRequirement::Authenticated);
+
+        let result = router.dispatch(make_ctx("protected", authed("u1"))).await;
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], ProtocolMessage::Patch(_)));
+    }
+
+    #[tokio::test]
+    async fn router_handler_error_converts_to_error_message() {
+        let router = ActionRouter::new()
+            .action("fail", error_handler(), AuthRequirement::None);
+
+        let result = router.dispatch(make_ctx("fail", anonymous())).await;
+        assert_eq!(result.len(), 1);
+        match &result[0] {
+            ProtocolMessage::Error(ErrorMessage { errors, .. }) => {
+                assert!(errors[0].message.contains("Internal error"));
+                assert!(errors[0].message.contains("boom"));
+            }
+            other => panic!("Expected Error, got {other:?}"),
+        }
+    }
+}

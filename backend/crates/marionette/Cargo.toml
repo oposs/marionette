@@ -16,3 +16,6 @@ tracing.workspace = true
 uuid.workspace = true
 sea-orm.workspace = true
 futures.workspace = true
+
+[dev-dependencies]
+sea-orm = { workspace = true, features = ["mock"] }

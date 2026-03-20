@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serde::de::DeserializeOwned;
 
 use marionette_protocol::ActionMessage;
@@ -9,8 +11,10 @@ use crate::error::ActionError;
 pub struct Payload<T>(pub T);
 
 /// Typed extractor providing database access.
+///
+/// Wraps the connection in `Arc` for cheap cloning across extractors and handlers.
 #[derive(Debug, Clone)]
-pub struct Db(pub sea_orm::DatabaseConnection);
+pub struct Db(pub Arc<sea_orm::DatabaseConnection>);
 
 /// Current session information.
 #[derive(Debug, Clone)]
@@ -25,8 +29,8 @@ pub struct Session {
 pub struct HandlerContext {
     /// The incoming action message.
     pub action: ActionMessage,
-    /// Database connection.
-    pub db: sea_orm::DatabaseConnection,
+    /// Database connection (shared via Arc).
+    pub db: Arc<sea_orm::DatabaseConnection>,
     /// Current session.
     pub session: Session,
 }
@@ -46,8 +50,7 @@ impl<T: DeserializeOwned> FromHandlerContext for Payload<T> {
         let value = ctx
             .action
             .payload
-            .as_ref()
-            .cloned()
+            .clone()
             .unwrap_or(serde_json::Value::Null);
         serde_json::from_value(value)
             .map(Payload)
@@ -57,7 +60,7 @@ impl<T: DeserializeOwned> FromHandlerContext for Payload<T> {
 
 impl FromHandlerContext for Db {
     fn from_context(ctx: &HandlerContext) -> Result<Self, ActionError> {
-        Ok(Db(ctx.db.clone()))
+        Ok(Db(Arc::clone(&ctx.db)))
     }
 }
 
