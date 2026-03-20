@@ -74,7 +74,7 @@
 - [x] **BACK-02**: Rust macros for ergonomic component construction
 - [x] **BACK-03**: Protocol message encoding/decoding
 - [x] **BACK-04**: Action routing and handler dispatch
-- [ ] **BACK-05**: SeaORM entity patterns for persistence
+- [x] **BACK-05**: SeaORM entity patterns for persistence
 - [x] **BACK-06**: WebSocket session management
 - [x] **BACK-07**: Permission/authorization utilities
 
@@ -84,7 +84,7 @@
 - [x] **BACK-12**: Unit tests for action routing and dispatch
 - [x] **BACK-13**: Integration tests for Axum handlers
 - [x] **BACK-14**: Integration tests for WebSocket session management
-- [ ] **BACK-15**: SeaORM entity tests with test database
+- [x] **BACK-15**: SeaORM entity tests with test database
 
 ### Integration (INTEG)
 *Frontend-backend end-to-end validation*
@@ -190,7 +190,7 @@
 | BACK-02 | Phase 4 | Complete |
 | BACK-03 | Phase 4 | Complete |
 | BACK-04 | Phase 4 | Complete |
-| BACK-05 | Phase 4 | Pending |
+| BACK-05 | Phase 4 | Complete |
 | BACK-06 | Phase 4 | Complete |
 | BACK-07 | Phase 4 | Complete |
 | BACK-10 | Phase 4 | Complete |
@@ -198,7 +198,7 @@
 | BACK-12 | Phase 4 | Complete |
 | BACK-13 | Phase 4 | Complete |
 | BACK-14 | Phase 4 | Complete |
-| BACK-15 | Phase 4 | Pending |
+| BACK-15 | Phase 4 | Complete |
 | INTEG-01 | Phase 5 | Pending |
 | INTEG-02 | Phase 5 | Pending |
 | INTEG-03 | Phase 5 | Pending |
