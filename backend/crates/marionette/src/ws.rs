@@ -103,7 +103,7 @@ async fn read_loop(
     }
 }
 
-/// Parse a text message as an ActionMessage and dispatch it.
+/// Parse a text message as an `ActionMessage` and dispatch it.
 async fn handle_text_message(
     text: &str,
     tx: &mpsc::Sender<ProtocolMessage>,
@@ -142,8 +142,8 @@ async fn handle_text_message(
     // Send each response message; if the channel is closed, stop.
     for mut response in responses {
         // Propagate the action ID to response messages if they don't have one
-        if action_id.is_some() {
-            propagate_id(&mut response, &action_id);
+        if let Some(ref id) = action_id {
+            propagate_id(&mut response, id);
         }
         if tx.send(response).await.is_err() {
             warn!(session_id = %session.id, "Writer channel closed during response send");
@@ -153,12 +153,12 @@ async fn handle_text_message(
 }
 
 /// Propagate the action correlation ID to response messages that lack one.
-fn propagate_id(msg: &mut ProtocolMessage, id: &Option<String>) {
+fn propagate_id(msg: &mut ProtocolMessage, id: &str) {
     match msg {
-        ProtocolMessage::Render(m) if m.id.is_none() => m.id.clone_from(id),
-        ProtocolMessage::Patch(m) if m.id.is_none() => m.id.clone_from(id),
-        ProtocolMessage::Event(m) if m.id.is_none() => m.id.clone_from(id),
-        ProtocolMessage::Error(m) if m.id.is_none() => m.id.clone_from(id),
+        ProtocolMessage::Render(m) if m.id.is_none() => m.id = Some(id.to_owned()),
+        ProtocolMessage::Patch(m) if m.id.is_none() => m.id = Some(id.to_owned()),
+        ProtocolMessage::Event(m) if m.id.is_none() => m.id = Some(id.to_owned()),
+        ProtocolMessage::Error(m) if m.id.is_none() => m.id = Some(id.to_owned()),
         _ => {}
     }
 }

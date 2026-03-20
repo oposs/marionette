@@ -19,3 +19,4 @@ futures.workspace = true
 
 [dev-dependencies]
 sea-orm = { workspace = true, features = ["mock"] }
+tokio-tungstenite.workspace = true
