@@ -39,9 +39,9 @@
 
 **Core Infrastructure:**
 - [x] **FRONT-01**: Reactive data store with JSON Pointer binding
-- [ ] **FRONT-02**: Component registry with dynamic rendering from adjacency list
+- [x] **FRONT-02**: Component registry with dynamic rendering from adjacency list
 - [x] **FRONT-03**: Message handling (send actions, receive renders/patches/events)
-- [ ] **FRONT-04**: Multi-surface renderer (main, sidebar, modal, toast)
+- [x] **FRONT-04**: Multi-surface renderer (main, sidebar, modal, toast)
 - [x] **FRONT-05**: WebSocket connection management with reconnection
 - [x] **FRONT-06**: Optimistic update handling with rollback on failure
 - [x] **FRONT-07**: Dirty field tracking (skip patches to actively edited fields)
@@ -54,7 +54,7 @@
 - [ ] **FRONT-13**: Table components (data-table: sortable, paginated, keyed rows)
 - [ ] **FRONT-14**: Popup components (modal, toast, confirm-dialog)
 - [ ] **FRONT-15**: Feedback components (spinner/loading, error display)
-- [ ] **FRONT-16**: Flowbite styling integration
+- [x] **FRONT-16**: Flowbite styling integration
 
 **Testing Infrastructure:**
 - [x] **FRONT-20**: Unit test framework (Vitest) for component logic
@@ -164,9 +164,9 @@
 | DOC-01 | Phase 2 | Complete |
 | DOC-02 | Phase 2 | Complete |
 | FRONT-01 | Phase 3 | Complete |
-| FRONT-02 | Phase 3 | Pending |
+| FRONT-02 | Phase 3 | Complete |
 | FRONT-03 | Phase 3 | Complete |
-| FRONT-04 | Phase 3 | Pending |
+| FRONT-04 | Phase 3 | Complete |
 | FRONT-05 | Phase 3 | Complete |
 | FRONT-06 | Phase 3 | Complete |
 | FRONT-07 | Phase 3 | Complete |
@@ -177,7 +177,7 @@
 | FRONT-13 | Phase 3 | Pending |
 | FRONT-14 | Phase 3 | Pending |
 | FRONT-15 | Phase 3 | Pending |
-| FRONT-16 | Phase 3 | Pending |
+| FRONT-16 | Phase 3 | Complete |
 | FRONT-20 | Phase 3 | Complete |
 | FRONT-21 | Phase 3 | Pending |
 | FRONT-22 | Phase 3 | Complete |
