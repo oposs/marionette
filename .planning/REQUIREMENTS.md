@@ -49,10 +49,10 @@
 
 **Component Vocabulary:**
 - [x] **FRONT-10**: Navigation components (side-nav, nav-item, nav-group)
-- [ ] **FRONT-11**: Form components (form, text-input, select, checkbox, button)
+- [x] **FRONT-11**: Form components (form, text-input, select, checkbox, button)
 - [x] **FRONT-12**: Layout components (container, grid/flex, heading, text)
-- [ ] **FRONT-13**: Table components (data-table: sortable, paginated, keyed rows)
-- [ ] **FRONT-14**: Popup components (modal, toast, confirm-dialog)
+- [x] **FRONT-13**: Table components (data-table: sortable, paginated, keyed rows)
+- [x] **FRONT-14**: Popup components (modal, toast, confirm-dialog)
 - [x] **FRONT-15**: Feedback components (spinner/loading, error display)
 - [x] **FRONT-16**: Flowbite styling integration
 
@@ -172,10 +172,10 @@
 | FRONT-07 | Phase 3 | Complete |
 | FRONT-08 | Phase 3 | Complete |
 | FRONT-10 | Phase 3 | Complete |
-| FRONT-11 | Phase 3 | Pending |
+| FRONT-11 | Phase 3 | Complete |
 | FRONT-12 | Phase 3 | Complete |
-| FRONT-13 | Phase 3 | Pending |
-| FRONT-14 | Phase 3 | Pending |
+| FRONT-13 | Phase 3 | Complete |
+| FRONT-14 | Phase 3 | Complete |
 | FRONT-15 | Phase 3 | Complete |
 | FRONT-16 | Phase 3 | Complete |
 | FRONT-20 | Phase 3 | Complete |
