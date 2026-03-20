@@ -51,3 +51,85 @@ pub struct ComponentAction {
     #[serde(flatten)]
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn component_round_trip() {
+        let component = Component {
+            r#type: "text-input".into(),
+            props: Some(json!({"label": "Name", "placeholder": "Enter name"})),
+            children: Some(vec!["child-1".into(), "child-2".into()]),
+            bind: Some("/user/name".into()),
+            action: Some(ComponentAction {
+                r#type: "submit".into(),
+                name: Some("save".into()),
+                target: Some("form-1".into()),
+                id_path: Some("/user/id".into()),
+                extra: serde_json::Map::new(),
+            }),
+            visible: Some("/user/isEditing".into()),
+        };
+
+        let json = serde_json::to_value(&component).unwrap();
+        // Verify "type" field is serialized as "type", not "r#type"
+        assert_eq!(json["type"], "text-input");
+        assert_eq!(json["bind"], "/user/name");
+        assert_eq!(json["children"][0], "child-1");
+        assert_eq!(json["action"]["type"], "submit");
+        assert_eq!(json["action"]["idPath"], "/user/id");
+        assert_eq!(json["visible"], "/user/isEditing");
+
+        let deserialized: Component = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, component);
+    }
+
+    #[test]
+    fn component_minimal() {
+        let component = Component {
+            r#type: "container".into(),
+            props: None,
+            children: None,
+            bind: None,
+            action: None,
+            visible: None,
+        };
+
+        let json = serde_json::to_value(&component).unwrap();
+        assert_eq!(json, json!({"type": "container"}));
+
+        let deserialized: Component = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, component);
+    }
+
+    #[test]
+    fn component_action_extra_fields() {
+        let mut extra = serde_json::Map::new();
+        extra.insert("confirmText".into(), json!("Are you sure?"));
+        extra.insert("style".into(), json!("danger"));
+
+        let action = ComponentAction {
+            r#type: "delete".into(),
+            name: Some("remove".into()),
+            target: None,
+            id_path: None,
+            extra,
+        };
+
+        let json = serde_json::to_value(&action).unwrap();
+        // Extra fields should be at the top level, not nested
+        assert_eq!(json["type"], "delete");
+        assert_eq!(json["name"], "remove");
+        assert_eq!(json["confirmText"], "Are you sure?");
+        assert_eq!(json["style"], "danger");
+        // target and idPath should be omitted
+        assert!(json.get("target").is_none());
+        assert!(json.get("idPath").is_none());
+
+        let deserialized: ComponentAction = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, action);
+    }
+}

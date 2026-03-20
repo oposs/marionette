@@ -8,7 +8,7 @@ use crate::data::{PatchOperation, ValidationError};
 
 /// Tagged union of all protocol message types.
 ///
-/// Serializes with a `"type"` discriminator tag matching the OpenAPI spec.
+/// Serializes with a `"type"` discriminator tag matching the `OpenAPI` spec.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum ProtocolMessage {
@@ -122,4 +122,210 @@ pub struct ErrorMessage {
 
     /// Array of validation errors.
     pub errors: Vec<ValidationError>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn hello_round_trip() {
+        let msg = ProtocolMessage::Hello(HelloMessage {
+            version: "1.0.0".into(),
+        });
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json, json!({"type": "hello", "version": "1.0.0"}));
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn render_round_trip() {
+        let mut nodes = HashMap::new();
+        nodes.insert(
+            "page-1".into(),
+            Component {
+                r#type: "container".into(),
+                props: None,
+                children: Some(vec!["input-1".into()]),
+                bind: None,
+                action: None,
+                visible: None,
+            },
+        );
+
+        let msg = ProtocolMessage::Render(RenderMessage {
+            id: Some("msg-123".into()),
+            surface: "main".into(),
+            root: "page-1".into(),
+            nodes,
+            data: json!({"name": "Alice"}),
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json["type"], "render");
+        assert_eq!(json["surface"], "main");
+        assert_eq!(json["root"], "page-1");
+        assert_eq!(json["id"], "msg-123");
+        assert_eq!(json["nodes"]["page-1"]["type"], "container");
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn patch_round_trip() {
+        let msg = ProtocolMessage::Patch(PatchMessage {
+            id: None,
+            patch: vec![PatchOperation {
+                path: "/user/name".into(),
+                value: json!("Bob"),
+            }],
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json["type"], "patch");
+        assert_eq!(json["patch"][0]["path"], "/user/name");
+        assert_eq!(json["patch"][0]["value"], "Bob");
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn action_round_trip() {
+        let msg = ProtocolMessage::Action(ActionMessage {
+            id: Some("msg-456".into()),
+            name: "save".into(),
+            source: Some("btn-1".into()),
+            payload: Some(json!({"confirmed": true})),
+            optimistic: Some(OptimisticUpdate {
+                patch: vec![PatchOperation {
+                    path: "/saving".into(),
+                    value: json!(true),
+                }],
+            }),
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json["type"], "action");
+        assert_eq!(json["name"], "save");
+        assert_eq!(json["source"], "btn-1");
+        assert_eq!(json["payload"]["confirmed"], true);
+        assert_eq!(json["optimistic"]["patch"][0]["path"], "/saving");
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn event_round_trip() {
+        let msg = ProtocolMessage::Event(EventMessage {
+            id: None,
+            name: "navigate".into(),
+            surface: Some("main".into()),
+            hint: Some(json!({"url": "/contacts"})),
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json["type"], "event");
+        assert_eq!(json["name"], "navigate");
+        assert_eq!(json["surface"], "main");
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn error_round_trip() {
+        let msg = ProtocolMessage::Error(ErrorMessage {
+            id: Some("msg-789".into()),
+            errors: vec![
+                ValidationError {
+                    path: Some("/email".into()),
+                    message: "Invalid email".into(),
+                },
+                ValidationError {
+                    path: None,
+                    message: "Server error".into(),
+                },
+            ],
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert_eq!(json["type"], "error");
+        assert_eq!(json["errors"][0]["path"], "/email");
+        assert_eq!(json["errors"][0]["message"], "Invalid email");
+        assert_eq!(json["errors"][1].get("path"), None);
+        assert_eq!(json["errors"][1]["message"], "Server error");
+
+        let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
+        assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn optional_fields_omitted() {
+        let msg = ProtocolMessage::Patch(PatchMessage {
+            id: None,
+            patch: vec![],
+        });
+
+        let json = serde_json::to_value(&msg).unwrap();
+        assert!(json.get("id").is_none(), "None id should be omitted");
+
+        let event = ProtocolMessage::Event(EventMessage {
+            id: None,
+            name: "init".into(),
+            surface: None,
+            hint: None,
+        });
+
+        let json = serde_json::to_value(&event).unwrap();
+        assert!(json.get("id").is_none());
+        assert!(json.get("surface").is_none());
+        assert!(json.get("hint").is_none());
+        // Required fields still present
+        assert_eq!(json["type"], "event");
+        assert_eq!(json["name"], "init");
+    }
+
+    #[test]
+    fn deserialize_from_spec_json() {
+        // Hello
+        let hello: ProtocolMessage =
+            serde_json::from_value(json!({"type": "hello", "version": "1.0.0"})).unwrap();
+        assert!(matches!(hello, ProtocolMessage::Hello(_)));
+
+        // Render
+        let render: ProtocolMessage = serde_json::from_value(json!({
+            "type": "render",
+            "surface": "main",
+            "root": "page-1",
+            "nodes": {
+                "page-1": { "type": "container", "children": ["input-1"] }
+            },
+            "data": { "user": { "name": "Alice" } }
+        }))
+        .unwrap();
+        assert!(matches!(render, ProtocolMessage::Render(_)));
+
+        // Action
+        let action: ProtocolMessage = serde_json::from_value(json!({
+            "type": "action",
+            "name": "delete",
+            "payload": { "id": "u-123" }
+        }))
+        .unwrap();
+        assert!(matches!(action, ProtocolMessage::Action(_)));
+
+        // Error
+        let error: ProtocolMessage = serde_json::from_value(json!({
+            "type": "error",
+            "errors": [{ "message": "Not found" }]
+        }))
+        .unwrap();
+        assert!(matches!(error, ProtocolMessage::Error(_)));
+    }
 }
