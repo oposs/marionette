@@ -94,10 +94,14 @@ Plans:
   6. `cargo test` passes for all component builders, message encoding, and action routing
   7. Integration tests validate Axum handlers respond correctly
   8. WebSocket session tests verify connection lifecycle
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md -- Workspace dependencies + protocol types + round-trip tests
+- [ ] 04-02-PLAN.md -- ComponentBuilder/action/requires derive macros + standard component builders + tests
+- [ ] 04-03-PLAN.md -- Action router, typed extractors, authorization checking + tests
+- [ ] 04-04-PLAN.md -- WebSocket session management, Axum WS handler + integration tests
+- [ ] 04-05-PLAN.md -- SeaORM entity patterns, migration framework, CRUD integration tests
 
 ### Phase 5: Integration
 **Goal**: Frontend and backend work together end-to-end with Axum serving the Svelte app
@@ -184,7 +188,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 1. Project Infrastructure | 0/3 | Planning complete | - |
 | 2. Protocol Specification | 3/3 | Complete   | 2026-03-18 |
 | 3. Frontend Library | 6/6 | Complete   | 2026-03-20 |
-| 4. Backend Toolkit | 0/TBD | Not started | - |
+| 4. Backend Toolkit | 0/5 | Planning complete | - |
 | 5. Integration | 0/TBD | Not started | - |
 | 6. CRM Auth & Foundation | 0/TBD | Not started | - |
 | 7. CRM Core | 0/TBD | Not started | - |
