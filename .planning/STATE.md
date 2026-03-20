@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-20T14:35:03.909Z"
-last_activity: 2026-03-20 -- Completed 03-06 browser tests, E2E, visual regression
+status: in-progress
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-20T15:00:00.000Z"
+last_activity: 2026-03-20 -- Completed 04-01 protocol types
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_plans: 17
+  completed_plans: 13
+  percent: 76
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 3 Frontend Library -- COMPLETE (all 6 plans, 3 test tiers)
+**Current focus:** Phase 4 Backend Toolkit -- Plan 01 complete
 
 ## Current Position
 
-Phase: 3 of 9 (Frontend Library) -- COMPLETE
-Plan: 6 of 6 in current phase
-Status: Phase complete
-Last activity: 2026-03-20 -- Completed 03-06 browser tests, E2E, visual regression
+Phase: 4 of 9 (Backend Toolkit)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-03-20 -- Completed 04-01 protocol types
 
-Progress: [██████████] 100%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [██████████] 100%
 | Phase 03 P04 | 3min | 2 tasks | 11 files |
 | Phase 03 P05 | 4min | 2 tasks | 10 files |
 | Phase 03 P06 | 6min | 2 tasks | 14 files |
+| Phase 04 P01 | 2min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Custom virtual scroll for DataTable (not @tanstack) for Svelte 5 compat
 - [Phase 03]: Checkbox has no dirty tracking (instant toggle)
 - [Phase 03]: Toast uses Svelte fly transition for animation
+- [Phase 04]: serde(tag = "type", rename_all = "lowercase") for protocol message discriminator
+- [Phase 04]: serde(flatten) on ComponentAction extra field for additionalProperties support
+- [Phase 04]: HashMap<String, Component> for nodes map in RenderMessage
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T14:35:03.903Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-backend-toolkit/04-CONTEXT.md
+Last session: 2026-03-20T15:00:00Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-backend-toolkit/04-01-SUMMARY.md
