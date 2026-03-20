@@ -1,0 +1,70 @@
+/**
+ * Reactive data store with JSON Pointer get/set/patch.
+ *
+ * Uses Svelte 5 $state rune for reactivity. Each surface has its own
+ * data namespace. Components bind to paths within the store.
+ */
+import type { PatchOperation } from '$lib/transport/messages.js';
+import { resolvePointer, setAtPointer } from './pointer.js';
+import { isDirty, queuePatch } from './dirty.svelte.js';
+
+const surfaces: Record<string, { data: Record<string, unknown> }> = $state({});
+
+/**
+ * Get (or create) the store for a surface.
+ */
+export function getStore(surface: string): { data: Record<string, unknown> } {
+	if (!surfaces[surface]) {
+		surfaces[surface] = { data: {} };
+	}
+	return surfaces[surface];
+}
+
+/**
+ * Read a value at a JSON Pointer path within a surface's data.
+ */
+export function getData(surface: string, pointer: string): unknown {
+	return resolvePointer(getStore(surface).data, pointer);
+}
+
+/**
+ * Set a value at a JSON Pointer path within a surface's data.
+ */
+export function setData(surface: string, pointer: string, value: unknown): void {
+	setAtPointer(getStore(surface).data, pointer, value);
+}
+
+/**
+ * Replace the entire data for a surface.
+ * Mutates the existing object (required for $state reactivity).
+ */
+export function setFullState(surface: string, data: Record<string, unknown>): void {
+	const store = getStore(surface);
+	// Clear all existing keys
+	for (const key of Object.keys(store.data)) {
+		delete store.data[key];
+	}
+	// Assign new keys
+	Object.assign(store.data, data);
+}
+
+/**
+ * Apply an array of patch operations to a surface's data.
+ * Skips patches to dirty paths (queues them instead).
+ */
+export function applyPatch(surface: string, operations: PatchOperation[]): void {
+	for (const op of operations) {
+		if (isDirty(op.path)) {
+			queuePatch(op.path, op);
+		} else {
+			setData(surface, op.path, op.value);
+		}
+	}
+}
+
+/**
+ * Reset (clear) a surface's store.
+ */
+export function resetStore(surface: string): void {
+	delete surfaces[surface];
+}
