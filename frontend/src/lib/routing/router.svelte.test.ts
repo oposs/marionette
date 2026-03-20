@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('URL Router', () => {
   let router: typeof import('./router.svelte');
-  let sendActionFn: ReturnType<typeof vi.fn>;
+  let sendActionFn: ReturnType<typeof vi.fn<(name: string, payload?: Record<string, unknown>) => void>>;
 
   let originalPushState: typeof history.pushState;
 
