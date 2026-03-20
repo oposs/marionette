@@ -71,15 +71,15 @@
 
 **Core Infrastructure:**
 - [ ] **BACK-01**: Axum handlers for serving SDUI responses
-- [ ] **BACK-02**: Rust macros for ergonomic component construction
+- [x] **BACK-02**: Rust macros for ergonomic component construction
 - [x] **BACK-03**: Protocol message encoding/decoding
 - [ ] **BACK-04**: Action routing and handler dispatch
 - [ ] **BACK-05**: SeaORM entity patterns for persistence
 - [ ] **BACK-06**: WebSocket session management
-- [ ] **BACK-07**: Permission/authorization utilities
+- [x] **BACK-07**: Permission/authorization utilities
 
 **Testing Infrastructure:**
-- [ ] **BACK-10**: Unit test framework for component builders and macros
+- [x] **BACK-10**: Unit test framework for component builders and macros
 - [x] **BACK-11**: Unit tests for message encoding/decoding
 - [ ] **BACK-12**: Unit tests for action routing and dispatch
 - [ ] **BACK-13**: Integration tests for Axum handlers
@@ -187,13 +187,13 @@
 | FRONT-26 | Phase 3 | Complete |
 | FRONT-27 | Phase 3 | Complete |
 | BACK-01 | Phase 4 | Pending |
-| BACK-02 | Phase 4 | Pending |
+| BACK-02 | Phase 4 | Complete |
 | BACK-03 | Phase 4 | Complete |
 | BACK-04 | Phase 4 | Pending |
 | BACK-05 | Phase 4 | Pending |
 | BACK-06 | Phase 4 | Pending |
-| BACK-07 | Phase 4 | Pending |
-| BACK-10 | Phase 4 | Pending |
+| BACK-07 | Phase 4 | Complete |
+| BACK-10 | Phase 4 | Complete |
 | BACK-11 | Phase 4 | Complete |
 | BACK-12 | Phase 4 | Pending |
 | BACK-13 | Phase 4 | Pending |
