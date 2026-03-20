@@ -2,7 +2,7 @@ use sea_orm_migration::MigratorTrait;
 
 use crate::migration::Migrator;
 
-/// SeaORM entity for the `session` table.
+/// `SeaORM` entity for the `session` table.
 ///
 /// Follows project SQL conventions: singular table name, `table_field` columns.
 pub mod session {
@@ -40,9 +40,13 @@ pub async fn init_db(database_url: &str) -> Result<sea_orm::DatabaseConnection, 
     Ok(db)
 }
 
-/// Create an in-memory SQLite database with migrations applied.
+/// Create an in-memory `SQLite` database with migrations applied.
 ///
-/// Intended for test use only. Panics on failure.
+/// Intended for test use only.
+///
+/// # Panics
+///
+/// Panics if database connection or migration fails.
 pub async fn test_db() -> sea_orm::DatabaseConnection {
     init_db("sqlite::memory:")
         .await
