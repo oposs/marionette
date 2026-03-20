@@ -71,10 +71,15 @@ Plans:
   6. Vitest unit tests pass for data store, message handling, and component logic
   7. vitest-browser-svelte component tests validate each component in real browser
   8. Playwright E2E framework is configured and ready for integration tests
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md -- Install deps, test infra, TypeScript protocol types, reactive data store with dirty tracking and optimistic updates + unit tests
+- [ ] 03-02-PLAN.md -- WebSocket transport with reconnection, message dispatcher, URL routing + unit tests
+- [ ] 03-03-PLAN.md -- Component registry, NodeRenderer, Surface, ErrorBoundary, FallbackComponent, init module, library exports
+- [ ] 03-04-PLAN.md -- Navigation components (SideNav, NavItem, NavGroup), layout components (Container, Grid, Heading, Text), feedback components (Spinner, ErrorDisplay)
+- [ ] 03-05-PLAN.md -- Form components (Form, TextInput, Select, Checkbox, Button), DataTable with virtual scroll, popup components (Modal, Toast, ConfirmDialog)
+- [ ] 03-06-PLAN.md -- Browser component tests (vitest-browser-svelte), Playwright E2E framework, visual regression screenshots, demo page
 
 ### Phase 4: Backend Toolkit
 **Goal**: Complete Marionette Rust toolkit with all infrastructure, macros, and comprehensive tests
@@ -178,7 +183,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 |-------|----------------|--------|-----------|
 | 1. Project Infrastructure | 0/3 | Planning complete | - |
 | 2. Protocol Specification | 3/3 | Complete   | 2026-03-18 |
-| 3. Frontend Library | 0/TBD | Not started | - |
+| 3. Frontend Library | 0/6 | Planning complete | - |
 | 4. Backend Toolkit | 0/TBD | Not started | - |
 | 5. Integration | 0/TBD | Not started | - |
 | 6. CRM Auth & Foundation | 0/TBD | Not started | - |
