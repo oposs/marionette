@@ -52,6 +52,44 @@ pub struct ComponentAction {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
+impl ComponentAction {
+    /// Create a submit action.
+    #[must_use]
+    pub fn submit(name: &str) -> Self {
+        Self {
+            r#type: "submit".into(),
+            name: Some(name.into()),
+            target: None,
+            id_path: None,
+            extra: serde_json::Map::new(),
+        }
+    }
+
+    /// Create a click action.
+    #[must_use]
+    pub fn click(name: &str) -> Self {
+        Self {
+            r#type: "click".into(),
+            name: Some(name.into()),
+            target: None,
+            id_path: None,
+            extra: serde_json::Map::new(),
+        }
+    }
+
+    /// Create a change action.
+    #[must_use]
+    pub fn change(name: &str) -> Self {
+        Self {
+            r#type: "change".into(),
+            name: Some(name.into()),
+            target: None,
+            id_path: None,
+            extra: serde_json::Map::new(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
