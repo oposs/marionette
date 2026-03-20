@@ -48,12 +48,12 @@
 - [x] **FRONT-08**: URL routing (reflect route in URL, handle browser nav)
 
 **Component Vocabulary:**
-- [ ] **FRONT-10**: Navigation components (side-nav, nav-item, nav-group)
+- [x] **FRONT-10**: Navigation components (side-nav, nav-item, nav-group)
 - [ ] **FRONT-11**: Form components (form, text-input, select, checkbox, button)
-- [ ] **FRONT-12**: Layout components (container, grid/flex, heading, text)
+- [x] **FRONT-12**: Layout components (container, grid/flex, heading, text)
 - [ ] **FRONT-13**: Table components (data-table: sortable, paginated, keyed rows)
 - [ ] **FRONT-14**: Popup components (modal, toast, confirm-dialog)
-- [ ] **FRONT-15**: Feedback components (spinner/loading, error display)
+- [x] **FRONT-15**: Feedback components (spinner/loading, error display)
 - [x] **FRONT-16**: Flowbite styling integration
 
 **Testing Infrastructure:**
@@ -171,12 +171,12 @@
 | FRONT-06 | Phase 3 | Complete |
 | FRONT-07 | Phase 3 | Complete |
 | FRONT-08 | Phase 3 | Complete |
-| FRONT-10 | Phase 3 | Pending |
+| FRONT-10 | Phase 3 | Complete |
 | FRONT-11 | Phase 3 | Pending |
-| FRONT-12 | Phase 3 | Pending |
+| FRONT-12 | Phase 3 | Complete |
 | FRONT-13 | Phase 3 | Pending |
 | FRONT-14 | Phase 3 | Pending |
-| FRONT-15 | Phase 3 | Pending |
+| FRONT-15 | Phase 3 | Complete |
 | FRONT-16 | Phase 3 | Complete |
 | FRONT-20 | Phase 3 | Complete |
 | FRONT-21 | Phase 3 | Pending |
