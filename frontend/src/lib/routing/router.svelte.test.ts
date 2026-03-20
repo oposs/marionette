@@ -1,21 +1,21 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('URL Router', () => {
   let router: typeof import('./router.svelte');
   let sendActionFn: ReturnType<typeof vi.fn>;
 
-  // Save originals
-  const originalPushState = history.pushState;
-  const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+  let originalPushState: typeof history.pushState;
 
   beforeEach(async () => {
     vi.resetModules();
     sendActionFn = vi.fn();
 
-    // Mock history.pushState
+    // Save and mock history.pushState
+    originalPushState = history.pushState;
     history.pushState = vi.fn();
 
-    // Mock window.location.pathname
+    // Set location pathname for tests
     Object.defineProperty(window, 'location', {
       value: { pathname: '/contacts', href: 'http://localhost/contacts' },
       writable: true,
@@ -28,9 +28,6 @@ describe('URL Router', () => {
   afterEach(() => {
     router.destroyRouter();
     history.pushState = originalPushState;
-    if (locationDescriptor) {
-      Object.defineProperty(window, 'location', locationDescriptor);
-    }
   });
 
   it('initRouter registers popstate listener', () => {
