@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-20T15:00:00.000Z"
-last_activity: 2026-03-20 -- Completed 04-02 macros and builders
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-20T15:25:30.000Z"
+last_activity: 2026-03-20 -- Completed 04-04 WebSocket session management
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 17
-  completed_plans: 15
-  percent: 88
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 4 Backend Toolkit -- Plan 03 complete
+**Current focus:** Phase 4 Backend Toolkit -- Plan 04 complete
 
 ## Current Position
 
 Phase: 4 of 9 (Backend Toolkit)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-03-20 -- Completed 04-03 action routing
+Last activity: 2026-03-20 -- Completed 04-04 WebSocket session management
 
-Progress: [████████▓░] 88%
+Progress: [█████████▓] 94%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [████████▓░] 88%
 | Phase 04 P01 | 2min | 2 tasks | 7 files |
 | Phase 04 P02 | 5min | 2 tasks | 13 files |
 | Phase 04 P03 | 6min | 2 tasks | 6 files |
+| Phase 04 P04 | 5min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,10 @@ Recent decisions affecting current work:
 - [Phase 04]: Fully qualified paths in macro output for edition 2024 compatibility
 - [Phase 04]: Arc<DatabaseConnection> wrapper because sea-orm DatabaseConnection is not Clone
 - [Phase 04]: box_handler function (not macro) for wrapping async handler fns into BoxedHandler
+- [Phase 04]: mpsc channel pattern for WebSocket reader/writer split (no Arc<Mutex> on sender)
+- [Phase 04]: Correlation ID propagation from ActionMessage to response messages
+- [Phase 04]: tokio-tungstenite 0.26 for WS integration test client
+- [Phase 04]: axum ws feature enabled in workspace dependencies
 
 ### Pending Todos
 
@@ -123,6 +128,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T15:17:51Z
-Stopped at: Completed 04-03-PLAN.md
-Resume file: .planning/phases/04-backend-toolkit/04-03-SUMMARY.md
+Last session: 2026-03-20T15:25:30Z
+Stopped at: Completed 04-04-PLAN.md
+Resume file: .planning/phases/04-backend-toolkit/04-04-SUMMARY.md
