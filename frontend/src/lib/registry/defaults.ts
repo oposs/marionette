@@ -1,17 +1,31 @@
 /**
  * Default component registrations.
  *
- * Plans 04 and 05 will populate this with built-in components
- * (side-nav, text-input, data-table, etc.). For now it registers
- * an empty set so the init flow works end-to-end.
+ * Registers all built-in Marionette SDUI components:
+ * navigation, layout, and feedback components (Plan 04),
+ * with form and data components to follow (Plan 05).
  */
 import { registerAll } from './registry';
+import SideNav from '../components/nav/SideNav.svelte';
+import NavItem from '../components/nav/NavItem.svelte';
+import NavGroup from '../components/nav/NavGroup.svelte';
+import Container from '../components/layout/Container.svelte';
+import Grid from '../components/layout/Grid.svelte';
+import Heading from '../components/layout/Heading.svelte';
+import Text from '../components/layout/Text.svelte';
+import MSpinner from '../components/feedback/Spinner.svelte';
+import ErrorDisplay from '../components/feedback/ErrorDisplay.svelte';
 
 export function registerDefaults(): void {
 	registerAll({
-		// Will be populated as components are built in Plans 04 and 05:
-		// 'side-nav': SideNav,
-		// 'text-input': TextInput,
-		// etc.
+		'side-nav': SideNav,
+		'nav-item': NavItem,
+		'nav-group': NavGroup,
+		'container': Container,
+		'grid': Grid,
+		'heading': Heading,
+		'text': Text,
+		'spinner': MSpinner,
+		'error-display': ErrorDisplay,
 	});
 }
