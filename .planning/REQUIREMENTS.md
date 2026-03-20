@@ -40,12 +40,12 @@
 **Core Infrastructure:**
 - [ ] **FRONT-01**: Reactive data store with JSON Pointer binding
 - [ ] **FRONT-02**: Component registry with dynamic rendering from adjacency list
-- [ ] **FRONT-03**: Message handling (send actions, receive renders/patches/events)
+- [x] **FRONT-03**: Message handling (send actions, receive renders/patches/events)
 - [ ] **FRONT-04**: Multi-surface renderer (main, sidebar, modal, toast)
-- [ ] **FRONT-05**: WebSocket connection management with reconnection
+- [x] **FRONT-05**: WebSocket connection management with reconnection
 - [ ] **FRONT-06**: Optimistic update handling with rollback on failure
 - [ ] **FRONT-07**: Dirty field tracking (skip patches to actively edited fields)
-- [ ] **FRONT-08**: URL routing (reflect route in URL, handle browser nav)
+- [x] **FRONT-08**: URL routing (reflect route in URL, handle browser nav)
 
 **Component Vocabulary:**
 - [ ] **FRONT-10**: Navigation components (side-nav, nav-item, nav-group)
@@ -60,7 +60,7 @@
 - [ ] **FRONT-20**: Unit test framework (Vitest) for component logic
 - [ ] **FRONT-21**: Component tests using vitest-browser-svelte + Playwright (real browser)
 - [ ] **FRONT-22**: Data store unit tests (binding, patching, dirty tracking)
-- [ ] **FRONT-23**: Message handling unit tests (action dispatch, render processing)
+- [x] **FRONT-23**: Message handling unit tests (action dispatch, render processing)
 - [ ] **FRONT-24**: E2E test framework (Playwright) for user flows
 - [ ] **FRONT-25**: Visual regression testing with Playwright screenshots
 - [ ] **FRONT-26**: Component visual snapshots (each component state captured)
@@ -165,12 +165,12 @@
 | DOC-02 | Phase 2 | Complete |
 | FRONT-01 | Phase 3 | Pending |
 | FRONT-02 | Phase 3 | Pending |
-| FRONT-03 | Phase 3 | Pending |
+| FRONT-03 | Phase 3 | Complete |
 | FRONT-04 | Phase 3 | Pending |
-| FRONT-05 | Phase 3 | Pending |
+| FRONT-05 | Phase 3 | Complete |
 | FRONT-06 | Phase 3 | Pending |
 | FRONT-07 | Phase 3 | Pending |
-| FRONT-08 | Phase 3 | Pending |
+| FRONT-08 | Phase 3 | Complete |
 | FRONT-10 | Phase 3 | Pending |
 | FRONT-11 | Phase 3 | Pending |
 | FRONT-12 | Phase 3 | Pending |
@@ -181,7 +181,7 @@
 | FRONT-20 | Phase 3 | Pending |
 | FRONT-21 | Phase 3 | Pending |
 | FRONT-22 | Phase 3 | Pending |
-| FRONT-23 | Phase 3 | Pending |
+| FRONT-23 | Phase 3 | Complete |
 | FRONT-24 | Phase 3 | Pending |
 | FRONT-25 | Phase 3 | Pending |
 | FRONT-26 | Phase 3 | Pending |
