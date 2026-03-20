@@ -15,6 +15,15 @@ import Heading from '../components/layout/Heading.svelte';
 import Text from '../components/layout/Text.svelte';
 import MSpinner from '../components/feedback/Spinner.svelte';
 import ErrorDisplay from '../components/feedback/ErrorDisplay.svelte';
+import Form from '../components/form/Form.svelte';
+import TextInput from '../components/form/TextInput.svelte';
+import SelectInput from '../components/form/SelectInput.svelte';
+import MCheckbox from '../components/form/Checkbox.svelte';
+import MButton from '../components/form/Button.svelte';
+import DataTable from '../components/table/DataTable.svelte';
+import ModalSurface from '../components/popup/ModalSurface.svelte';
+import ToastSurface from '../components/popup/ToastSurface.svelte';
+import ConfirmDialog from '../components/popup/ConfirmDialog.svelte';
 
 export function registerDefaults(): void {
 	registerAll({
@@ -27,5 +36,14 @@ export function registerDefaults(): void {
 		'text': Text,
 		'spinner': MSpinner,
 		'error-display': ErrorDisplay,
+		'form': Form,
+		'text-input': TextInput,
+		'select': SelectInput,
+		'checkbox': MCheckbox,
+		'button': MButton,
+		'data-table': DataTable,
+		'modal': ModalSurface,
+		'toast': ToastSurface,
+		'confirm-dialog': ConfirmDialog,
 	});
 }
