@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-23T09:53:58.704Z"
-last_activity: 2026-03-23 -- Completed 08-01 CRM entity foundation
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-23T10:01:25.016Z"
+last_activity: 2026-03-23 -- Completed 08-02 notes feature
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 29
-  completed_plans: 26
+  completed_plans: 27
   percent: 90
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 ## Current Position
 
 Phase: 8 of 9 (CRM Features)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: in-progress
-Last activity: 2026-03-23 -- Completed 08-01 CRM entity foundation
+Last activity: 2026-03-23 -- Completed 08-02 notes feature
 
 Progress: [█████████░] 90%
 
@@ -78,6 +78,7 @@ Progress: [█████████░] 90%
 | Phase 07 P02 | 2min | 2 tasks | 3 files |
 | Phase 07 P03 | 4min | 2 tasks | 4 files |
 | Phase 08 P01 | 3min | 2 tasks | 12 files |
+| Phase 08 P02 | 4min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Linked contacts sub-table only shown when contacts exist for company
 - [Phase 08]: NotSet for auto-increment PKs and timestamp fields to use DB defaults
 - [Phase 08]: Interaction type enforced via SQLite CHECK constraint rather than Rust enum
+- [Phase 08]: Handler delegation pattern: note_save re-renders parent form by constructing new HandlerContext with modified action payload
+- [Phase 08]: Notes UI pattern: Form wrapper with TextInput + Button, entity ID in noteForm data namespace for submission
 
 ### Pending Todos
 
@@ -164,6 +167,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T09:53:58.701Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-03-23T10:01:25.013Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
