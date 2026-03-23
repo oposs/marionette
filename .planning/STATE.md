@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-03-23T11:50:49.785Z"
+stopped_at: Completed 09-03-PLAN.md
+last_updated: "2026-03-23T11:56:40.134Z"
 last_activity: 2026-03-23 -- Completed 09-02 contact-to-Listmonk sync
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 32
-  completed_plans: 31
+  completed_plans: 32
   percent: 94
 ---
 
@@ -83,6 +83,7 @@ Progress: [█████████░] 94%
 | Phase 08 P04 | 2min | 2 tasks | 4 files |
 | Phase 09 P01 | 2min | 2 tasks | 11 files |
 | Phase 09 P02 | 6min | 2 tasks | 9 files |
+| Phase 09 P03 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -169,6 +170,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Type-erased extension field (Arc<dyn Any>) on AppState to avoid leaking CRM types into marionette library
 - [Phase 09]: OnceLock static for ListmonkClient access from handlers (avoids modifying marionette library crate)
 - [Phase 09]: Best-effort blocklist on contact delete and email-change propagation (warn on failure, never fail user operations)
+- [Phase 09]: 15-minute cache duration for mailing history with parse_sqlite_datetime_to_unix helper
 
 ### Pending Todos
 
@@ -180,6 +182,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T11:50:49.780Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-03-23T11:56:40.130Z
+Stopped at: Completed 09-03-PLAN.md
 Resume file: None
