@@ -129,10 +129,12 @@ Plans:
   3. Admin can assign roles (admin, user) to control access levels
   4. System records who changed what and when (audit trail queryable)
   5. Unauthorized users are denied access to protected features
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md -- Database entities (user, audit_log), migrations, seed, login endpoint, WebSocket session auth from cookie
+- [ ] 06-02-PLAN.md -- Admin-only user management SDUI screens (list, create, edit, delete)
+- [ ] 06-03-PLAN.md -- Automatic audit trail helper, audit log admin query screen, wire audit into user handlers
 
 ### Phase 7: CRM Core
 **Goal**: Users can manage contacts and companies with full CRUD operations
@@ -191,7 +193,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 3. Frontend Library | 6/6 | Complete   | 2026-03-20 |
 | 4. Backend Toolkit | 4/5 | In Progress|  |
 | 5. Integration | 0/2 | Planning complete | - |
-| 6. CRM Auth & Foundation | 0/TBD | Not started | - |
+| 6. CRM Auth & Foundation | 0/3 | Planning complete | - |
 | 7. CRM Core | 0/TBD | Not started | - |
 | 8. CRM Features | 0/TBD | Not started | - |
 | 9. CRM Listmonk | 0/TBD | Not started | - |
