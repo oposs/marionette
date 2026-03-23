@@ -196,7 +196,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 4. Backend Toolkit | 4/5 | In Progress|  |
 | 5. Integration | 0/2 | Planning complete | - |
 | 6. CRM Auth & Foundation | 0/3 | Planning complete | - |
-| 7. CRM Core | 0/3 | Planning complete | - |
+| 7. CRM Core | 1/3 | In Progress|  |
 | 8. CRM Features | 0/TBD | Not started | - |
 | 9. CRM Listmonk | 0/TBD | Not started | - |
 

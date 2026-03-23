@@ -96,9 +96,9 @@
 ### Demo CRM (CRM)
 *Proof that OpenSDUI + Marionette works for real apps*
 
-- [ ] **CRM-01**: User can create, view, edit, delete contacts
-- [ ] **CRM-02**: User can create, view, edit, delete companies
-- [ ] **CRM-03**: User can link contacts to companies
+- [x] **CRM-01**: User can create, view, edit, delete contacts
+- [x] **CRM-02**: User can create, view, edit, delete companies
+- [x] **CRM-03**: User can link contacts to companies
 - [ ] **CRM-04**: User can view paginated, sortable data tables
 - [ ] **CRM-05**: User can view and edit records in form views
 - [ ] **CRM-06**: User can add notes to contacts and companies
@@ -205,9 +205,9 @@
 | CRM-12 | Phase 6 | Complete |
 | CRM-13 | Phase 6 | Complete |
 | CRM-14 | Phase 6 | Complete |
-| CRM-01 | Phase 7 | Pending |
-| CRM-02 | Phase 7 | Pending |
-| CRM-03 | Phase 7 | Pending |
+| CRM-01 | Phase 7 | Complete |
+| CRM-02 | Phase 7 | Complete |
+| CRM-03 | Phase 7 | Complete |
 | CRM-04 | Phase 7 | Pending |
 | CRM-05 | Phase 7 | Pending |
 | CRM-06 | Phase 8 | Pending |
