@@ -67,11 +67,20 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 		setData('main', '/_errors', msg.errors);
 	});
 
+	// Register hello handler: when server acknowledges connection,
+	// initialize the router which sends the initial navigate action.
+	// This ensures the navigate action is sent only after the WebSocket
+	// is fully open (not dropped due to socket not yet connected).
+	let routerInitialized = false;
+	registerHandler('hello', () => {
+		if (!routerInitialized) {
+			routerInitialized = true;
+			initRouter(sendAction);
+		}
+	});
+
 	// Connect WebSocket and route messages through the dispatcher
 	connect(wsUrl, handleMessage);
-
-	// Initialize URL router with sendAction for navigation
-	initRouter(sendAction);
 }
 
 /**

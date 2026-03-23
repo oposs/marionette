@@ -27,10 +27,14 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         .id("btn1")
         .action(ComponentAction::click("demo_click"))
         .build();
+    let msg_text = Text::new("")
+        .id("msg1")
+        .bind("/message")
+        .build();
 
     let nodes_vec = Container::new()
         .id("root")
-        .children(vec![heading, text, button])
+        .children(vec![heading, text, button, msg_text])
         .build_with_children();
 
     let mut nodes = HashMap::new();

@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * Load all OpenAPI YAML schema files, merge definitions into a single
@@ -10,6 +11,8 @@ import * as path from 'path';
  * for validating protocol messages.
  */
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const SCHEMA_DIR = path.resolve(__dirname, '../../../spec/schemas');
 const SCHEMA_FILES = ['message.yaml', 'component.yaml', 'data.yaml', 'common.yaml'];
 
