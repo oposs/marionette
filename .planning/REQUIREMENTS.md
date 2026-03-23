@@ -110,8 +110,8 @@
 - [x] **CRM-12**: Admin can manage users and assign roles
 - [x] **CRM-13**: User can log in and access features based on role
 - [x] **CRM-14**: System records audit trail (who changed what when)
-- [ ] **CRM-15**: User can sync contacts to Listmonk subscriber lists
-- [ ] **CRM-16**: User can view mailing history per contact from Listmonk
+- [x] **CRM-15**: User can sync contacts to Listmonk subscriber lists
+- [x] **CRM-16**: User can view mailing history per contact from Listmonk
 
 ---
 
@@ -216,8 +216,8 @@
 | CRM-09 | Phase 8 | Complete |
 | CRM-10 | Phase 8 | Complete |
 | CRM-11 | Phase 8 | Complete |
-| CRM-15 | Phase 9 | Pending |
-| CRM-16 | Phase 9 | Pending |
+| CRM-15 | Phase 9 | Complete |
+| CRM-16 | Phase 9 | Complete |
 
 ---
 *Last updated: 2026-01-24 after roadmap regeneration*
