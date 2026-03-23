@@ -223,6 +223,26 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         map
     };
 
+    // Batch-load Listmonk sync statuses for all displayed contacts
+    let sync_statuses: HashMap<i32, (String, Option<String>)> = if contact_ids.is_empty() {
+        HashMap::new()
+    } else {
+        let syncs = listmonk_sync::Entity::find()
+            .filter(listmonk_sync::Column::ListmonkSyncContact.is_in(contact_ids.clone()))
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        syncs
+            .into_iter()
+            .map(|s| {
+                (
+                    s.listmonk_sync_contact,
+                    (s.listmonk_sync_status, s.listmonk_sync_error),
+                )
+            })
+            .collect()
+    };
+
     // Load companies for filter dropdown
     let companies = company::Entity::find()
         .order_by_asc(company::Column::CompanyName)
@@ -249,6 +269,11 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     let new_button = Button::new("New Contact")
         .id("btn-new-contact")
         .action(ComponentAction::click("contact_new"))
+        .build();
+
+    let sync_all_button = Button::new("Sync All to Listmonk")
+        .id("btn-sync-all")
+        .action(ComponentAction::click("listmonk_sync_all"))
         .build();
 
     // Search bar
@@ -316,6 +341,11 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
             sortable: None,
         },
         TableColumn {
+            key: "sync_status".into(),
+            label: "Sync".into(),
+            sortable: None,
+        },
+        TableColumn {
             key: "created".into(),
             label: "Created".into(),
             sortable: Some(true),
@@ -344,7 +374,7 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         ])
         .build_with_children();
 
-    let mut all_children = vec![heading, new_button];
+    let mut all_children = vec![heading, new_button, sync_all_button];
     all_children.extend(filter_form);
     all_children.push(table);
 
@@ -366,6 +396,12 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
                 .get(&c.contact_id)
                 .map(|names| names.join(", "))
                 .unwrap_or_default();
+            let sync_label = match sync_statuses.get(&c.contact_id) {
+                Some((status, _)) if status == "success" => "Synced",
+                Some((_, Some(err))) => err.as_str(),
+                Some((_, None)) => "Error",
+                None => "Not synced",
+            };
             serde_json::json!({
                 "id": c.contact_id,
                 "name": c.contact_name,
@@ -373,6 +409,7 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
                 "phone": c.contact_phone.as_deref().unwrap_or("-"),
                 "company": co.as_ref().map(|comp| comp.company_name.as_str()).unwrap_or("-"),
                 "tags": tags_str,
+                "sync_status": sync_label,
                 "created": c.contact_created_at,
                 "actions": [
                     { "label": "Edit", "action": { "type": "click", "name": "contact_edit", "payload": { "contact_id": c.contact_id } } },
@@ -727,6 +764,47 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                 })
             })
             .collect();
+
+        // --- Listmonk Sync section ---
+        let sync_record = listmonk_sync::Entity::find()
+            .filter(listmonk_sync::Column::ListmonkSyncContact.eq(cid))
+            .one(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+        let sync_heading = Heading::new("Listmonk Sync")
+            .id("sync-heading")
+            .build();
+        all_nodes.push(sync_heading);
+
+        let status_text = match &sync_record {
+            Some(s) if s.listmonk_sync_status == "success" => format!(
+                "Synced (subscriber #{}) at {}",
+                s.listmonk_sync_subscriber_id.unwrap_or(0),
+                s.listmonk_sync_at
+            ),
+            Some(s) => format!(
+                "Error: {} (at {})",
+                s.listmonk_sync_error.as_deref().unwrap_or("unknown"),
+                s.listmonk_sync_at
+            ),
+            None => "Not yet synced".to_string(),
+        };
+        let sync_status = Text::new(&status_text)
+            .id("sync-status")
+            .build();
+        all_nodes.push(sync_status);
+
+        let mut sync_action = ComponentAction::click("listmonk_sync");
+        sync_action.extra.insert(
+            "payload".into(),
+            serde_json::json!({ "contact_id": cid }),
+        );
+        let sync_button = Button::new("Sync to Listmonk")
+            .id("btn-sync")
+            .action(sync_action)
+            .build();
+        all_nodes.push(sync_button);
 
         // Merge tagForm, noteForm, and interactions data with contact_id
         if let Some(obj) = merged_data.as_object_mut() {
