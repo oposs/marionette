@@ -146,10 +146,12 @@ Plans:
   3. User can link contacts to companies and view the relationship
   4. Data tables display contacts and companies with sorting and pagination
   5. Form views allow editing all fields with validation feedback
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md -- Company and contact SeaORM entities, SQLite migrations, module wiring, demo seed data
+- [ ] 07-02-PLAN.md -- Company CRUD handlers (list with contact count, form, save, delete) + router and nav wiring
+- [ ] 07-03-PLAN.md -- Contact CRUD handlers (list with joined company, form with company select, save, delete) + default view + company linked contacts sub-table
 
 ### Phase 8: CRM Features
 **Goal**: CRM has notes, tagging, search, filtering, and interaction tracking
@@ -194,7 +196,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 4. Backend Toolkit | 4/5 | In Progress|  |
 | 5. Integration | 0/2 | Planning complete | - |
 | 6. CRM Auth & Foundation | 0/3 | Planning complete | - |
-| 7. CRM Core | 0/TBD | Not started | - |
+| 7. CRM Core | 0/3 | Planning complete | - |
 | 8. CRM Features | 0/TBD | Not started | - |
 | 9. CRM Listmonk | 0/TBD | Not started | - |
 
