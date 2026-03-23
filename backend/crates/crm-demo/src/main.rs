@@ -10,10 +10,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use axum::Router;
-use sea_orm::{DatabaseBackend, MockDatabase};
+use sea_orm_migration::MigratorTrait;
 use tower_http::services::{ServeDir, ServeFile};
 
-use marionette::builders::standard::{Button, Container, Heading, Text};
+use marionette::builders::standard::{Button, Container, Form, Heading, Text, TextInput};
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
 use marionette::router::{box_handler, ActionRouter};
@@ -72,21 +72,89 @@ async fn health() -> &'static str {
     "ok"
 }
 
+/// Build the login form as a SDUI render message.
+fn build_login_form() -> ProtocolMessage {
+    let heading = Heading::new("Login").id("login-heading").build();
+    let email_input = TextInput::new("Email")
+        .id("login-email")
+        .placeholder("Enter your email")
+        .bind("/login/email")
+        .build();
+    let password_input = TextInput::new("Password")
+        .id("login-password")
+        .input_type("password")
+        .bind("/login/password")
+        .build();
+    let submit_button = Button::new("Log In")
+        .id("login-submit")
+        .action(ComponentAction::submit("login"))
+        .build();
+
+    let form = Form::new()
+        .id("login-form")
+        .children(vec![email_input, password_input, submit_button])
+        .build_with_children();
+
+    let mut all_nodes = Vec::new();
+    all_nodes.push(heading);
+    all_nodes.extend(form);
+
+    let container_nodes = Container::new()
+        .id("login-root")
+        .children(all_nodes)
+        .build_with_children();
+
+    let mut nodes = HashMap::new();
+    for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+
+    ProtocolMessage::Render(RenderMessage {
+        id: None,
+        surface: "main".into(),
+        root: "login-root".into(),
+        nodes,
+        data: serde_json::json!({ "login": { "email": "", "password": "" } }),
+    })
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
+    // Initialize database with real SQLite
+    let db = marionette::init_db("sqlite://crm.db?mode=rwc")
+        .await
+        .expect("failed to initialize database");
+
+    // Run CRM-specific migrations
+    migration::Migrator::up(&db, None)
+        .await
+        .expect("failed to run CRM migrations");
+
+    // Seed default admin account
+    seed::seed_admin(&db)
+        .await
+        .expect("failed to seed admin");
+
+    let db = Arc::new(db);
+
     let action_router = ActionRouter::new()
-        .action("navigate", box_handler(handle_navigate), AuthRequirement::None)
+        .action(
+            "navigate",
+            box_handler(handle_navigate),
+            AuthRequirement::Authenticated,
+        )
         .action(
             "demo_click",
             box_handler(handle_demo_click),
-            AuthRequirement::None,
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
         router: action_router,
-        db: Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection()),
+        db,
+        login_form: Some(build_login_form()),
     });
 
     // Static files with SPA fallback
@@ -96,6 +164,14 @@ async fn main() {
     let app = Router::new()
         .route("/ws", axum::routing::any(ws_handler))
         .route("/api/health", axum::routing::get(health))
+        .route(
+            "/api/login",
+            axum::routing::post(handlers::auth::handle_login),
+        )
+        .route(
+            "/api/logout",
+            axum::routing::post(handlers::auth::handle_logout),
+        )
         .fallback_service(serve_dir)
         .with_state(state);
 

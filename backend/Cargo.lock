@@ -1452,6 +1452,8 @@ name = "marionette"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum-extra",
+ "chrono",
  "futures",
  "marionette-macros",
  "marionette-protocol",

@@ -3,8 +3,11 @@ use std::sync::Arc;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
 use axum::response::IntoResponse;
+use axum_extra::extract::CookieJar;
+use chrono::Utc;
 use futures::stream::{SplitSink, SplitStream};
 use futures::{SinkExt, StreamExt};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tokio::sync::mpsc;
 use tracing::{debug, error, warn};
 
@@ -12,6 +15,7 @@ use marionette_protocol::{
     ActionMessage, ErrorMessage, HelloMessage, ProtocolMessage, ValidationError,
 };
 
+use crate::db::session;
 use crate::extractors::HandlerContext;
 use crate::router::ActionRouter;
 use crate::session::WsSession;
@@ -22,29 +26,78 @@ pub struct AppState {
     pub router: ActionRouter,
     /// Database connection pool.
     pub db: Arc<sea_orm::DatabaseConnection>,
+    /// Optional login form to send to unauthenticated WebSocket connections.
+    pub login_form: Option<ProtocolMessage>,
 }
 
 /// Axum handler that upgrades an HTTP connection to a WebSocket.
 ///
 /// Accepts connections at the configured route (typically `/ws`) and hands
-/// off to [`handle_session`] for the message loop.
+/// off to [`handle_session`] for the message loop. Extracts the session
+/// cookie from the HTTP upgrade request for authentication.
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
+    jar: CookieJar,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_session(socket, state))
+    let session_token = jar
+        .get("marionette_session")
+        .map(|c| c.value().to_owned());
+    ws.on_upgrade(move |socket| handle_session(socket, state, session_token))
 }
 
 /// Main WebSocket session loop.
 ///
 /// Splits the socket into reader/writer halves, sends the hello message,
 /// then processes incoming actions until the connection closes.
-async fn handle_session(socket: WebSocket, state: Arc<AppState>) {
+async fn handle_session(
+    socket: WebSocket,
+    state: Arc<AppState>,
+    session_token: Option<String>,
+) {
     let (ws_sender, ws_receiver) = socket.split();
     let (tx, rx) = mpsc::channel::<ProtocolMessage>(32);
-    let session = WsSession::new();
+    let mut ws_session = WsSession::new();
 
-    debug!(session_id = %session.id, "WebSocket session started");
+    // Authenticate from session cookie if present
+    if let Some(token) = session_token {
+        match session::Entity::find()
+            .filter(session::Column::SessionToken.eq(&token))
+            .one(&*state.db)
+            .await
+        {
+            Ok(Some(model)) => {
+                // Check if session has expired
+                let expired = chrono::NaiveDateTime::parse_from_str(
+                    &model.session_expires,
+                    "%Y-%m-%dT%H:%M:%SZ",
+                )
+                .map(|dt| dt.and_utc() < Utc::now())
+                .unwrap_or(true);
+
+                if !expired {
+                    ws_session.user_id = model.session_user.map(|id| id.to_string());
+                    ws_session.roles =
+                        serde_json::from_str(&model.session_roles).unwrap_or_default();
+                    debug!(
+                        session_id = %ws_session.id,
+                        user_id = ?ws_session.user_id,
+                        "Authenticated from cookie"
+                    );
+                } else {
+                    debug!(session_id = %ws_session.id, "Session cookie expired");
+                }
+            }
+            Ok(None) => {
+                debug!(session_id = %ws_session.id, "Session token not found in DB");
+            }
+            Err(e) => {
+                warn!(session_id = %ws_session.id, error = %e, "Failed to look up session");
+            }
+        }
+    }
+
+    debug!(session_id = %ws_session.id, "WebSocket session started");
 
     // Writer task: drains mpsc channel and sends to WebSocket
     let write_task = tokio::spawn(write_loop(ws_sender, rx));
@@ -54,19 +107,30 @@ async fn handle_session(socket: WebSocket, state: Arc<AppState>) {
         version: "1.0.0".into(),
     });
     if tx.send(hello).await.is_err() {
-        warn!(session_id = %session.id, "Failed to send hello — writer closed");
+        warn!(session_id = %ws_session.id, "Failed to send hello -- writer closed");
         write_task.abort();
         return;
     }
 
+    // Send login form to unauthenticated sessions
+    if ws_session.user_id.is_none() {
+        if let Some(ref login_form) = state.login_form {
+            if tx.send(login_form.clone()).await.is_err() {
+                warn!(session_id = %ws_session.id, "Failed to send login form");
+                write_task.abort();
+                return;
+            }
+        }
+    }
+
     // Reader loop: reads WS messages, dispatches actions, sends responses through tx
-    read_loop(ws_receiver, &tx, &state, &session).await;
+    read_loop(ws_receiver, &tx, &state, &ws_session).await;
 
     // Clean up: drop sender to signal writer task, then wait for it
     drop(tx);
     let _ = write_task.await;
 
-    debug!(session_id = %session.id, "WebSocket session ended");
+    debug!(session_id = %ws_session.id, "WebSocket session ended");
 }
 
 /// Reads incoming WebSocket messages and dispatches actions through the router.

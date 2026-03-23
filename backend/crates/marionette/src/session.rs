@@ -31,6 +31,17 @@ impl WsSession {
         }
     }
 
+    /// Create an authenticated session for a given user ID and roles.
+    #[must_use]
+    pub fn with_auth(user_id: i32, roles: Vec<String>) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            user_id: Some(user_id.to_string()),
+            roles,
+            connected_at: Instant::now(),
+        }
+    }
+
     /// Convert this session into the [`Session`] extractor type used by handlers.
     #[must_use]
     pub fn to_session(&self) -> Session {

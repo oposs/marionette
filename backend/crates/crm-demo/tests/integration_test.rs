@@ -79,6 +79,7 @@ async fn start_server() -> (String, u16) {
     let state = Arc::new(AppState {
         router: action_router,
         db: Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection()),
+        login_form: None,
     });
 
     // Use the actual frontend build directory for SPA fallback testing.

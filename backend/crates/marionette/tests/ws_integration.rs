@@ -21,6 +21,7 @@ async fn start_test_server(router: ActionRouter) -> String {
     let app_state = Arc::new(AppState {
         router,
         db: mock_db(),
+        login_form: None,
     });
 
     let app = axum::Router::new()
