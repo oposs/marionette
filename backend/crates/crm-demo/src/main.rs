@@ -198,6 +198,11 @@ async fn main() {
             None
         };
 
+    // Initialize global Listmonk client for handler access
+    if let Some(ref client) = listmonk_client {
+        handlers::listmonk::init_listmonk_client(Arc::clone(client));
+    }
+
     let db = Arc::new(db);
 
     let action_router = ActionRouter::new()
@@ -309,6 +314,16 @@ async fn main() {
         .action(
             "interaction_save",
             box_handler(handlers::interaction::handle_interaction_save),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "listmonk_sync",
+            box_handler(handlers::listmonk::handle_listmonk_sync),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "listmonk_sync_all",
+            box_handler(handlers::listmonk::handle_listmonk_sync_all),
             AuthRequirement::Authenticated,
         );
 

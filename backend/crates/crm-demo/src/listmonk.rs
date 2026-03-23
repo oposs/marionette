@@ -6,10 +6,10 @@ use std::time::Duration;
 /// Wraps `reqwest::Client` with basic auth credentials and provides
 /// typed methods for all subscriber and list management operations.
 pub struct ListmonkClient {
-    client: reqwest::Client,
-    base_url: String,
-    user: String,
-    password: String,
+    pub(crate) client: reqwest::Client,
+    pub(crate) base_url: String,
+    pub(crate) user: String,
+    pub(crate) password: String,
 }
 
 #[derive(Serialize)]

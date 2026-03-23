@@ -10,7 +10,7 @@ use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-use crate::entities::{company, contact, contact_tag, interaction, note, tag, user};
+use crate::entities::{company, contact, contact_tag, interaction, listmonk_sync, note, tag, user};
 
 /// Format current UTC time as SQLite datetime string.
 fn now_sqlite() -> String {
@@ -841,6 +841,8 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
                 .map_err(|e| ActionError::Internal(e.to_string()))?
                 .ok_or_else(|| ActionError::Internal("Contact not found".into()))?;
 
+            let old_email = found.contact_email.clone();
+
             let old_json = serde_json::json!({
                 "name": found.contact_name,
                 "email": found.contact_email,
@@ -872,6 +874,31 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
             let changes = crate::audit::compute_changes(&old_json, &new_json);
             crate::audit::record_audit(&*db.0, caller_id, "contact", cid, "update", changes)
                 .await?;
+
+            // Propagate email change to Listmonk if subscriber exists
+            if old_email != data.email {
+                if let Ok(Some(sync_record)) = listmonk_sync::Entity::find()
+                    .filter(listmonk_sync::Column::ListmonkSyncContact.eq(cid))
+                    .one(&*db.0)
+                    .await
+                {
+                    if let Some(subscriber_id) = sync_record.listmonk_sync_subscriber_id {
+                        if let Some(client) = super::listmonk::get_listmonk_client() {
+                            let name = format!("{}", &data.name);
+                            if let Err(e) =
+                                client.update_subscriber(subscriber_id, &data.email, &name).await
+                            {
+                                tracing::warn!(
+                                    contact_id = cid,
+                                    subscriber_id,
+                                    error = %e,
+                                    "Failed to update Listmonk subscriber email"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -900,8 +927,28 @@ pub async fn handle_contact_delete(ctx: HandlerContext) -> ActionResult {
         "company": found.contact_company,
     });
 
-    // Delete
+    // Blocklist subscriber in Listmonk if synced (best-effort)
     let deleted_id = found.contact_id;
+    if let Ok(Some(sync_record)) = listmonk_sync::Entity::find()
+        .filter(listmonk_sync::Column::ListmonkSyncContact.eq(deleted_id))
+        .one(&*db.0)
+        .await
+    {
+        if let Some(subscriber_id) = sync_record.listmonk_sync_subscriber_id {
+            if let Some(client) = super::listmonk::get_listmonk_client() {
+                if let Err(e) = client.blocklist_subscriber(subscriber_id).await {
+                    tracing::warn!(
+                        contact_id = deleted_id,
+                        subscriber_id,
+                        error = %e,
+                        "Failed to blocklist Listmonk subscriber on delete (best-effort)"
+                    );
+                }
+            }
+        }
+    }
+
+    // Delete
     found
         .delete(&*db.0)
         .await
