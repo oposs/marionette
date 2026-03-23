@@ -8,6 +8,8 @@ mod m20260323_000005_create_note;
 mod m20260323_000006_create_tag;
 mod m20260323_000007_create_contact_tag;
 mod m20260323_000008_create_interaction;
+mod m20260323_000009_create_listmonk_sync;
+mod m20260323_000010_create_listmonk_cache;
 
 pub struct Migrator;
 
@@ -23,6 +25,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260323_000006_create_tag::Migration),
             Box::new(m20260323_000007_create_contact_tag::Migration),
             Box::new(m20260323_000008_create_interaction::Migration),
+            Box::new(m20260323_000009_create_listmonk_sync::Migration),
+            Box::new(m20260323_000010_create_listmonk_cache::Migration),
         ]
     }
 }

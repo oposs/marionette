@@ -21,8 +21,8 @@ axum-extra.workspace = true
 uuid.workspace = true
 serde.workspace = true
 time.workspace = true
+reqwest.workspace = true
 
 [dev-dependencies]
 tokio-tungstenite.workspace = true
 futures.workspace = true
-reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }

@@ -3,6 +3,8 @@ pub mod company;
 pub mod contact;
 pub mod contact_tag;
 pub mod interaction;
+pub mod listmonk_cache;
+pub mod listmonk_sync;
 pub mod note;
 pub mod tag;
 pub mod user;
