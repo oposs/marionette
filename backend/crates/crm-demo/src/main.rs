@@ -268,6 +268,11 @@ async fn main() {
             "company_delete",
             box_handler(handlers::company::handle_company_delete),
             AuthRequirement::Authenticated,
+        )
+        .action(
+            "note_save",
+            box_handler(handlers::note::handle_note_save),
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
