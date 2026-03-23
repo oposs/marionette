@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext};
-use crate::entities::{contact, contact_tag, listmonk_sync, tag};
+use crate::entities::{contact, contact_tag, listmonk_cache, listmonk_sync, tag};
 use crate::listmonk::ListmonkClient;
 
 /// Global holder for the Listmonk client, initialized in main.rs.
@@ -266,6 +266,46 @@ pub async fn handle_listmonk_sync_all(ctx: HandlerContext) -> ActionResult {
     .await
 }
 
+/// Cache duration in seconds (15 minutes).
+const CACHE_DURATION_SECS: i64 = 15 * 60;
+
+/// Fetch mailing history for a contact, using cache if fresh (< 15 min).
+/// Returns parsed JSON array of campaign entries, or empty array.
+pub async fn get_cached_or_fetch_history(
+    db: &sea_orm::DatabaseConnection,
+    contact_id: i32,
+) -> Result<serde_json::Value, ActionError> {
+    // Stub: always return empty array (tests will fail)
+    Ok(serde_json::json!([]))
+}
+
+/// Handle the `listmonk_history_refresh` action: delete cache and re-fetch.
+pub async fn handle_listmonk_history_refresh(ctx: HandlerContext) -> ActionResult {
+    let db = Db::from_context(&ctx)?;
+    let payload = marionette::extractors::Payload::<SyncPayload>::from_context(&ctx)?;
+    let cid = payload.0.contact_id;
+
+    // Delete existing cache for this contact (force re-fetch)
+    listmonk_cache::Entity::delete_many()
+        .filter(listmonk_cache::Column::ListmonkCacheContact.eq(cid))
+        .exec(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    // Re-fetch (will hit API since cache is gone)
+    let _history = get_cached_or_fetch_history(&*db.0, cid).await?;
+
+    // Re-render the contact form
+    let mut form_action = ctx.action.clone();
+    form_action.payload = Some(serde_json::json!({ "contact_id": cid }));
+    let form_ctx = HandlerContext {
+        action: form_action,
+        db: ctx.db.clone(),
+        session: ctx.session.clone(),
+    };
+    super::contact::handle_contact_form(form_ctx).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -434,6 +474,165 @@ mod tests {
         let result = sync_one_contact(&client, &db, &contact, &["VIP".to_string()]).await;
         assert!(result.is_ok(), "sync should succeed: {:?}", result);
         assert_eq!(result.unwrap(), 10, "should return existing subscriber_id");
+    }
+
+    // --- Mailing history cache tests ---
+
+    #[tokio::test]
+    async fn test_get_history_returns_empty_when_not_synced() {
+        // Contact exists but no listmonk_sync record -> empty array
+        let db = MockDatabase::new(DatabaseBackend::Sqlite)
+            // Query for listmonk_sync record (find by contact) -> empty
+            .append_query_results::<listmonk_sync::Model, Vec<listmonk_sync::Model>, _>(vec![vec![]])
+            .into_connection();
+
+        let result = get_cached_or_fetch_history(&db, 99).await;
+        assert!(result.is_ok());
+        let val = result.unwrap();
+        assert!(val.is_array());
+        assert_eq!(val.as_array().unwrap().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_returns_empty_when_no_subscriber_id() {
+        // Sync record exists but subscriber_id is None
+        let db = MockDatabase::new(DatabaseBackend::Sqlite)
+            .append_query_results([[listmonk_sync::Model {
+                listmonk_sync_id: 1,
+                listmonk_sync_contact: 10,
+                listmonk_sync_status: "success".into(),
+                listmonk_sync_error: None,
+                listmonk_sync_subscriber_id: None,
+                listmonk_sync_at: "2026-01-01 00:00:00".into(),
+            }]])
+            .into_connection();
+
+        let result = get_cached_or_fetch_history(&db, 10).await;
+        assert!(result.is_ok());
+        let val = result.unwrap();
+        assert!(val.is_array());
+        assert_eq!(val.as_array().unwrap().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_uses_cache_when_fresh() {
+        // Sync record with subscriber_id, fresh cache (now)
+        let now = {
+            let t = time::OffsetDateTime::now_utc();
+            format!(
+                "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                t.year(), t.month() as u8, t.day(), t.hour(), t.minute(), t.second()
+            )
+        };
+        let cached_data = serde_json::json!([
+            {"campaign": "Newsletter #1", "date": "2026-03-01", "status": "sent"}
+        ]);
+
+        let db = MockDatabase::new(DatabaseBackend::Sqlite)
+            // Query for listmonk_sync
+            .append_query_results([[listmonk_sync::Model {
+                listmonk_sync_id: 1,
+                listmonk_sync_contact: 10,
+                listmonk_sync_status: "success".into(),
+                listmonk_sync_error: None,
+                listmonk_sync_subscriber_id: Some(42),
+                listmonk_sync_at: "2026-01-01 00:00:00".into(),
+            }]])
+            // Query for listmonk_cache
+            .append_query_results([[listmonk_cache::Model {
+                listmonk_cache_id: 1,
+                listmonk_cache_contact: 10,
+                listmonk_cache_data: cached_data.to_string(),
+                listmonk_cache_at: now,
+            }]])
+            .into_connection();
+
+        let result = get_cached_or_fetch_history(&db, 10).await;
+        assert!(result.is_ok());
+        let val = result.unwrap();
+        assert!(val.is_array(), "should return array, got: {val}");
+        assert_eq!(val.as_array().unwrap().len(), 1, "should return 1 cached entry");
+        assert_eq!(val[0]["campaign"], "Newsletter #1");
+    }
+
+    #[tokio::test]
+    async fn test_get_history_fetches_when_cache_stale() {
+        let server = MockServer::start().await;
+
+        // Cache was 20 minutes ago
+        let stale = {
+            let t = time::OffsetDateTime::now_utc() - time::Duration::minutes(20);
+            format!(
+                "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+                t.year(), t.month() as u8, t.day(), t.hour(), t.minute(), t.second()
+            )
+        };
+
+        // Mock subscriber export endpoint
+        Mock::given(method("GET"))
+            .and(path_regex("api/subscribers/42/export"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": {
+                    "campaign_views": [
+                        {"campaign": {"name": "Newsletter #1"}, "created_at": "2026-03-01T10:00:00Z"}
+                    ],
+                    "link_clicks": []
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        // Initialize the global client for this test
+        let client = ListmonkClient {
+            client: reqwest::Client::new(),
+            base_url: server.uri(),
+            user: "test".into(),
+            password: "test".into(),
+        };
+        let _ = LISTMONK_CLIENT.set(Arc::new(client));
+
+        let db = MockDatabase::new(DatabaseBackend::Sqlite)
+            // Query for listmonk_sync
+            .append_query_results([[listmonk_sync::Model {
+                listmonk_sync_id: 1,
+                listmonk_sync_contact: 10,
+                listmonk_sync_status: "success".into(),
+                listmonk_sync_error: None,
+                listmonk_sync_subscriber_id: Some(42),
+                listmonk_sync_at: "2026-01-01 00:00:00".into(),
+            }]])
+            // Query for listmonk_cache (stale entry)
+            .append_query_results([[listmonk_cache::Model {
+                listmonk_cache_id: 1,
+                listmonk_cache_contact: 10,
+                listmonk_cache_data: "[]".to_string(),
+                listmonk_cache_at: stale,
+            }]])
+            // delete_many exec for cache deletion
+            .append_exec_results([MockExecResult {
+                last_insert_id: 0,
+                rows_affected: 1,
+            }])
+            // insert exec for new cache
+            .append_exec_results([MockExecResult {
+                last_insert_id: 2,
+                rows_affected: 1,
+            }])
+            // query result for inserted cache model
+            .append_query_results([[listmonk_cache::Model {
+                listmonk_cache_id: 2,
+                listmonk_cache_contact: 10,
+                listmonk_cache_data: "[]".to_string(),
+                listmonk_cache_at: "2026-03-23 12:00:00".into(),
+            }]])
+            .into_connection();
+
+        let result = get_cached_or_fetch_history(&db, 10).await;
+        assert!(result.is_ok(), "should succeed: {:?}", result);
+        let val = result.unwrap();
+        assert!(val.is_array());
+        // Should have at least 1 entry from the API response
+        assert!(!val.as_array().unwrap().is_empty(), "should have fetched fresh data from API");
     }
 
     #[tokio::test]
