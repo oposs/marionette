@@ -101,11 +101,11 @@
 - [x] **CRM-03**: User can link contacts to companies
 - [x] **CRM-04**: User can view paginated, sortable data tables
 - [x] **CRM-05**: User can view and edit records in form views
-- [ ] **CRM-06**: User can add notes to contacts and companies
+- [x] **CRM-06**: User can add notes to contacts and companies
 - [ ] **CRM-07**: User can search contacts by name, email, company
-- [ ] **CRM-08**: User can tag/label contacts for categorization
+- [x] **CRM-08**: User can tag/label contacts for categorization
 - [ ] **CRM-09**: User can filter lists by company, tag, date range
-- [ ] **CRM-10**: User can log interactions (calls, emails, meetings) per contact
+- [x] **CRM-10**: User can log interactions (calls, emails, meetings) per contact
 - [ ] **CRM-11**: User can view interaction timeline per contact
 - [x] **CRM-12**: Admin can manage users and assign roles
 - [x] **CRM-13**: User can log in and access features based on role
@@ -210,11 +210,11 @@
 | CRM-03 | Phase 7 | Complete |
 | CRM-04 | Phase 7 | Complete |
 | CRM-05 | Phase 7 | Complete |
-| CRM-06 | Phase 8 | Pending |
+| CRM-06 | Phase 8 | Complete |
 | CRM-07 | Phase 8 | Pending |
-| CRM-08 | Phase 8 | Pending |
+| CRM-08 | Phase 8 | Complete |
 | CRM-09 | Phase 8 | Pending |
-| CRM-10 | Phase 8 | Pending |
+| CRM-10 | Phase 8 | Complete |
 | CRM-11 | Phase 8 | Pending |
 | CRM-15 | Phase 9 | Pending |
 | CRM-16 | Phase 9 | Pending |
