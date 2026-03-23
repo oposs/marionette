@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-01-23)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 4 Backend Toolkit -- Plan 04 complete
+**Current focus:** Phase 5 Integration -- Plan 01 complete
 
 ## Current Position
 
-Phase: 4 of 9 (Backend Toolkit) -- COMPLETE
-Plan: 5 of 5 in current phase
-Status: Phase 4 complete
-Last activity: 2026-03-20 -- Completed 04-05 SeaORM database integration
+Phase: 5 of 9 (Integration)
+Plan: 1 of 2 in current phase
+Status: Plan 05-01 complete
+Last activity: 2026-03-23 -- Completed 05-01 Backend integration with static serving and WS
 
-Progress: [██████████] 100%
+Progress: [█████████▒] 95%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [██████████] 100%
 | Phase 04 P03 | 6min | 2 tasks | 6 files |
 | Phase 04 P04 | 5min | 2 tasks | 6 files |
 | Phase 04 P05 | 12min | 2 tasks | 6 files |
+| Phase 05 P01 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Recent decisions affecting current work:
 - [Phase 04]: db_session re-export alias to avoid conflict with existing WsSession session module
 - [Phase 04]: Raw SQL in migrations (execute_unprepared) for SQLite-specific DEFAULT expressions
 - [Phase 04]: Session entity in db.rs submodule rather than separate entity crate
+- [Phase 05]: Generic JSON parsing in ws.rs handle_text_message for hello/action/unknown type routing
+- [Phase 05]: MockDatabase for crm-demo (no real DB needed for protocol demo)
 
 ### Pending Todos
 
@@ -132,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T06:10:42.981Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-integration/05-CONTEXT.md
+Last session: 2026-03-23T06:39:02Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: .planning/phases/05-integration/05-01-SUMMARY.md
