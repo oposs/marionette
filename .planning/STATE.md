@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-01-23)
 
 ## Current Position
 
-Phase: 5 of 9 (Integration)
-Plan: 1 of 2 in current phase
-Status: Plan 05-01 complete
-Last activity: 2026-03-23 -- Completed 05-01 Backend integration with static serving and WS
+Phase: 5 of 9 (Integration) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 05 complete
+Last activity: 2026-03-23 -- Completed 05-02 E2E integration tests
 
-Progress: [█████████▒] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [█████████▒] 95%
 | Phase 04 P04 | 5min | 2 tasks | 6 files |
 | Phase 04 P05 | 12min | 2 tasks | 6 files |
 | Phase 05 P01 | 5min | 2 tasks | 8 files |
+| Phase 05 P02 | 10min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Session entity in db.rs submodule rather than separate entity crate
 - [Phase 05]: Generic JSON parsing in ws.rs handle_text_message for hello/action/unknown type routing
 - [Phase 05]: MockDatabase for crm-demo (no real DB needed for protocol demo)
+- [Phase 05]: Defer router init until server hello to fix navigate race condition
+- [Phase 05]: Separate playwright.e2e.config.ts for E2E tests (preserves Phase 3 visual tests)
+- [Phase 05]: AJV with cross-file YAML $ref rewriting for protocol schema validation
 
 ### Pending Todos
 
@@ -135,6 +139,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T06:39:02Z
-Stopped at: Completed 05-01-PLAN.md
-Resume file: .planning/phases/05-integration/05-01-SUMMARY.md
+Last session: 2026-03-23T06:53:19Z
+Stopped at: Completed 05-02-PLAN.md
+Resume file: .planning/phases/05-integration/05-02-SUMMARY.md

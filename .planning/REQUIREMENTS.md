@@ -91,7 +91,7 @@
 
 - [x] **INTEG-01**: Axum serves built Svelte app as static files
 - [x] **INTEG-02**: End-to-end message flow (action -> backend -> render -> frontend)
-- [ ] **INTEG-03**: Protocol conformance validation against OpenAPI schemas
+- [x] **INTEG-03**: Protocol conformance validation against OpenAPI schemas
 
 ### Demo CRM (CRM)
 *Proof that OpenSDUI + Marionette works for real apps*
@@ -201,7 +201,7 @@
 | BACK-15 | Phase 4 | Complete |
 | INTEG-01 | Phase 5 | Complete |
 | INTEG-02 | Phase 5 | Complete |
-| INTEG-03 | Phase 5 | Pending |
+| INTEG-03 | Phase 5 | Complete |
 | CRM-12 | Phase 6 | Pending |
 | CRM-13 | Phase 6 | Pending |
 | CRM-14 | Phase 6 | Pending |
