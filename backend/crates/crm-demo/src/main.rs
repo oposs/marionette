@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+mod audit;
 mod entities;
 mod handlers;
 mod migration;
@@ -67,6 +68,12 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
             .action(ComponentAction::click("user_list"))
             .build();
         nav_items.push(users_item);
+
+        let audit_item = NavItem::new("Audit Log", "/audit")
+            .id("nav-audit")
+            .action(ComponentAction::click("audit_list"))
+            .build();
+        nav_items.push(audit_item);
     }
 
     let side_nav_nodes = SideNav::new()
@@ -216,6 +223,11 @@ async fn main() {
         .action(
             "user_delete",
             box_handler(handlers::user::handle_user_delete),
+            AuthRequirement::Role("admin"),
+        )
+        .action(
+            "audit_list",
+            box_handler(handlers::audit::handle_audit_list),
             AuthRequirement::Role("admin"),
         );
 

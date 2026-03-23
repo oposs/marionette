@@ -130,11 +130,27 @@ pub async fn handle_user_delete(ctx: HandlerContext) -> ActionResult {
         .map_err(|e| ActionError::Internal(e.to_string()))?
         .ok_or_else(|| ActionError::Internal("User not found".into()))?;
 
+    let deleted_json = serde_json::json!({
+        "name": found.user_name,
+        "email": found.user_email,
+        "role": found.user_role,
+    });
+
     // Delete
+    let deleted_id = found.user_id;
     found
         .delete(&*db.0)
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    // Record audit entry
+    let caller_id: i32 = session
+        .user_id
+        .as_ref()
+        .and_then(|id| id.parse().ok())
+        .unwrap_or(0);
+    crate::audit::record_audit(&*db.0, caller_id, "user", deleted_id, "delete", deleted_json)
+        .await?;
 
     // Re-render the list
     render_user_list(&ctx).await
@@ -277,6 +293,7 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
     use sea_orm::ActiveValue::Set;
 
     let db = Db::from_context(&ctx)?;
+    let session = Session::from_context(&ctx)?;
     let payload = Payload::<UserSavePayload>::from_context(&ctx)?;
     let data = payload.0;
 
@@ -308,6 +325,12 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
                 .map_err(|e| ActionError::Internal(e.to_string()))?
                 .map_err(|e| ActionError::Internal(e.to_string()))?;
 
+            let user_json = serde_json::json!({
+                "name": &data.name,
+                "email": &data.email,
+                "role": &data.role,
+            });
+
             let new_user = user::ActiveModel {
                 user_name: Set(data.name),
                 user_email: Set(data.email),
@@ -315,10 +338,25 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
                 user_role: Set(data.role),
                 ..Default::default()
             };
-            new_user
+            let inserted = new_user
                 .insert(&*db.0)
                 .await
                 .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+            let caller_id: i32 = session
+                .user_id
+                .as_ref()
+                .and_then(|id| id.parse().ok())
+                .unwrap_or(0);
+            crate::audit::record_audit(
+                &*db.0,
+                caller_id,
+                "user",
+                inserted.user_id,
+                "create",
+                user_json,
+            )
+            .await?;
         }
         Some(uid) => {
             // Edit mode: fetch existing user
@@ -328,10 +366,16 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
                 .map_err(|e| ActionError::Internal(e.to_string()))?
                 .ok_or_else(|| ActionError::Internal("User not found".into()))?;
 
+            let old_json = serde_json::json!({
+                "name": found.user_name,
+                "email": found.user_email,
+                "role": found.user_role,
+            });
+
             let mut active: user::ActiveModel = found.into();
-            active.user_name = Set(data.name);
-            active.user_email = Set(data.email);
-            active.user_role = Set(data.role);
+            active.user_name = Set(data.name.clone());
+            active.user_email = Set(data.email.clone());
+            active.user_role = Set(data.role.clone());
 
             // Only update password if provided
             if !data.password.is_empty() {
@@ -352,6 +396,20 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
                 .update(&*db.0)
                 .await
                 .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+            let new_json = serde_json::json!({
+                "name": &data.name,
+                "email": &data.email,
+                "role": &data.role,
+            });
+            let changes = crate::audit::compute_changes(&old_json, &new_json);
+            let caller_id: i32 = session
+                .user_id
+                .as_ref()
+                .and_then(|id| id.parse().ok())
+                .unwrap_or(0);
+            crate::audit::record_audit(&*db.0, caller_id, "user", uid, "update", changes)
+                .await?;
         }
     }
 
