@@ -1,6 +1,11 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+mod entities;
+mod handlers;
+mod migration;
+mod seed;
+
 use std::collections::HashMap;
 use std::sync::Arc;
 

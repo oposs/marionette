@@ -23,6 +23,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros", "mock"] }
 sea-orm-migration = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls"] }
+bcrypt = "0.19"
+chrono = { version = "0.4", features = ["serde"] }
+axum-extra = { version = "0.12", features = ["cookie"] }
+time = "0.3"
 darling = "0.23"
 futures = "0.3"
 tokio-tungstenite = "0.26"
