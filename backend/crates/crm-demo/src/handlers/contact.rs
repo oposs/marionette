@@ -527,8 +527,62 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
 
     let mut merged_data = form_data;
 
-    // In edit mode, append notes section below the form
+    // In edit mode, append tags and notes sections below the form
     if let Some(cid) = contact_id {
+        // --- Tags section ---
+        let tags_heading = Heading::new("Tags")
+            .id("tags-heading")
+            .build();
+        all_nodes.push(tags_heading);
+
+        // Load current tags for this contact
+        let ct_rows = contact_tag::Entity::find()
+            .filter(contact_tag::Column::ContactTagContact.eq(cid))
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        let all_tags = tag::Entity::find()
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        let tag_name_map: HashMap<i32, String> =
+            all_tags.into_iter().map(|t| (t.tag_id, t.tag_name)).collect();
+
+        for ct in &ct_rows {
+            if let Some(name) = tag_name_map.get(&ct.contact_tag_tag) {
+                let color = tag_color(name);
+                let label = format!("{name} [{color}] [x]");
+                let mut action = ComponentAction::click("contact_tag_remove");
+                action.extra.insert(
+                    "payload".into(),
+                    serde_json::json!({ "contact_id": cid, "tag_id": ct.contact_tag_tag }),
+                );
+                let remove_btn = Button::new(&label)
+                    .id(&format!("tag-remove-{}", ct.contact_tag_tag))
+                    .action(action)
+                    .build();
+                all_nodes.push(remove_btn);
+            }
+        }
+
+        // Add-tag form: text input + submit button wrapped in a Form
+        let tag_input = TextInput::new("Add tag...")
+            .id("tag-input")
+            .bind("/tagForm/name")
+            .build();
+
+        let tag_submit = Button::new("Add Tag")
+            .id("tag-add")
+            .action(ComponentAction::submit("contact_tag_save"))
+            .build();
+
+        let tag_form = Form::new()
+            .id("tag-form")
+            .children(vec![tag_input, tag_submit])
+            .build_with_children();
+        all_nodes.extend(tag_form);
+
+        // --- Notes section ---
         let notes = note::Entity::find()
             .filter(note::Column::NoteContact.eq(cid))
             .order_by_desc(note::Column::NoteCreatedAt)
@@ -579,8 +633,12 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             all_nodes.push(note_component);
         }
 
-        // Merge noteForm data with contact_id for the note_save handler
+        // Merge tagForm and noteForm data with contact_id
         if let Some(obj) = merged_data.as_object_mut() {
+            obj.insert(
+                "tagForm".into(),
+                serde_json::json!({ "name": "", "contact_id": cid }),
+            );
             obj.insert(
                 "noteForm".into(),
                 serde_json::json!({ "text": "", "contact_id": cid }),
@@ -771,4 +829,146 @@ pub async fn handle_contact_delete(ctx: HandlerContext) -> ActionResult {
 
     // Re-render the list
     render_contact_list(&ctx).await
+}
+
+// -- Tag management handlers --
+
+/// Payload for adding a tag to a contact.
+#[derive(Deserialize)]
+struct TagSavePayload {
+    contact_id: i32,
+    name: String,
+}
+
+/// Payload for removing a tag from a contact.
+#[derive(Deserialize)]
+struct TagRemovePayload {
+    contact_id: i32,
+    tag_id: i32,
+}
+
+/// Find or create a tag by name, return its ID.
+async fn find_or_create_tag(
+    db: &sea_orm::DatabaseConnection,
+    name: &str,
+) -> Result<i32, ActionError> {
+    use sea_orm::ActiveValue::{NotSet, Set};
+
+    let trimmed = name.trim();
+    if let Some(existing) = tag::Entity::find()
+        .filter(tag::Column::TagName.eq(trimmed))
+        .one(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?
+    {
+        return Ok(existing.tag_id);
+    }
+
+    let new_tag = tag::ActiveModel {
+        tag_id: NotSet,
+        tag_name: Set(trimmed.to_owned()),
+    };
+    let result = new_tag
+        .insert(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+    Ok(result.tag_id)
+}
+
+/// Handle the `contact_tag_save` action: add a tag to a contact (auto-create if new).
+pub async fn handle_contact_tag_save(ctx: HandlerContext) -> ActionResult {
+    use sea_orm::ActiveValue::Set;
+
+    let db = Db::from_context(&ctx)?;
+    let session = Session::from_context(&ctx)?;
+    let payload = Payload::<TagSavePayload>::from_context(&ctx)?;
+    let data = payload.0;
+
+    let tag_name = data.name.trim().to_owned();
+    if tag_name.is_empty() {
+        return Err(ActionError::BadPayload("Tag name is required".into()));
+    }
+
+    let tag_id = find_or_create_tag(&*db.0, &tag_name).await?;
+
+    // Insert contact_tag link; ignore unique constraint violation (tag already applied)
+    let link = contact_tag::ActiveModel {
+        contact_tag_contact: Set(data.contact_id),
+        contact_tag_tag: Set(tag_id),
+    };
+    if let Err(e) = link.insert(&*db.0).await {
+        let msg = e.to_string();
+        // Unique constraint violation means the tag is already applied -- no-op
+        if !msg.contains("UNIQUE") {
+            return Err(ActionError::Internal(msg));
+        }
+    }
+
+    // Audit
+    let caller_id: i32 = session
+        .user_id
+        .as_ref()
+        .and_then(|id| id.parse().ok())
+        .unwrap_or(0);
+    crate::audit::record_audit(
+        &*db.0,
+        caller_id,
+        "contact_tag",
+        data.contact_id,
+        "create",
+        serde_json::json!({ "contact_id": data.contact_id, "tag": tag_name }),
+    )
+    .await?;
+
+    // Re-render the contact form
+    let mut form_action = ctx.action.clone();
+    form_action.payload = Some(serde_json::json!({ "contact_id": data.contact_id }));
+    let form_ctx = HandlerContext {
+        action: form_action,
+        db: ctx.db.clone(),
+        session: ctx.session.clone(),
+    };
+    handle_contact_form(form_ctx).await
+}
+
+/// Handle the `contact_tag_remove` action: remove a tag from a contact.
+pub async fn handle_contact_tag_remove(ctx: HandlerContext) -> ActionResult {
+    let db = Db::from_context(&ctx)?;
+    let session = Session::from_context(&ctx)?;
+    let payload = Payload::<TagRemovePayload>::from_context(&ctx)?;
+    let data = payload.0;
+
+    // Delete the contact_tag link
+    contact_tag::Entity::delete_many()
+        .filter(contact_tag::Column::ContactTagContact.eq(data.contact_id))
+        .filter(contact_tag::Column::ContactTagTag.eq(data.tag_id))
+        .exec(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    // Audit
+    let caller_id: i32 = session
+        .user_id
+        .as_ref()
+        .and_then(|id| id.parse().ok())
+        .unwrap_or(0);
+    crate::audit::record_audit(
+        &*db.0,
+        caller_id,
+        "contact_tag",
+        data.contact_id,
+        "delete",
+        serde_json::json!({ "contact_id": data.contact_id, "tag_id": data.tag_id }),
+    )
+    .await?;
+
+    // Re-render the contact form
+    let mut form_action = ctx.action.clone();
+    form_action.payload = Some(serde_json::json!({ "contact_id": data.contact_id }));
+    let form_ctx = HandlerContext {
+        action: form_action,
+        db: ctx.db.clone(),
+        session: ctx.session.clone(),
+    };
+    handle_contact_form(form_ctx).await
 }

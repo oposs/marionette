@@ -273,6 +273,16 @@ async fn main() {
             "note_save",
             box_handler(handlers::note::handle_note_save),
             AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_tag_save",
+            box_handler(handlers::contact::handle_contact_tag_save),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_tag_remove",
+            box_handler(handlers::contact::handle_contact_tag_remove),
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
