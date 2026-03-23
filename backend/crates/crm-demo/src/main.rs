@@ -62,6 +62,12 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         .build();
     nav_items.push(home_item);
 
+    let companies_item = NavItem::new("Companies", "/companies")
+        .id("nav-companies")
+        .action(ComponentAction::click("company_list"))
+        .build();
+    nav_items.push(companies_item);
+
     if is_admin {
         let users_item = NavItem::new("Users", "/users")
             .id("nav-users")
@@ -237,6 +243,31 @@ async fn main() {
             "audit_list",
             box_handler(handlers::audit::handle_audit_list),
             AuthRequirement::Role("admin"),
+        )
+        .action(
+            "company_list",
+            box_handler(handlers::company::handle_company_list),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "company_new",
+            box_handler(handlers::company::handle_company_form),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "company_edit",
+            box_handler(handlers::company::handle_company_form),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "company_save",
+            box_handler(handlers::company::handle_company_save),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "company_delete",
+            box_handler(handlers::company::handle_company_delete),
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
