@@ -13,7 +13,10 @@ use axum::Router;
 use sea_orm_migration::MigratorTrait;
 use tower_http::services::{ServeDir, ServeFile};
 
-use marionette::builders::standard::{Button, Container, Form, Heading, Text, TextInput};
+use marionette::builders::standard::{
+    Button, Container, Form, Heading, NavItem, SideNav, Text, TextInput,
+};
+use marionette::extractors::{FromHandlerContext, Session};
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
 use marionette::router::{box_handler, ActionRouter};
@@ -24,6 +27,9 @@ use marionette_protocol::{ComponentAction, PatchMessage, ProtocolMessage, Render
 
 /// Handle the `navigate` action by returning a demo render message.
 async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
+    let session = Session::from_context(&ctx)?;
+    let is_admin = session.roles.contains(&"admin".to_string());
+
     let heading = Heading::new("Welcome to Marionette").id("h1").build();
     let text = Text::new("This demo proves the end-to-end protocol round-trip works.")
         .id("t1")
@@ -47,13 +53,50 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         nodes.insert(id, component);
     }
 
-    Ok(vec![ProtocolMessage::Render(RenderMessage {
+    // Build sidebar navigation
+    let mut nav_items: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    let home_item = NavItem::new("Home", "/")
+        .id("nav-home")
+        .action(ComponentAction::click("navigate"))
+        .build();
+    nav_items.push(home_item);
+
+    if is_admin {
+        let users_item = NavItem::new("Users", "/users")
+            .id("nav-users")
+            .action(ComponentAction::click("user_list"))
+            .build();
+        nav_items.push(users_item);
+    }
+
+    let side_nav_nodes = SideNav::new()
+        .id("side-nav")
+        .children(nav_items)
+        .build_with_children();
+
+    let mut nav_nodes_map = HashMap::new();
+    for (id, component) in side_nav_nodes {
+        nav_nodes_map.insert(id, component);
+    }
+
+    let mut messages = vec![ProtocolMessage::Render(RenderMessage {
         id: ctx.action.id.clone(),
         surface: "main".into(),
         root: "root".into(),
         nodes,
         data: serde_json::json!({ "message": "Hello from the backend!" }),
-    })])
+    })];
+
+    // Send sidebar render as a separate surface
+    messages.push(ProtocolMessage::Render(RenderMessage {
+        id: None,
+        surface: "nav".into(),
+        root: "side-nav".into(),
+        nodes: nav_nodes_map,
+        data: serde_json::json!({}),
+    }));
+
+    Ok(messages)
 }
 
 /// Handle the `demo_click` action by returning a patch that updates the message.
@@ -149,6 +192,31 @@ async fn main() {
             "demo_click",
             box_handler(handle_demo_click),
             AuthRequirement::Authenticated,
+        )
+        .action(
+            "user_list",
+            box_handler(handlers::user::handle_user_list),
+            AuthRequirement::Role("admin"),
+        )
+        .action(
+            "user_new",
+            box_handler(handlers::user::handle_user_form),
+            AuthRequirement::Role("admin"),
+        )
+        .action(
+            "user_edit",
+            box_handler(handlers::user::handle_user_form),
+            AuthRequirement::Role("admin"),
+        )
+        .action(
+            "user_save",
+            box_handler(handlers::user::handle_user_save),
+            AuthRequirement::Role("admin"),
+        )
+        .action(
+            "user_delete",
+            box_handler(handlers::user::handle_user_delete),
+            AuthRequirement::Role("admin"),
         );
 
     let state = Arc::new(AppState {
