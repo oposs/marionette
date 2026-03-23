@@ -283,6 +283,16 @@ async fn main() {
             "contact_tag_remove",
             box_handler(handlers::contact::handle_contact_tag_remove),
             AuthRequirement::Authenticated,
+        )
+        .action(
+            "interaction_form",
+            box_handler(handlers::interaction::handle_interaction_form),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "interaction_save",
+            box_handler(handlers::interaction::handle_interaction_save),
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
