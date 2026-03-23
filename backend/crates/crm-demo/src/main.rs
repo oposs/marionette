@@ -187,6 +187,14 @@ async fn main() {
         .await
         .expect("failed to seed admin");
 
+    // Seed demo companies and contacts
+    seed::seed_companies(&db)
+        .await
+        .expect("failed to seed companies");
+    seed::seed_contacts(&db)
+        .await
+        .expect("failed to seed contacts");
+
     let db = Arc::new(db);
 
     let action_router = ActionRouter::new()
