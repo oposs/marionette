@@ -33,14 +33,22 @@ struct InteractionFormPayload {
     contact_id: i32,
 }
 
-/// Payload for saving an interaction.
+/// Inner form data for saving an interaction.
 #[derive(Deserialize)]
-struct InteractionSavePayload {
+struct InteractionFormData {
     contact_id: i32,
     interaction_type: String,
     subject: String,
     date: String,
     notes: Option<String>,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with form fields
+/// nested under the form's bind prefix (e.g. `interactionForm`).
+#[derive(Deserialize)]
+struct InteractionSavePayload {
+    #[serde(rename = "interactionForm")]
+    interaction_form: InteractionFormData,
 }
 
 /// Handle the `interaction_form` action: render a form for logging an interaction.
@@ -149,7 +157,7 @@ pub async fn handle_interaction_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<InteractionSavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.interaction_form;
 
     // Validate required fields
     if data.subject.trim().is_empty() {

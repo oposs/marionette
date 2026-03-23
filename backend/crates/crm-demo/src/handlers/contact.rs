@@ -53,15 +53,23 @@ struct ContactIdPayload {
     contact_id: i32,
 }
 
-/// Payload for saving a contact (create or update).
+/// Inner form data for a contact (create or update).
 #[derive(Deserialize)]
-struct ContactSavePayload {
+struct ContactFormData {
     id: Option<i32>,
     name: String,
     email: String,
     phone: Option<String>,
     title: Option<String>,
     company: Option<String>,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with form fields
+/// nested under the form's bind prefix (e.g. `contactForm`).
+#[derive(Deserialize)]
+struct ContactSavePayload {
+    #[serde(rename = "contactForm")]
+    contact_form: ContactFormData,
 }
 
 /// Shared helper: build a rendered contact list from the database.
@@ -907,7 +915,7 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<ContactSavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.contact_form;
 
     // Validate required fields
     if data.name.trim().is_empty() {
@@ -1115,11 +1123,19 @@ pub async fn handle_contact_delete(ctx: HandlerContext) -> ActionResult {
 
 // -- Tag management handlers --
 
-/// Payload for adding a tag to a contact.
+/// Inner form data for adding a tag to a contact.
 #[derive(Deserialize)]
-struct TagSavePayload {
+struct TagFormData {
     contact_id: i32,
     name: String,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with tag form
+/// fields nested under `tagForm`.
+#[derive(Deserialize)]
+struct TagSavePayload {
+    #[serde(rename = "tagForm")]
+    tag_form: TagFormData,
 }
 
 /// Payload for removing a tag from a contact.
@@ -1164,7 +1180,7 @@ pub async fn handle_contact_tag_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<TagSavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.tag_form;
 
     let tag_name = data.name.trim().to_owned();
     if tag_name.is_empty() {

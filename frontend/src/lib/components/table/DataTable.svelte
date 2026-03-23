@@ -34,7 +34,7 @@
 	type ColumnDef = { key: string; label: string; sortable?: boolean };
 
 	let columns = $derived((props.columns as ColumnDef[]) ?? []);
-	let totalRows = $derived((props.totalRows as number) ?? 0);
+	let explicitTotalRows = $derived((props.totalRows as number) ?? 0);
 	let rowIdKey = $derived((props.rowIdKey as string) ?? 'id');
 
 	// Virtual scroll state
@@ -51,6 +51,11 @@
 	);
 	let rows = $derived(Object.entries(rawData));
 
+	// Use explicit totalRows from props if provided, otherwise fall back to actual row count.
+	// This allows virtual scrolling for large server-paginated datasets while still
+	// working correctly when all data is sent at once (no totalRows prop).
+	let totalRows = $derived(explicitTotalRows > 0 ? explicitTotalRows : rows.length);
+
 	// Virtual scroll computed values
 	let totalHeight = $derived(totalRows * ROW_HEIGHT);
 	let visibleStart = $derived(
@@ -64,7 +69,7 @@
 
 	// Prefetch trigger
 	$effect(() => {
-		if (visibleEnd > 0 && visibleEnd >= rows.length - CHUNK_SIZE * 2 && rows.length < totalRows) {
+		if (explicitTotalRows > 0 && visibleEnd > 0 && visibleEnd >= rows.length - CHUNK_SIZE * 2 && rows.length < explicitTotalRows) {
 			sendAction('fetch-rows', { offset: rows.length, limit: CHUNK_SIZE });
 		}
 	});

@@ -156,14 +156,22 @@ pub async fn handle_user_delete(ctx: HandlerContext) -> ActionResult {
     render_user_list(&ctx).await
 }
 
-/// Payload for saving a user (create or update).
+/// Inner form data for a user (create or update).
 #[derive(Deserialize)]
-struct UserSavePayload {
+struct UserFormData {
     id: Option<i32>,
     name: String,
     email: String,
     password: String,
     role: String,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with form fields
+/// nested under the form's bind prefix (e.g. `userForm`).
+#[derive(Deserialize)]
+struct UserSavePayload {
+    #[serde(rename = "userForm")]
+    user_form: UserFormData,
 }
 
 /// Handle the `user_new` / `user_edit` action: render a create/edit form.
@@ -296,7 +304,7 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<UserSavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.user_form;
 
     // Validate required fields
     if data.name.trim().is_empty() {

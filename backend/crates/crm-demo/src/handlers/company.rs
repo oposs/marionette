@@ -32,13 +32,21 @@ struct CompanyIdPayload {
     company_id: i32,
 }
 
-/// Payload for saving a company (create or update).
+/// Inner form data for a company (create or update).
 #[derive(Deserialize)]
-struct CompanySavePayload {
+struct CompanyFormData {
     id: Option<i32>,
     name: String,
     website: Option<String>,
     address: Option<String>,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with form fields
+/// nested under the form's bind prefix (e.g. `companyForm`).
+#[derive(Deserialize)]
+struct CompanySavePayload {
+    #[serde(rename = "companyForm")]
+    company_form: CompanyFormData,
 }
 
 /// Shared helper: build a rendered company list from the database.
@@ -379,7 +387,7 @@ pub async fn handle_company_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<CompanySavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.company_form;
 
     // Validate required fields
     if data.name.trim().is_empty() {

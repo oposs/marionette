@@ -7,12 +7,20 @@ use marionette_protocol::messages::ActionMessage;
 
 use crate::entities::note;
 
-/// Payload for saving a note (create only -- notes are append-only).
+/// Inner form data for a note (create only -- notes are append-only).
 #[derive(Deserialize)]
-struct NoteSavePayload {
+struct NoteFormData {
     contact_id: Option<i32>,
     company_id: Option<i32>,
     text: String,
+}
+
+/// Payload wrapper: the frontend sends all surface data, with form fields
+/// nested under the form's bind prefix (e.g. `noteForm`).
+#[derive(Deserialize)]
+struct NoteSavePayload {
+    #[serde(rename = "noteForm")]
+    note_form: NoteFormData,
 }
 
 /// Handle the `note_save` action: create a new note attached to a contact or company.
@@ -20,7 +28,7 @@ pub async fn handle_note_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<NoteSavePayload>::from_context(&ctx)?;
-    let data = payload.0;
+    let data = payload.0.note_form;
 
     // Validate text is not empty
     if data.text.trim().is_empty() {
