@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
-use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait, QueryOrder};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn, TextInput,
+    Button, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn, Text, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-use crate::entities::{company, contact};
+use crate::entities::{company, contact, note, user};
 
 /// Format current UTC time as SQLite datetime string.
 fn now_sqlite() -> String {
@@ -261,6 +261,69 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
     all_nodes.push(heading);
     all_nodes.extend(form);
 
+    let mut merged_data = form_data;
+
+    // In edit mode, append notes section below the form
+    if let Some(cid) = contact_id {
+        let notes = note::Entity::find()
+            .filter(note::Column::NoteContact.eq(cid))
+            .order_by_desc(note::Column::NoteCreatedAt)
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+        // Notes heading
+        let notes_heading = Heading::new("Notes")
+            .id("notes-heading")
+            .build();
+        all_nodes.push(notes_heading);
+
+        // Add-note form: text input + submit button wrapped in a Form
+        let note_input = TextInput::new("Add a note...")
+            .id("note-input")
+            .bind("/noteForm/text")
+            .build();
+
+        let note_submit = Button::new("Add Note")
+            .id("note-submit")
+            .action(ComponentAction::submit("note_save"))
+            .build();
+
+        let note_form = Form::new()
+            .id("note-form")
+            .children(vec![note_input, note_submit])
+            .build_with_children();
+        all_nodes.extend(note_form);
+
+        // Render existing notes as Text components
+        for n in &notes {
+            // Look up author name (N+1 acceptable at demo scale)
+            let author_name = user::Entity::find_by_id(n.note_user)
+                .one(&*db.0)
+                .await
+                .map_err(|e| ActionError::Internal(e.to_string()))?
+                .map(|u| u.user_name)
+                .unwrap_or_else(|| "Unknown".into());
+
+            let note_text = format!(
+                "[{}] {}: {}",
+                n.note_created_at, author_name, n.note_text
+            );
+            let note_component = Text::new(&note_text)
+                .id(&format!("note-{}", n.note_id))
+                .build();
+            all_nodes.push(note_component);
+        }
+
+        // Merge noteForm data with contact_id for the note_save handler
+        if let Some(obj) = merged_data.as_object_mut() {
+            obj.insert(
+                "noteForm".into(),
+                serde_json::json!({ "text": "", "contact_id": cid }),
+            );
+        }
+    }
+
     let container_nodes = Container::new()
         .id("contact-form-root")
         .children(all_nodes)
@@ -276,7 +339,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         surface: "main".into(),
         root: "contact-form-root".into(),
         nodes,
-        data: form_data,
+        data: merged_data,
     })])
 }
 

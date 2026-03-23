@@ -4,13 +4,13 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorT
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Form, Heading, TableColumn, TextInput,
+    Button, Container, DataTable, Form, Heading, TableColumn, Text, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-use crate::entities::{company, contact};
+use crate::entities::{company, contact, note, user};
 
 /// Format current UTC time as SQLite datetime string.
 fn now_sqlite() -> String {
@@ -224,7 +224,7 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
 
     let mut merged_data = form_data;
 
-    // In edit mode, add linked contacts sub-table
+    // In edit mode, add linked contacts sub-table and notes section
     if let Some(cid) = company_id {
         let linked_contacts = contact::Entity::find()
             .filter(contact::Column::ContactCompany.eq(cid))
@@ -288,6 +288,62 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
                     serde_json::json!(contact_rows),
                 );
             }
+        }
+
+        // Notes section
+        let notes = note::Entity::find()
+            .filter(note::Column::NoteCompany.eq(cid))
+            .order_by_desc(note::Column::NoteCreatedAt)
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+        let notes_heading = Heading::new("Notes")
+            .id("notes-heading")
+            .build();
+        all_nodes.push(notes_heading);
+
+        // Add-note form
+        let note_input = TextInput::new("Add a note...")
+            .id("note-input")
+            .bind("/noteForm/text")
+            .build();
+
+        let note_submit = Button::new("Add Note")
+            .id("note-submit")
+            .action(ComponentAction::submit("note_save"))
+            .build();
+
+        let note_form = Form::new()
+            .id("note-form")
+            .children(vec![note_input, note_submit])
+            .build_with_children();
+        all_nodes.extend(note_form);
+
+        // Render existing notes
+        for n in &notes {
+            let author_name = user::Entity::find_by_id(n.note_user)
+                .one(&*db.0)
+                .await
+                .map_err(|e| ActionError::Internal(e.to_string()))?
+                .map(|u| u.user_name)
+                .unwrap_or_else(|| "Unknown".into());
+
+            let note_text = format!(
+                "[{}] {}: {}",
+                n.note_created_at, author_name, n.note_text
+            );
+            let note_component = Text::new(&note_text)
+                .id(&format!("note-{}", n.note_id))
+                .build();
+            all_nodes.push(note_component);
+        }
+
+        if let Some(obj) = merged_data.as_object_mut() {
+            obj.insert(
+                "noteForm".into(),
+                serde_json::json!({ "text": "", "company_id": cid }),
+            );
         }
     }
 
