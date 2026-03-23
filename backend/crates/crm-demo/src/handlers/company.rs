@@ -222,6 +222,75 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
     all_nodes.push(heading);
     all_nodes.extend(form);
 
+    let mut merged_data = form_data;
+
+    // In edit mode, add linked contacts sub-table
+    if let Some(cid) = company_id {
+        let linked_contacts = contact::Entity::find()
+            .filter(contact::Column::ContactCompany.eq(cid))
+            .order_by_asc(contact::Column::ContactName)
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+        if !linked_contacts.is_empty() {
+            let contacts_heading = Heading::new("Linked Contacts")
+                .id("company-contacts-heading")
+                .build();
+
+            let contacts_table = DataTable::new(vec![
+                TableColumn {
+                    key: "name".into(),
+                    label: "Name".into(),
+                    sortable: Some(true),
+                },
+                TableColumn {
+                    key: "email".into(),
+                    label: "Email".into(),
+                    sortable: Some(true),
+                },
+                TableColumn {
+                    key: "phone".into(),
+                    label: "Phone".into(),
+                    sortable: None,
+                },
+                TableColumn {
+                    key: "actions".into(),
+                    label: "Actions".into(),
+                    sortable: None,
+                },
+            ])
+            .id("company-contacts-table")
+            .bind("/linkedContacts")
+            .build();
+
+            all_nodes.push(contacts_heading);
+            all_nodes.push(contacts_table);
+
+            let contact_rows: Vec<serde_json::Value> = linked_contacts
+                .iter()
+                .map(|c| {
+                    serde_json::json!({
+                        "id": c.contact_id,
+                        "name": c.contact_name,
+                        "email": c.contact_email,
+                        "phone": c.contact_phone.as_deref().unwrap_or("-"),
+                        "actions": [
+                            { "label": "Edit", "action": { "type": "click", "name": "contact_edit", "payload": { "contact_id": c.contact_id } } }
+                        ]
+                    })
+                })
+                .collect();
+
+            if let Some(obj) = merged_data.as_object_mut() {
+                obj.insert(
+                    "linkedContacts".into(),
+                    serde_json::json!(contact_rows),
+                );
+            }
+        }
+    }
+
     let container_nodes = Container::new()
         .id("company-form-root")
         .children(all_nodes)
@@ -237,7 +306,7 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         surface: "main".into(),
         root: "company-form-root".into(),
         nodes,
-        data: form_data,
+        data: merged_data,
     })])
 }
 

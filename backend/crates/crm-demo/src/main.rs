@@ -15,7 +15,7 @@ use sea_orm_migration::MigratorTrait;
 use tower_http::services::{ServeDir, ServeFile};
 
 use marionette::builders::standard::{
-    Button, Container, Form, Heading, NavItem, SideNav, Text, TextInput,
+    Button, Container, Form, Heading, NavItem, SideNav, TextInput,
 };
 use marionette::extractors::{FromHandlerContext, Session};
 use marionette::error::ActionResult;
@@ -23,36 +23,20 @@ use marionette::extractors::HandlerContext;
 use marionette::router::{box_handler, ActionRouter};
 use marionette::ws::{ws_handler, AppState};
 use marionette_protocol::common::AuthRequirement;
-use marionette_protocol::data::PatchOperation;
-use marionette_protocol::{ComponentAction, PatchMessage, ProtocolMessage, RenderMessage};
+use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-/// Handle the `navigate` action by returning a demo render message.
+/// Handle the `navigate` action: default authenticated view is the contact list.
 async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     let session = Session::from_context(&ctx)?;
     let is_admin = session.roles.contains(&"admin".to_string());
 
-    let heading = Heading::new("Welcome to Marionette").id("h1").build();
-    let text = Text::new("This demo proves the end-to-end protocol round-trip works.")
-        .id("t1")
-        .build();
-    let button = Button::new("Click Me")
-        .id("btn1")
-        .action(ComponentAction::click("demo_click"))
-        .build();
-    let msg_text = Text::new("")
-        .id("msg1")
-        .bind("/message")
-        .build();
-
-    let nodes_vec = Container::new()
-        .id("root")
-        .children(vec![heading, text, button, msg_text])
-        .build_with_children();
-
-    let mut nodes = HashMap::new();
-    for (id, component) in nodes_vec {
-        nodes.insert(id, component);
-    }
+    // Default authenticated view: show contact list
+    let mut messages = handlers::contact::handle_contact_list(HandlerContext {
+        action: ctx.action.clone(),
+        db: ctx.db.clone(),
+        session: ctx.session.clone(),
+    })
+    .await?;
 
     // Build sidebar navigation
     let mut nav_items: Vec<(String, marionette_protocol::Component)> = Vec::new();
@@ -61,6 +45,12 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         .action(ComponentAction::click("navigate"))
         .build();
     nav_items.push(home_item);
+
+    let contacts_item = NavItem::new("Contacts", "/contacts")
+        .id("nav-contacts")
+        .action(ComponentAction::click("contact_list"))
+        .build();
+    nav_items.push(contacts_item);
 
     let companies_item = NavItem::new("Companies", "/companies")
         .id("nav-companies")
@@ -92,14 +82,6 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         nav_nodes_map.insert(id, component);
     }
 
-    let mut messages = vec![ProtocolMessage::Render(RenderMessage {
-        id: ctx.action.id.clone(),
-        surface: "main".into(),
-        root: "root".into(),
-        nodes,
-        data: serde_json::json!({ "message": "Hello from the backend!" }),
-    })];
-
     // Send sidebar render as a separate surface
     messages.push(ProtocolMessage::Render(RenderMessage {
         id: None,
@@ -110,17 +92,6 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     }));
 
     Ok(messages)
-}
-
-/// Handle the `demo_click` action by returning a patch that updates the message.
-async fn handle_demo_click(_ctx: HandlerContext) -> ActionResult {
-    Ok(vec![ProtocolMessage::Patch(PatchMessage {
-        id: None,
-        patch: vec![PatchOperation {
-            path: "/message".into(),
-            value: serde_json::json!("Button was clicked!"),
-        }],
-    })])
 }
 
 /// Simple health check endpoint.
@@ -210,8 +181,28 @@ async fn main() {
             AuthRequirement::Authenticated,
         )
         .action(
-            "demo_click",
-            box_handler(handle_demo_click),
+            "contact_list",
+            box_handler(handlers::contact::handle_contact_list),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_new",
+            box_handler(handlers::contact::handle_contact_form),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_edit",
+            box_handler(handlers::contact::handle_contact_form),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_save",
+            box_handler(handlers::contact::handle_contact_save),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_delete",
+            box_handler(handlers::contact::handle_contact_delete),
             AuthRequirement::Authenticated,
         )
         .action(
