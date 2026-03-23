@@ -164,10 +164,13 @@ Plans:
   4. User can filter contact lists by company, tags, or date range
   5. User can log interactions (calls, emails, meetings) on contacts
   6. User can view chronological interaction timeline per contact
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01-PLAN.md -- Migrations + entities for note, tag, contact_tag, interaction tables + seed data
+- [ ] 08-02-PLAN.md -- Notes feature: note_save handler + notes section on contact and company detail views
+- [ ] 08-03-PLAN.md -- Tags, search, and filtering on contact list + tag editing on contact form
+- [ ] 08-04-PLAN.md -- Interaction logging form + save handler + interaction timeline on contact detail
 
 ### Phase 9: CRM Listmonk
 **Goal**: CRM integrates with Listmonk for newsletter management
@@ -197,7 +200,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 5. Integration | 0/2 | Planning complete | - |
 | 6. CRM Auth & Foundation | 0/3 | Planning complete | - |
 | 7. CRM Core | 1/3 | In Progress|  |
-| 8. CRM Features | 0/TBD | Not started | - |
+| 8. CRM Features | 0/4 | Planning complete | - |
 | 9. CRM Listmonk | 0/TBD | Not started | - |
 
 ---
