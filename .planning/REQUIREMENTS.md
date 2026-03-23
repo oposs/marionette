@@ -99,8 +99,8 @@
 - [x] **CRM-01**: User can create, view, edit, delete contacts
 - [x] **CRM-02**: User can create, view, edit, delete companies
 - [x] **CRM-03**: User can link contacts to companies
-- [ ] **CRM-04**: User can view paginated, sortable data tables
-- [ ] **CRM-05**: User can view and edit records in form views
+- [x] **CRM-04**: User can view paginated, sortable data tables
+- [x] **CRM-05**: User can view and edit records in form views
 - [ ] **CRM-06**: User can add notes to contacts and companies
 - [ ] **CRM-07**: User can search contacts by name, email, company
 - [ ] **CRM-08**: User can tag/label contacts for categorization
@@ -208,8 +208,8 @@
 | CRM-01 | Phase 7 | Complete |
 | CRM-02 | Phase 7 | Complete |
 | CRM-03 | Phase 7 | Complete |
-| CRM-04 | Phase 7 | Pending |
-| CRM-05 | Phase 7 | Pending |
+| CRM-04 | Phase 7 | Complete |
+| CRM-05 | Phase 7 | Complete |
 | CRM-06 | Phase 8 | Pending |
 | CRM-07 | Phase 8 | Pending |
 | CRM-08 | Phase 8 | Pending |
