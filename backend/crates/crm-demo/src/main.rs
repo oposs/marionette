@@ -4,6 +4,7 @@
 mod audit;
 mod entities;
 mod handlers;
+mod listmonk;
 mod migration;
 mod seed;
 
@@ -181,6 +182,22 @@ async fn main() {
         .await
         .expect("failed to seed interactions");
 
+    // Initialize Listmonk client from environment
+    let listmonk_client: Option<Arc<listmonk::ListmonkClient>> =
+        if let Some(client) = listmonk::ListmonkClient::from_env() {
+            if client.validate_connection().await {
+                tracing::info!("Listmonk connection validated");
+            } else {
+                tracing::warn!(
+                    "Listmonk configured but unreachable -- sync features will return errors"
+                );
+            }
+            Some(Arc::new(client))
+        } else {
+            tracing::info!("Listmonk not configured (LISTMONK_URL not set) -- sync features disabled");
+            None
+        };
+
     let db = Arc::new(db);
 
     let action_router = ActionRouter::new()
@@ -299,6 +316,7 @@ async fn main() {
         router: action_router,
         db,
         login_form: Some(build_login_form()),
+        listmonk: listmonk_client.map(|c| c as Arc<dyn std::any::Any + Send + Sync>),
     });
 
     // Static files with SPA fallback

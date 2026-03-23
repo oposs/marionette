@@ -28,6 +28,8 @@ pub struct AppState {
     pub db: Arc<sea_orm::DatabaseConnection>,
     /// Optional login form to send to unauthenticated WebSocket connections.
     pub login_form: Option<ProtocolMessage>,
+    /// Optional extension data (e.g., external service clients).
+    pub listmonk: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 /// Axum handler that upgrades an HTTP connection to a WebSocket.
