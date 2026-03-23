@@ -4,7 +4,7 @@ use sea_orm::{
 };
 use sea_orm::ActiveValue::NotSet;
 
-use crate::entities::{company, contact, user};
+use crate::entities::{company, contact, contact_tag, interaction, note, tag, user};
 
 /// Seed a default admin account if no users exist.
 ///
@@ -124,5 +124,177 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
     }
 
     tracing::info!("Seeded 3 demo contacts");
+    Ok(())
+}
+
+/// Seed demo tags and contact-tag links if the tag table is empty.
+///
+/// # Errors
+///
+/// Returns `DbErr` if the database query or insert fails.
+pub async fn seed_tags(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let count = tag::Entity::find().count(db).await?;
+    if count > 0 {
+        return Ok(());
+    }
+
+    let tag_names = vec!["VIP", "Lead", "Partner", "Inactive", "Newsletter"];
+    for name in &tag_names {
+        let model = tag::ActiveModel {
+            tag_id: NotSet,
+            tag_name: Set((*name).into()),
+        };
+        model.insert(db).await?;
+    }
+
+    // Look up contacts and tags by name for linking
+    let alice = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Alice Johnson"))
+        .one(db)
+        .await?;
+    let bob = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Bob Smith"))
+        .one(db)
+        .await?;
+    let carol = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Carol Williams"))
+        .one(db)
+        .await?;
+
+    let vip = tag::Entity::find()
+        .filter(tag::Column::TagName.eq("VIP"))
+        .one(db)
+        .await?;
+    let lead = tag::Entity::find()
+        .filter(tag::Column::TagName.eq("Lead"))
+        .one(db)
+        .await?;
+    let partner = tag::Entity::find()
+        .filter(tag::Column::TagName.eq("Partner"))
+        .one(db)
+        .await?;
+    let inactive = tag::Entity::find()
+        .filter(tag::Column::TagName.eq("Inactive"))
+        .one(db)
+        .await?;
+    let newsletter = tag::Entity::find()
+        .filter(tag::Column::TagName.eq("Newsletter"))
+        .one(db)
+        .await?;
+
+    // Alice: VIP + Partner
+    // Bob: Lead + Newsletter
+    // Carol: Inactive
+    let links: Vec<(Option<&contact::Model>, Option<&tag::Model>)> = vec![
+        (alice.as_ref(), vip.as_ref()),
+        (alice.as_ref(), partner.as_ref()),
+        (bob.as_ref(), lead.as_ref()),
+        (bob.as_ref(), newsletter.as_ref()),
+        (carol.as_ref(), inactive.as_ref()),
+    ];
+
+    for (c, t) in links {
+        if let (Some(c), Some(t)) = (c, t) {
+            let model = contact_tag::ActiveModel {
+                contact_tag_contact: Set(c.contact_id),
+                contact_tag_tag: Set(t.tag_id),
+            };
+            model.insert(db).await?;
+        }
+    }
+
+    tracing::info!("Seeded 5 tags and 5 contact-tag links");
+    Ok(())
+}
+
+/// Seed demo notes if the note table is empty.
+///
+/// # Errors
+///
+/// Returns `DbErr` if the database query or insert fails.
+pub async fn seed_notes(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let count = note::Entity::find().count(db).await?;
+    if count > 0 {
+        return Ok(());
+    }
+
+    let alice = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Alice Johnson"))
+        .one(db)
+        .await?;
+    let bob = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Bob Smith"))
+        .one(db)
+        .await?;
+    let acme = company::Entity::find()
+        .filter(company::Column::CompanyName.eq("Acme Corp"))
+        .one(db)
+        .await?;
+
+    let notes_data: Vec<(Option<i32>, Option<i32>, &str)> = vec![
+        (alice.as_ref().map(|c| c.contact_id), None, "Met at the industry conference. Very interested in our enterprise plan."),
+        (bob.as_ref().map(|c| c.contact_id), None, "Needs follow-up on the technical proposal by end of week."),
+        (None, acme.as_ref().map(|c| c.company_id), "Key account — renewing contract Q2 2026."),
+    ];
+
+    for (contact_id, company_id, text) in notes_data {
+        let model = note::ActiveModel {
+            note_id: NotSet,
+            note_contact: Set(contact_id),
+            note_company: Set(company_id),
+            note_text: Set(text.into()),
+            note_user: Set(1),
+            note_created_at: NotSet,
+        };
+        model.insert(db).await?;
+    }
+
+    tracing::info!("Seeded 3 demo notes");
+    Ok(())
+}
+
+/// Seed demo interactions if the interaction table is empty.
+///
+/// # Errors
+///
+/// Returns `DbErr` if the database query or insert fails.
+pub async fn seed_interactions(db: &DatabaseConnection) -> Result<(), DbErr> {
+    let count = interaction::Entity::find().count(db).await?;
+    if count > 0 {
+        return Ok(());
+    }
+
+    let alice = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Alice Johnson"))
+        .one(db)
+        .await?;
+    let bob = contact::Entity::find()
+        .filter(contact::Column::ContactName.eq("Bob Smith"))
+        .one(db)
+        .await?;
+
+    let interactions_data: Vec<(Option<&contact::Model>, &str, &str, Option<&str>, &str)> = vec![
+        (alice.as_ref(), "call", "Initial outreach", Some("Discussed product features and pricing."), "2026-03-20 10:00:00"),
+        (bob.as_ref(), "email", "Follow-up proposal", Some("Sent detailed proposal with pricing tiers."), "2026-03-21 14:00:00"),
+        (alice.as_ref(), "meeting", "Contract review", Some("Reviewed contract terms with legal team."), "2026-03-22 09:00:00"),
+    ];
+
+    for (contact_ref, itype, subject, notes, date) in interactions_data {
+        if let Some(c) = contact_ref {
+            let model = interaction::ActiveModel {
+                interaction_id: NotSet,
+                interaction_contact: Set(c.contact_id),
+                interaction_type: Set(itype.into()),
+                interaction_subject: Set(subject.into()),
+                interaction_notes: Set(notes.map(String::from)),
+                interaction_user: Set(1),
+                interaction_date: Set(date.into()),
+                interaction_created_at: NotSet,
+            };
+            model.insert(db).await?;
+        }
+    }
+
+    tracing::info!("Seeded 3 demo interactions");
     Ok(())
 }

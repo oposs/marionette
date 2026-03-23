@@ -171,6 +171,15 @@ async fn main() {
     seed::seed_contacts(&db)
         .await
         .expect("failed to seed contacts");
+    seed::seed_tags(&db)
+        .await
+        .expect("failed to seed tags");
+    seed::seed_notes(&db)
+        .await
+        .expect("failed to seed notes");
+    seed::seed_interactions(&db)
+        .await
+        .expect("failed to seed interactions");
 
     let db = Arc::new(db);
 
