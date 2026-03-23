@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
@@ -10,7 +10,7 @@ use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-use crate::entities::{company, contact, note, user};
+use crate::entities::{company, contact, contact_tag, note, tag, user};
 
 /// Format current UTC time as SQLite datetime string.
 fn now_sqlite() -> String {
@@ -24,6 +24,27 @@ fn now_sqlite() -> String {
         now.minute(),
         now.second()
     )
+}
+
+/// Payload for the contact list with optional search/filter parameters.
+#[derive(Deserialize, Default)]
+struct ContactListPayload {
+    search: Option<String>,
+    company_filter: Option<i32>,
+    tag_filter_text: Option<String>,
+    date_from: Option<String>,
+    date_to: Option<String>,
+}
+
+/// Assign a color from a fixed palette based on tag name hash.
+fn tag_color(name: &str) -> &'static str {
+    const PALETTE: &[&str] = &[
+        "blue", "green", "red", "yellow", "indigo", "purple", "pink", "teal",
+    ];
+    let hash = name
+        .bytes()
+        .fold(0u32, |acc, b| acc.wrapping_mul(31).wrapping_add(u32::from(b)));
+    PALETTE[(hash as usize) % PALETTE.len()]
 }
 
 /// Payload for identifying a contact by ID.
@@ -44,15 +65,183 @@ struct ContactSavePayload {
 }
 
 /// Shared helper: build a rendered contact list from the database.
+/// Accepts optional search/filter parameters from the action payload.
 async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     let db = Db::from_context(ctx)?;
-    let contacts = contact::Entity::find()
+
+    // Extract optional search/filter parameters
+    let params: ContactListPayload = ctx
+        .action
+        .payload
+        .as_ref()
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    // Build dynamic filter condition
+    let mut condition = Condition::all();
+
+    let search_term = params
+        .search
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from);
+
+    if let Some(ref q) = search_term {
+        condition = condition.add(
+            Condition::any()
+                .add(contact::Column::ContactName.contains(q.as_str()))
+                .add(contact::Column::ContactEmail.contains(q.as_str())),
+        );
+    }
+
+    if let Some(company_id) = params.company_filter {
+        condition = condition.add(contact::Column::ContactCompany.eq(company_id));
+    }
+
+    if let Some(ref from_date) = params.date_from {
+        let trimmed = from_date.trim();
+        if !trimmed.is_empty() {
+            condition = condition.add(contact::Column::ContactCreatedAt.gte(trimmed.to_owned()));
+        }
+    }
+
+    if let Some(ref to_date) = params.date_to {
+        let trimmed = to_date.trim();
+        if !trimmed.is_empty() {
+            // Append time so that the whole day is included
+            let to_end = if trimmed.len() == 10 {
+                format!("{trimmed} 23:59:59")
+            } else {
+                trimmed.to_owned()
+            };
+            condition = condition.add(contact::Column::ContactCreatedAt.lte(to_end));
+        }
+    }
+
+    // Tag filter: parse comma-separated tag names, look up IDs, filter contacts
+    let tag_filter_names: Vec<String> = params
+        .tag_filter_text
+        .as_deref()
+        .unwrap_or("")
+        .split(',')
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if !tag_filter_names.is_empty() {
+        // Look up tag IDs by name
+        let all_tags = tag::Entity::find()
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        let matching_tag_ids: Vec<i32> = all_tags
+            .iter()
+            .filter(|t| tag_filter_names.contains(&t.tag_name.to_lowercase()))
+            .map(|t| t.tag_id)
+            .collect();
+
+        if matching_tag_ids.is_empty() {
+            // No tags match -> no contacts can match
+            condition = condition.add(contact::Column::ContactId.eq(-1));
+        } else {
+            let tagged_contacts = contact_tag::Entity::find()
+                .filter(contact_tag::Column::ContactTagTag.is_in(matching_tag_ids))
+                .all(&*db.0)
+                .await
+                .map_err(|e| ActionError::Internal(e.to_string()))?;
+            let tagged_ids: HashSet<i32> = tagged_contacts
+                .iter()
+                .map(|ct| ct.contact_tag_contact)
+                .collect();
+            if tagged_ids.is_empty() {
+                condition = condition.add(contact::Column::ContactId.eq(-1));
+            } else {
+                condition = condition.add(
+                    contact::Column::ContactId.is_in(tagged_ids.into_iter().collect::<Vec<_>>()),
+                );
+            }
+        }
+    }
+
+    let mut contacts = contact::Entity::find()
         .find_also_related(company::Entity)
+        .filter(condition)
         .order_by_asc(contact::Column::ContactName)
         .all(&*db.0)
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
 
+    // Post-filter: also include contacts whose company name matches the search term
+    if let Some(ref q) = search_term {
+        let q_lower = q.to_lowercase();
+        // Re-query ALL contacts if we have a search, to pick up company-name matches
+        // that the SQL LIKE on contact columns would have missed.
+        let all_matched_ids: HashSet<i32> =
+            contacts.iter().map(|(c, _)| c.contact_id).collect();
+        let all_contacts = contact::Entity::find()
+            .find_also_related(company::Entity)
+            .order_by_asc(contact::Column::ContactName)
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        for (c, co) in all_contacts {
+            if !all_matched_ids.contains(&c.contact_id) {
+                if let Some(ref comp) = co {
+                    if comp.company_name.to_lowercase().contains(&q_lower) {
+                        contacts.push((c, co));
+                    }
+                }
+            }
+        }
+    }
+
+    // Load tags for all displayed contacts in one batch query
+    let contact_ids: Vec<i32> = contacts.iter().map(|(c, _)| c.contact_id).collect();
+    let contact_tags_map = if contact_ids.is_empty() {
+        HashMap::new()
+    } else {
+        let ct_rows = contact_tag::Entity::find()
+            .filter(contact_tag::Column::ContactTagContact.is_in(contact_ids.clone()))
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        let all_tags = tag::Entity::find()
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+        let tag_name_map: HashMap<i32, String> =
+            all_tags.into_iter().map(|t| (t.tag_id, t.tag_name)).collect();
+        let mut map: HashMap<i32, Vec<String>> = HashMap::new();
+        for ct in ct_rows {
+            if let Some(name) = tag_name_map.get(&ct.contact_tag_tag) {
+                map.entry(ct.contact_tag_contact)
+                    .or_default()
+                    .push(name.clone());
+            }
+        }
+        map
+    };
+
+    // Load companies for filter dropdown
+    let companies = company::Entity::find()
+        .order_by_asc(company::Column::CompanyName)
+        .all(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    let mut company_options = vec![SelectOption {
+        value: String::new(),
+        label: "All Companies".into(),
+    }];
+    for co in &companies {
+        company_options.push(SelectOption {
+            value: co.company_id.to_string(),
+            label: co.company_name.clone(),
+        });
+    }
+
+    // Build UI components
     let heading = Heading::new("Contact Management")
         .id("contact-heading")
         .build();
@@ -60,6 +249,44 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     let new_button = Button::new("New Contact")
         .id("btn-new-contact")
         .action(ComponentAction::click("contact_new"))
+        .build();
+
+    // Search bar
+    let search_input = TextInput::new("Search contacts...")
+        .id("contact-search")
+        .bind("/contactFilters/search")
+        .build();
+    let search_button = Button::new("Search")
+        .id("btn-search")
+        .action(ComponentAction::submit("contact_list"))
+        .build();
+
+    // Company filter dropdown
+    let company_filter = Select::new("Filter by Company", company_options)
+        .id("filter-company")
+        .bind("/contactFilters/company_filter")
+        .build();
+
+    // Tag filter text input
+    let tag_filter = TextInput::new("Filter by tags (comma-separated)")
+        .id("filter-tags")
+        .bind("/contactFilters/tag_filter_text")
+        .build();
+
+    // Date range inputs
+    let date_from = TextInput::new("From date (YYYY-MM-DD)")
+        .id("filter-date-from")
+        .bind("/contactFilters/date_from")
+        .build();
+    let date_to = TextInput::new("To date (YYYY-MM-DD)")
+        .id("filter-date-to")
+        .bind("/contactFilters/date_to")
+        .build();
+
+    // Clear button
+    let clear_button = Button::new("Clear")
+        .id("btn-clear-filters")
+        .action(ComponentAction::click("contact_list"))
         .build();
 
     let table = DataTable::new(vec![
@@ -84,6 +311,11 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
             sortable: Some(true),
         },
         TableColumn {
+            key: "tags".into(),
+            label: "Tags".into(),
+            sortable: None,
+        },
+        TableColumn {
             key: "created".into(),
             label: "Created".into(),
             sortable: Some(true),
@@ -98,9 +330,27 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     .bind("/contacts")
     .build();
 
+    // Filter panel wrapped in a form for submission
+    let filter_form = Form::new()
+        .id("filter-form")
+        .children(vec![
+            search_input,
+            search_button,
+            company_filter,
+            tag_filter,
+            date_from,
+            date_to,
+            clear_button,
+        ])
+        .build_with_children();
+
+    let mut all_children = vec![heading, new_button];
+    all_children.extend(filter_form);
+    all_children.push(table);
+
     let container_nodes = Container::new()
         .id("contact-list-root")
-        .children(vec![heading, new_button, table])
+        .children(all_children)
         .build_with_children();
 
     let mut nodes = HashMap::new();
@@ -108,16 +358,21 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         nodes.insert(id, component);
     }
 
-    // Build row data with joined company name and per-row edit/delete actions
+    // Build row data with joined company name, tags, and per-row actions
     let rows: Vec<serde_json::Value> = contacts
         .iter()
         .map(|(c, co)| {
+            let tags_str = contact_tags_map
+                .get(&c.contact_id)
+                .map(|names| names.join(", "))
+                .unwrap_or_default();
             serde_json::json!({
                 "id": c.contact_id,
                 "name": c.contact_name,
                 "email": c.contact_email,
                 "phone": c.contact_phone.as_deref().unwrap_or("-"),
                 "company": co.as_ref().map(|comp| comp.company_name.as_str()).unwrap_or("-"),
+                "tags": tags_str,
                 "created": c.contact_created_at,
                 "actions": [
                     { "label": "Edit", "action": { "type": "click", "name": "contact_edit", "payload": { "contact_id": c.contact_id } } },
@@ -127,7 +382,16 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         })
         .collect();
 
-    let data = serde_json::json!({ "contacts": rows });
+    let data = serde_json::json!({
+        "contacts": rows,
+        "contactFilters": {
+            "search": params.search.as_deref().unwrap_or(""),
+            "company_filter": params.company_filter.map(|id| id.to_string()).unwrap_or_default(),
+            "date_from": params.date_from.as_deref().unwrap_or(""),
+            "date_to": params.date_to.as_deref().unwrap_or(""),
+            "tag_filter_text": params.tag_filter_text.as_deref().unwrap_or("")
+        }
+    });
 
     Ok(vec![ProtocolMessage::Render(RenderMessage {
         id: ctx.action.id.clone(),
