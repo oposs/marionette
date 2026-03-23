@@ -10,7 +10,7 @@ use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
-use crate::entities::{company, contact, contact_tag, note, tag, user};
+use crate::entities::{company, contact, contact_tag, interaction, note, tag, user};
 
 /// Format current UTC time as SQLite datetime string.
 fn now_sqlite() -> String {
@@ -633,7 +633,102 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             all_nodes.push(note_component);
         }
 
-        // Merge tagForm and noteForm data with contact_id
+        // --- Interactions timeline section ---
+        let interactions = interaction::Entity::find()
+            .filter(interaction::Column::InteractionContact.eq(cid))
+            .order_by_desc(interaction::Column::InteractionDate)
+            .all(&*db.0)
+            .await
+            .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+        // Batch-load user names for interaction authors
+        let interaction_user_ids: HashSet<i32> =
+            interactions.iter().map(|i| i.interaction_user).collect();
+        let interaction_users: HashMap<i32, String> = if interaction_user_ids.is_empty() {
+            HashMap::new()
+        } else {
+            let users = user::Entity::find()
+                .filter(user::Column::UserId.is_in(interaction_user_ids.into_iter().collect::<Vec<_>>()))
+                .all(&*db.0)
+                .await
+                .map_err(|e| ActionError::Internal(e.to_string()))?;
+            users.into_iter().map(|u| (u.user_id, u.user_name)).collect()
+        };
+
+        let interactions_heading = Heading::new("Interactions")
+            .id("interaction-timeline-heading")
+            .build();
+        all_nodes.push(interactions_heading);
+
+        // "Log Interaction" button with contact_id payload
+        let mut log_action = ComponentAction::click("interaction_form");
+        log_action.extra.insert(
+            "payload".into(),
+            serde_json::json!({ "contact_id": cid }),
+        );
+        let log_interaction_btn = Button::new("Log Interaction")
+            .id("btn-log-interaction")
+            .action(log_action)
+            .build();
+        all_nodes.push(log_interaction_btn);
+
+        // Build interaction timeline as a DataTable
+        let timeline_table = DataTable::new(vec![
+            TableColumn {
+                key: "type_label".into(),
+                label: "Type".into(),
+                sortable: Some(true),
+            },
+            TableColumn {
+                key: "subject".into(),
+                label: "Subject".into(),
+                sortable: None,
+            },
+            TableColumn {
+                key: "date".into(),
+                label: "Date".into(),
+                sortable: Some(true),
+            },
+            TableColumn {
+                key: "logged_by".into(),
+                label: "Logged By".into(),
+                sortable: None,
+            },
+            TableColumn {
+                key: "notes".into(),
+                label: "Notes".into(),
+                sortable: None,
+            },
+        ])
+        .id("interaction-timeline")
+        .bind("/interactions")
+        .build();
+        all_nodes.push(timeline_table);
+
+        let interaction_rows: Vec<serde_json::Value> = interactions
+            .iter()
+            .map(|i| {
+                let type_label = match i.interaction_type.as_str() {
+                    "call" => "Phone Call",
+                    "email" => "Email",
+                    "meeting" => "Meeting",
+                    _ => &i.interaction_type,
+                };
+                let user_name = interaction_users
+                    .get(&i.interaction_user)
+                    .cloned()
+                    .unwrap_or_else(|| "Unknown".into());
+                serde_json::json!({
+                    "type_label": type_label,
+                    "subject": i.interaction_subject,
+                    "date": i.interaction_date,
+                    "logged_by": user_name,
+                    "notes": i.interaction_notes.as_deref().unwrap_or("")
+                })
+            })
+            .collect();
+
+        // Merge tagForm, noteForm, and interactions data with contact_id
         if let Some(obj) = merged_data.as_object_mut() {
             obj.insert(
                 "tagForm".into(),
@@ -643,6 +738,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                 "noteForm".into(),
                 serde_json::json!({ "text": "", "contact_id": cid }),
             );
+            obj.insert("interactions".into(), serde_json::json!(interaction_rows));
         }
     }
 
