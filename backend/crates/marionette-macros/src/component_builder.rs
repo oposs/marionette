@@ -255,6 +255,14 @@ pub fn derive_component_builder(input: &DeriveInput) -> TokenStream {
 
             /// Build this component and return a flat list of all nodes
             /// (this component plus all collected children).
+            ///
+            /// **Note:** This should only be used at the TOP level of a component
+            /// tree to collect all nodes into a flat `HashMap` for the render
+            /// message.  When composing a sub-tree that will be passed as a
+            /// child to another builder, use [`build_tree`] instead so that
+            /// only the root tuple is handed to the parent's `.child()` /
+            /// `.children()` while the descendant nodes are collected
+            /// separately.
             #[must_use]
             pub fn build_with_children(self) -> ::std::vec::Vec<(::std::string::String, ::marionette_protocol::Component)> {
                 let children = self.__children.clone();
@@ -262,6 +270,21 @@ pub fn derive_component_builder(input: &DeriveInput) -> TokenStream {
                 let mut nodes = ::std::vec![( id, component )];
                 nodes.extend(children);
                 nodes
+            }
+
+            /// Build this component and return the root node separately from
+            /// its descendant nodes.
+            ///
+            /// Returns `(root_tuple, descendants)` where:
+            /// - `root_tuple` is `(node_id, Component)` — pass this to a
+            ///   parent builder via `.child()` / `.children()`.
+            /// - `descendants` is the flat list of all child/grandchild nodes
+            ///   that must be inserted into the final `HashMap<String, Component>`.
+            #[must_use]
+            pub fn build_tree(self) -> ((::std::string::String, ::marionette_protocol::Component), ::std::vec::Vec<(::std::string::String, ::marionette_protocol::Component)>) {
+                let descendants = self.__children.clone();
+                let root = self.build();
+                (root, descendants)
             }
         }
     }

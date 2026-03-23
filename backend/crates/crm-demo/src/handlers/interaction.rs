@@ -98,7 +98,7 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
         .action(ComponentAction::click("contact_list"))
         .build();
 
-    let form = Form::new()
+    let (form_child, form_descendants) = Form::new()
         .id("interaction-form")
         .children(vec![
             type_select,
@@ -108,11 +108,9 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
             save_button,
             cancel_button,
         ])
-        .build_with_children();
+        .build_tree();
 
-    let mut all_nodes = Vec::new();
-    all_nodes.push(heading);
-    all_nodes.extend(form);
+    let all_nodes = vec![heading, form_child];
 
     let container_nodes = Container::new()
         .id("interaction-form-root")
@@ -121,6 +119,9 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in form_descendants {
         nodes.insert(id, component);
     }
 

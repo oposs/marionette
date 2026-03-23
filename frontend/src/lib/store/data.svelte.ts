@@ -21,6 +21,13 @@ export function getStore(surface: string): { data: Record<string, unknown> } {
 }
 
 /**
+ * Get all data for a surface as a plain object.
+ */
+export function getAllData(surface: string): Record<string, unknown> {
+	return getStore(surface).data;
+}
+
+/**
  * Read a value at a JSON Pointer path within a surface's data.
  */
 export function getData(surface: string, pointer: string): unknown {

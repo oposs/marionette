@@ -361,7 +361,7 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     .build();
 
     // Filter panel wrapped in a form for submission
-    let filter_form = Form::new()
+    let (filter_form_child, filter_form_descendants) = Form::new()
         .id("filter-form")
         .children(vec![
             search_input,
@@ -372,11 +372,9 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
             date_to,
             clear_button,
         ])
-        .build_with_children();
+        .build_tree();
 
-    let mut all_children = vec![heading, new_button, sync_all_button];
-    all_children.extend(filter_form);
-    all_children.push(table);
+    let all_children = vec![heading, new_button, sync_all_button, filter_form_child, table];
 
     let container_nodes = Container::new()
         .id("contact-list-root")
@@ -385,6 +383,9 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in filter_form_descendants {
         nodes.insert(id, component);
     }
 
@@ -545,7 +546,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         .action(ComponentAction::click("contact_list"))
         .build();
 
-    let form = Form::new()
+    let (form_child, form_descendants) = Form::new()
         .id("contact-form")
         .children(vec![
             name_input,
@@ -556,11 +557,13 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             save_button,
             cancel_button,
         ])
-        .build_with_children();
+        .build_tree();
 
     let mut all_nodes = Vec::new();
+    let mut extra_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
     all_nodes.push(heading);
-    all_nodes.extend(form);
+    all_nodes.push(form_child);
+    extra_descendants.extend(form_descendants);
 
     let mut merged_data = form_data;
 
@@ -613,11 +616,12 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .action(ComponentAction::submit("contact_tag_save"))
             .build();
 
-        let tag_form = Form::new()
+        let (tag_form_child, tag_form_descendants) = Form::new()
             .id("tag-form")
             .children(vec![tag_input, tag_submit])
-            .build_with_children();
-        all_nodes.extend(tag_form);
+            .build_tree();
+        all_nodes.push(tag_form_child);
+        extra_descendants.extend(tag_form_descendants);
 
         // --- Notes section ---
         let notes = note::Entity::find()
@@ -644,11 +648,12 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .action(ComponentAction::submit("note_save"))
             .build();
 
-        let note_form = Form::new()
+        let (note_form_child, note_form_descendants) = Form::new()
             .id("note-form")
             .children(vec![note_input, note_submit])
-            .build_with_children();
-        all_nodes.extend(note_form);
+            .build_tree();
+        all_nodes.push(note_form_child);
+        extra_descendants.extend(note_form_descendants);
 
         // Render existing notes as Text components
         for n in &notes {
@@ -880,6 +885,9 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in extra_descendants {
         nodes.insert(id, component);
     }
 

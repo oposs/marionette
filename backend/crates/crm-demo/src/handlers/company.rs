@@ -207,7 +207,7 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         .action(ComponentAction::click("company_list"))
         .build();
 
-    let form = Form::new()
+    let (form_child, form_descendants) = Form::new()
         .id("company-form")
         .children(vec![
             name_input,
@@ -216,11 +216,13 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             save_button,
             cancel_button,
         ])
-        .build_with_children();
+        .build_tree();
 
     let mut all_nodes = Vec::new();
+    let mut extra_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
     all_nodes.push(heading);
-    all_nodes.extend(form);
+    all_nodes.push(form_child);
+    extra_descendants.extend(form_descendants);
 
     let mut merged_data = form_data;
 
@@ -314,11 +316,12 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             .action(ComponentAction::submit("note_save"))
             .build();
 
-        let note_form = Form::new()
+        let (note_form_child, note_form_descendants) = Form::new()
             .id("note-form")
             .children(vec![note_input, note_submit])
-            .build_with_children();
-        all_nodes.extend(note_form);
+            .build_tree();
+        all_nodes.push(note_form_child);
+        extra_descendants.extend(note_form_descendants);
 
         // Render existing notes
         for n in &notes {
@@ -354,6 +357,9 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in extra_descendants {
         nodes.insert(id, component);
     }
 

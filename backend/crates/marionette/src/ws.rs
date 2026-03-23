@@ -9,7 +9,7 @@ use futures::stream::{SplitSink, SplitStream};
 use futures::{SinkExt, StreamExt};
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use tokio::sync::mpsc;
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 use marionette_protocol::{
     ActionMessage, ErrorMessage, HelloMessage, ProtocolMessage, ValidationError,
@@ -126,7 +126,7 @@ async fn handle_session(
     }
 
     // Reader loop: reads WS messages, dispatches actions, sends responses through tx
-    read_loop(ws_receiver, &tx, &state, &ws_session).await;
+    read_loop(ws_receiver, &tx, &state, &mut ws_session).await;
 
     // Clean up: drop sender to signal writer task, then wait for it
     drop(tx);
@@ -140,7 +140,7 @@ async fn read_loop(
     mut receiver: SplitStream<WebSocket>,
     tx: &mpsc::Sender<ProtocolMessage>,
     state: &Arc<AppState>,
-    session: &WsSession,
+    session: &mut WsSession,
 ) {
     while let Some(result) = receiver.next().await {
         let msg = match result {
@@ -174,7 +174,7 @@ async fn handle_text_message(
     text: &str,
     tx: &mpsc::Sender<ProtocolMessage>,
     state: &Arc<AppState>,
-    session: &WsSession,
+    session: &mut WsSession,
 ) {
     // Parse as generic JSON first to check the message type
     let value: serde_json::Value = match serde_json::from_str(text) {
@@ -242,6 +242,30 @@ async fn handle_text_message(
     };
 
     let responses = state.router.dispatch(ctx).await;
+
+    // If a login action succeeded (returned Render, not Error), update the WsSession
+    // so subsequent actions on this connection pass auth checks.
+    if action_name == "login"
+        && responses
+            .iter()
+            .any(|r| matches!(r, ProtocolMessage::Render(_)))
+    {
+        // The login handler validated credentials. Extract user info from the
+        // render response data (the handler embeds it for us).
+        for r in &responses {
+            if let ProtocolMessage::Render(render) = r {
+                if let Some(user_id) = render.data.get("_auth_user_id").and_then(|v| v.as_i64()) {
+                    session.user_id = Some(user_id.to_string());
+                }
+                if let Some(role) = render.data.get("_auth_role").and_then(|v| v.as_str()) {
+                    session.roles = vec![role.to_string()];
+                }
+            }
+        }
+        if session.user_id.is_some() {
+            info!(session_id = %session.id, user_id = ?session.user_id, "WebSocket session authenticated via login action");
+        }
+    }
 
     // Send each response message; if the channel is closed, stop.
     for mut response in responses {

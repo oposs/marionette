@@ -25,7 +25,11 @@
 
 	function handleClick(e: Event) {
 		e.preventDefault();
-		sendAction('navigate', { path: (props.href as string) ?? '' });
+		if (action) {
+			sendAction(action.name, action.payload as Record<string, unknown> | undefined);
+		} else {
+			sendAction('navigate', { path: (props.href as string) ?? '' });
+		}
 	}
 </script>
 

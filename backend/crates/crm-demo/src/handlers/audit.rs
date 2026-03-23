@@ -110,7 +110,7 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
         .action(ComponentAction::submit("audit_list"))
         .build();
 
-    let filter_container = Container::new()
+    let (filter_container_child, filter_container_descendants) = Container::new()
         .id("audit-filter-form")
         .children(vec![
             user_select,
@@ -119,7 +119,7 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
             date_to_input,
             filter_button,
         ])
-        .build_with_children();
+        .build_tree();
 
     let table = DataTable::new(vec![
         TableColumn {
@@ -179,10 +179,7 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
         .collect();
 
     // Combine all nodes
-    let mut all_children: Vec<(String, marionette_protocol::Component)> = Vec::new();
-    all_children.push(heading);
-    all_children.extend(filter_container);
-    all_children.push(table);
+    let all_children = vec![heading, filter_container_child, table];
 
     let container_nodes = Container::new()
         .id("audit-root")
@@ -191,6 +188,9 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in filter_container_descendants {
         nodes.insert(id, component);
     }
 

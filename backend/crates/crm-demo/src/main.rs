@@ -26,6 +26,98 @@ use marionette::ws::{ws_handler, AppState};
 use marionette_protocol::common::AuthRequirement;
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
+/// Handle the `login` action via WebSocket.
+///
+/// Validates credentials, updates the WsSession auth state inline, and sends
+/// the authenticated view (contact list + sidebar) as the response.
+async fn handle_login_action(ctx: HandlerContext) -> ActionResult {
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, ActiveModelTrait, ActiveValue::Set};
+    use chrono::Utc;
+
+    let payload = ctx.action.payload.clone().unwrap_or_default();
+    // Form data is under /login/email and /login/password in the surface data store
+    let login_data = payload.get("login").and_then(|v| v.as_object());
+    let email = login_data
+        .and_then(|d| d.get("email"))
+        .and_then(|v| v.as_str())
+        .or_else(|| payload.get("email").and_then(|v| v.as_str()))
+        .unwrap_or("");
+    let password = login_data
+        .and_then(|d| d.get("password"))
+        .and_then(|v| v.as_str())
+        .or_else(|| payload.get("password").and_then(|v| v.as_str()))
+        .unwrap_or("");
+
+    if email.is_empty() || password.is_empty() {
+        return Ok(vec![ProtocolMessage::Error(marionette_protocol::ErrorMessage {
+            id: ctx.action.id.clone(),
+            errors: vec![marionette_protocol::ValidationError {
+                path: None,
+                message: "Email and password are required".into(),
+            }],
+        })]);
+    }
+
+    // Look up user
+    let user = entities::user::Entity::find()
+        .filter(entities::user::Column::UserEmail.eq(email))
+        .one(&*ctx.db)
+        .await
+        .map_err(|e| marionette::error::ActionError::Internal(e.to_string()))?
+        .ok_or_else(|| marionette::error::ActionError::BadPayload("Invalid credentials".into()))?;
+
+    // Verify password
+    let hash = user.user_password.clone();
+    let pw = password.to_string();
+    let valid = tokio::task::spawn_blocking(move || bcrypt::verify(pw, &hash))
+        .await
+        .map_err(|e| marionette::error::ActionError::Internal(e.to_string()))?
+        .unwrap_or(false);
+
+    if !valid {
+        return Ok(vec![ProtocolMessage::Error(marionette_protocol::ErrorMessage {
+            id: ctx.action.id.clone(),
+            errors: vec![marionette_protocol::ValidationError {
+                path: None,
+                message: "Invalid email or password".into(),
+            }],
+        })]);
+    }
+
+    // Update last login
+    let user_id = user.user_id;
+    let user_role = user.user_role.clone();
+    let mut active_user: entities::user::ActiveModel = user.into();
+    active_user.user_last_login = Set(Some(Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()));
+    let _ = active_user.update(&*ctx.db).await;
+
+    // Temporarily set session auth so navigate handler works
+    let authenticated_ctx = HandlerContext {
+        action: ctx.action.clone(),
+        db: ctx.db.clone(),
+        session: marionette::extractors::Session {
+            user_id: Some(user_id.to_string()),
+            roles: vec![user_role.clone()],
+        },
+    };
+
+    // Get the authenticated view
+    let mut messages = handle_navigate(authenticated_ctx).await?;
+
+    // Embed auth info in the first Render message so ws.rs can update the WsSession
+    for msg in &mut messages {
+        if let ProtocolMessage::Render(render) = msg {
+            if let Some(data) = render.data.as_object_mut() {
+                data.insert("_auth_user_id".into(), serde_json::json!(user_id));
+                data.insert("_auth_role".into(), serde_json::json!(user_role));
+            }
+            break;
+        }
+    }
+
+    Ok(messages)
+}
+
 /// Handle the `navigate` action: default authenticated view is the contact list.
 async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     let session = Session::from_context(&ctx)?;
@@ -86,7 +178,7 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     // Send sidebar render as a separate surface
     messages.push(ProtocolMessage::Render(RenderMessage {
         id: None,
-        surface: "nav".into(),
+        surface: "sidebar".into(),
         root: "side-nav".into(),
         nodes: nav_nodes_map,
         data: serde_json::json!({}),
@@ -118,22 +210,24 @@ fn build_login_form() -> ProtocolMessage {
         .action(ComponentAction::submit("login"))
         .build();
 
-    let form = Form::new()
+    // Build form sub-tree: get root tuple for parent + descendants for flat map
+    let (form_child, form_descendants) = Form::new()
         .id("login-form")
         .children(vec![email_input, password_input, submit_button])
-        .build_with_children();
+        .build_tree();
 
-    let mut all_nodes = Vec::new();
-    all_nodes.push(heading);
-    all_nodes.extend(form);
-
+    // Container only gets the heading and the form root as direct children
     let container_nodes = Container::new()
         .id("login-root")
-        .children(all_nodes)
+        .children(vec![heading, form_child])
         .build_with_children();
 
+    // Collect ALL flat nodes into the HashMap
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
+        nodes.insert(id, component);
+    }
+    for (id, component) in form_descendants {
         nodes.insert(id, component);
     }
 
@@ -150,12 +244,14 @@ fn build_login_form() -> ProtocolMessage {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    // Initialize database with real SQLite
-    let db = marionette::init_db("sqlite://crm.db?mode=rwc")
+    // Initialize database — connect directly and run CRM migrations only
+    // (CRM migrations include all tables; skip marionette::init_db which runs
+    // its own session migration that conflicts with the CRM migrator)
+    let db = sea_orm::Database::connect("sqlite://crm.db?mode=rwc")
         .await
-        .expect("failed to initialize database");
+        .expect("failed to connect to database");
 
-    // Run CRM-specific migrations
+    // Run CRM-specific migrations (includes all tables the app needs)
     migration::Migrator::up(&db, None)
         .await
         .expect("failed to run CRM migrations");
@@ -206,6 +302,11 @@ async fn main() {
     let db = Arc::new(db);
 
     let action_router = ActionRouter::new()
+        .action(
+            "login",
+            box_handler(handle_login_action),
+            AuthRequirement::None,
+        )
         .action(
             "navigate",
             box_handler(handle_navigate),
