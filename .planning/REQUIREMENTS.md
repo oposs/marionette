@@ -107,7 +107,7 @@
 - [ ] **CRM-09**: User can filter lists by company, tag, date range
 - [ ] **CRM-10**: User can log interactions (calls, emails, meetings) per contact
 - [ ] **CRM-11**: User can view interaction timeline per contact
-- [ ] **CRM-12**: Admin can manage users and assign roles
+- [x] **CRM-12**: Admin can manage users and assign roles
 - [x] **CRM-13**: User can log in and access features based on role
 - [ ] **CRM-14**: System records audit trail (who changed what when)
 - [ ] **CRM-15**: User can sync contacts to Listmonk subscriber lists
@@ -202,7 +202,7 @@
 | INTEG-01 | Phase 5 | Complete |
 | INTEG-02 | Phase 5 | Complete |
 | INTEG-03 | Phase 5 | Complete |
-| CRM-12 | Phase 6 | Pending |
+| CRM-12 | Phase 6 | Complete |
 | CRM-13 | Phase 6 | Complete |
 | CRM-14 | Phase 6 | Pending |
 | CRM-01 | Phase 7 | Pending |
