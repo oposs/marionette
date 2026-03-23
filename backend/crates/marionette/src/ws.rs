@@ -103,22 +103,60 @@ async fn read_loop(
     }
 }
 
-/// Parse a text message as an `ActionMessage` and dispatch it.
+/// Parse a text message, check its type, and dispatch actions.
 async fn handle_text_message(
     text: &str,
     tx: &mpsc::Sender<ProtocolMessage>,
     state: &Arc<AppState>,
     session: &WsSession,
 ) {
-    // Parse incoming text as ActionMessage
-    let action: ActionMessage = match serde_json::from_str(text) {
-        Ok(action) => action,
+    // Parse as generic JSON first to check the message type
+    let value: serde_json::Value = match serde_json::from_str(text) {
+        Ok(v) => v,
         Err(e) => {
             let error_msg = ProtocolMessage::Error(ErrorMessage {
                 id: None,
                 errors: vec![ValidationError {
                     path: None,
                     message: format!("Invalid message: {e}"),
+                }],
+            });
+            let _ = tx.send(error_msg).await;
+            return;
+        }
+    };
+
+    // Check message type before dispatching
+    let msg_type = value.get("type").and_then(|t| t.as_str()).unwrap_or("");
+    match msg_type {
+        "action" => {
+            // Parse as ActionMessage and dispatch
+        }
+        "hello" => {
+            debug!(session_id = %session.id, "Received client hello, acknowledging");
+            return;
+        }
+        other => {
+            let error_msg = ProtocolMessage::Error(ErrorMessage {
+                id: None,
+                errors: vec![ValidationError {
+                    path: None,
+                    message: format!("Unexpected message type: {other}"),
+                }],
+            });
+            let _ = tx.send(error_msg).await;
+            return;
+        }
+    }
+
+    let action: ActionMessage = match serde_json::from_value(value) {
+        Ok(action) => action,
+        Err(e) => {
+            let error_msg = ProtocolMessage::Error(ErrorMessage {
+                id: None,
+                errors: vec![ValidationError {
+                    path: None,
+                    message: format!("Invalid action message: {e}"),
                 }],
             });
             let _ = tx.send(error_msg).await;

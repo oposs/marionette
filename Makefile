@@ -1,4 +1,4 @@
-.PHONY: dev build test lint lint-spec clean format
+.PHONY: dev build test lint lint-spec clean format e2e
 
 dev:
 	@echo "Starting development servers..."
@@ -8,8 +8,8 @@ dev:
 	wait
 
 build:
-	cd backend && cargo build --release
 	cd frontend && npm run build
+	cd backend && cargo build --release
 
 test:
 	cd backend && cargo test
@@ -28,6 +28,9 @@ lint-spec:
 format:
 	cd backend && cargo fmt
 	cd frontend && npm run format
+
+e2e:
+	cd frontend && npx playwright test --config playwright.e2e.config.ts tests/e2e/
 
 clean:
 	cd backend && cargo clean

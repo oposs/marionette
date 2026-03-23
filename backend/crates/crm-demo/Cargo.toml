@@ -6,8 +6,16 @@ license.workspace = true
 
 [dependencies]
 marionette = { path = "../marionette" }
+marionette-protocol = { path = "../marionette-protocol" }
 axum.workspace = true
 tokio.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+serde_json.workspace = true
+sea-orm.workspace = true
+
+[dev-dependencies]
+tokio-tungstenite.workspace = true
+futures.workspace = true
+reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }

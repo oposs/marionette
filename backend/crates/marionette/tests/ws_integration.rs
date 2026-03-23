@@ -81,8 +81,9 @@ async fn ws_dispatches_action() {
     // Consume hello
     let _ = ws.next().await.unwrap().unwrap();
 
-    // Send an action
+    // Send an action (must include "type": "action" per protocol spec)
     let action = serde_json::json!({
+        "type": "action",
         "name": "echo",
         "payload": { "data": "test" }
     });
@@ -111,6 +112,7 @@ async fn ws_unknown_action_returns_error() {
 
     // Send an action with unregistered name
     let action = serde_json::json!({
+        "type": "action",
         "name": "nonexistent"
     });
     ws.send(Message::Text(serde_json::to_string(&action).unwrap().into())).await.unwrap();
