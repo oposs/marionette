@@ -113,10 +113,11 @@ Plans:
   3. WebSocket connection establishes and maintains communication
   4. End-to-end flow works: backend sends component tree, frontend renders, user interacts, action dispatches, backend responds
   5. Protocol messages match specification exactly (validated by comparing against OpenAPI schemas)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md -- Wire crm-demo Axum server with static file serving, WS handler, demo action handlers, and backend integration tests
+- [ ] 05-02-PLAN.md -- Playwright E2E tests for round-trip validation and protocol conformance against OpenAPI schemas
 
 ### Phase 6: CRM Auth & Foundation
 **Goal**: Users can securely access the CRM with role-based permissions
@@ -189,7 +190,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 2. Protocol Specification | 3/3 | Complete   | 2026-03-18 |
 | 3. Frontend Library | 6/6 | Complete   | 2026-03-20 |
 | 4. Backend Toolkit | 4/5 | In Progress|  |
-| 5. Integration | 0/TBD | Not started | - |
+| 5. Integration | 0/2 | Planning complete | - |
 | 6. CRM Auth & Foundation | 0/TBD | Not started | - |
 | 7. CRM Core | 0/TBD | Not started | - |
 | 8. CRM Features | 0/TBD | Not started | - |
