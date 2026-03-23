@@ -275,8 +275,157 @@ pub async fn get_cached_or_fetch_history(
     db: &sea_orm::DatabaseConnection,
     contact_id: i32,
 ) -> Result<serde_json::Value, ActionError> {
-    // Stub: always return empty array (tests will fail)
-    Ok(serde_json::json!([]))
+    use sea_orm::ActiveValue::{NotSet, Set};
+
+    // 1. Look up listmonk_sync for this contact to get subscriber_id
+    let sync_record = listmonk_sync::Entity::find()
+        .filter(listmonk_sync::Column::ListmonkSyncContact.eq(contact_id))
+        .one(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    let subscriber_id = match sync_record {
+        Some(ref s) => match s.listmonk_sync_subscriber_id {
+            Some(id) => id,
+            None => return Ok(serde_json::json!([])),
+        },
+        None => return Ok(serde_json::json!([])),
+    };
+
+    // 2. Check listmonk_cache for this contact
+    let cache_record = listmonk_cache::Entity::find()
+        .filter(listmonk_cache::Column::ListmonkCacheContact.eq(contact_id))
+        .one(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    if let Some(ref cached) = cache_record {
+        // Parse cache timestamp and check if fresh
+        let now = time::OffsetDateTime::now_utc();
+        let now_secs = now.unix_timestamp();
+
+        // Parse "YYYY-MM-DD HH:MM:SS" format
+        let cache_secs = parse_sqlite_datetime_to_unix(&cached.listmonk_cache_at);
+        let age = now_secs - cache_secs;
+
+        if age < CACHE_DURATION_SECS {
+            // Cache is fresh -- return cached data
+            let data: serde_json::Value =
+                serde_json::from_str(&cached.listmonk_cache_data).unwrap_or_else(|_| serde_json::json!([]));
+            return Ok(data);
+        }
+    }
+
+    // 3. Cache is stale or missing: fetch from Listmonk
+    let client = match get_listmonk_client() {
+        Some(c) => c,
+        None => return Ok(serde_json::json!([])),
+    };
+
+    let export = client
+        .get_subscriber_export(subscriber_id)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    // Build combined timeline from campaign_views and link_clicks
+    let mut timeline: Vec<serde_json::Value> = Vec::new();
+
+    if let Some(views) = export["data"]["campaign_views"].as_array() {
+        for view in views {
+            let campaign_name = view["campaign"]["name"]
+                .as_str()
+                .unwrap_or("Unknown Campaign");
+            let date = view["created_at"].as_str().unwrap_or("");
+            timeline.push(serde_json::json!({
+                "campaign": campaign_name,
+                "date": date,
+                "status": "sent"
+            }));
+        }
+    }
+
+    if let Some(clicks) = export["data"]["link_clicks"].as_array() {
+        for click in clicks {
+            let campaign_name = click["campaign"]["name"]
+                .as_str()
+                .unwrap_or("Unknown Campaign");
+            let date = click["created_at"].as_str().unwrap_or("");
+            timeline.push(serde_json::json!({
+                "campaign": campaign_name,
+                "date": date,
+                "status": "clicked"
+            }));
+        }
+    }
+
+    // Sort by date descending
+    timeline.sort_by(|a, b| {
+        let da = a["date"].as_str().unwrap_or("");
+        let db_val = b["date"].as_str().unwrap_or("");
+        db_val.cmp(da)
+    });
+
+    let timeline_json = serde_json::Value::Array(timeline);
+
+    // Store in cache (upsert: delete old + insert)
+    listmonk_cache::Entity::delete_many()
+        .filter(listmonk_cache::Column::ListmonkCacheContact.eq(contact_id))
+        .exec(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    let now_str = {
+        let t = time::OffsetDateTime::now_utc();
+        format!(
+            "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+            t.year(),
+            t.month() as u8,
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second()
+        )
+    };
+
+    let new_cache = listmonk_cache::ActiveModel {
+        listmonk_cache_id: NotSet,
+        listmonk_cache_contact: Set(contact_id),
+        listmonk_cache_data: Set(timeline_json.to_string()),
+        listmonk_cache_at: Set(now_str),
+    };
+    new_cache
+        .insert(db)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
+    Ok(timeline_json)
+}
+
+/// Parse a SQLite datetime string "YYYY-MM-DD HH:MM:SS" to Unix timestamp.
+fn parse_sqlite_datetime_to_unix(dt: &str) -> i64 {
+    // Expected format: "2026-03-23 11:50:00"
+    let parts: Vec<&str> = dt.split(|c| c == '-' || c == ' ' || c == ':').collect();
+    if parts.len() >= 6 {
+        if let (Ok(y), Ok(mo), Ok(d), Ok(h), Ok(mi), Ok(s)) = (
+            parts[0].parse::<i32>(),
+            parts[1].parse::<u8>(),
+            parts[2].parse::<u8>(),
+            parts[3].parse::<u8>(),
+            parts[4].parse::<u8>(),
+            parts[5].parse::<u8>(),
+        ) {
+            if let Ok(month) = time::Month::try_from(mo) {
+                if let Ok(date) = time::Date::from_calendar_date(y, month, d) {
+                    if let Ok(t) = time::Time::from_hms(h, mi, s) {
+                        let odt = time::PrimitiveDateTime::new(date, t)
+                            .assume_utc();
+                        return odt.unix_timestamp();
+                    }
+                }
+            }
+        }
+    }
+    0 // fallback: treat as epoch (will always be stale)
 }
 
 /// Handle the `listmonk_history_refresh` action: delete cache and re-fetch.

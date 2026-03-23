@@ -325,6 +325,11 @@ async fn main() {
             "listmonk_sync_all",
             box_handler(handlers::listmonk::handle_listmonk_sync_all),
             AuthRequirement::Authenticated,
+        )
+        .action(
+            "listmonk_history_refresh",
+            box_handler(handlers::listmonk::handle_listmonk_history_refresh),
+            AuthRequirement::Authenticated,
         );
 
     let state = Arc::new(AppState {
