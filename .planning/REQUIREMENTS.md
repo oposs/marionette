@@ -106,7 +106,7 @@
 - [x] **CRM-08**: User can tag/label contacts for categorization
 - [x] **CRM-09**: User can filter lists by company, tag, date range
 - [x] **CRM-10**: User can log interactions (calls, emails, meetings) per contact
-- [ ] **CRM-11**: User can view interaction timeline per contact
+- [x] **CRM-11**: User can view interaction timeline per contact
 - [x] **CRM-12**: Admin can manage users and assign roles
 - [x] **CRM-13**: User can log in and access features based on role
 - [x] **CRM-14**: System records audit trail (who changed what when)
@@ -215,7 +215,7 @@
 | CRM-08 | Phase 8 | Complete |
 | CRM-09 | Phase 8 | Complete |
 | CRM-10 | Phase 8 | Complete |
-| CRM-11 | Phase 8 | Pending |
+| CRM-11 | Phase 8 | Complete |
 | CRM-15 | Phase 9 | Pending |
 | CRM-16 | Phase 9 | Pending |
 
