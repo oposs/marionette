@@ -806,7 +806,59 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .build();
         all_nodes.push(sync_button);
 
-        // Merge tagForm, noteForm, and interactions data with contact_id
+        // --- Mailing History section ---
+        let history_heading = Heading::new("Mailing History")
+            .id("history-heading")
+            .build();
+        all_nodes.push(history_heading);
+
+        let history_data = super::listmonk::get_cached_or_fetch_history(&*db.0, cid).await?;
+        let has_history = history_data
+            .as_array()
+            .is_some_and(|a| !a.is_empty());
+
+        // Refresh button
+        let mut refresh_action = ComponentAction::click("listmonk_history_refresh");
+        refresh_action.extra.insert(
+            "payload".into(),
+            serde_json::json!({ "contact_id": cid }),
+        );
+        let refresh_button = Button::new("Refresh History")
+            .id("btn-refresh-history")
+            .action(refresh_action)
+            .build();
+        all_nodes.push(refresh_button);
+
+        if has_history {
+            let history_table = DataTable::new(vec![
+                TableColumn {
+                    key: "campaign".into(),
+                    label: "Campaign".into(),
+                    sortable: Some(true),
+                },
+                TableColumn {
+                    key: "date".into(),
+                    label: "Date".into(),
+                    sortable: Some(true),
+                },
+                TableColumn {
+                    key: "status".into(),
+                    label: "Status".into(),
+                    sortable: None,
+                },
+            ])
+            .id("history-table")
+            .bind("/mailingHistory")
+            .build();
+            all_nodes.push(history_table);
+        } else {
+            let no_history = Text::new("No mailing history available. Sync contact first, then check back.")
+                .id("no-history")
+                .build();
+            all_nodes.push(no_history);
+        }
+
+        // Merge tagForm, noteForm, interactions, and mailingHistory data with contact_id
         if let Some(obj) = merged_data.as_object_mut() {
             obj.insert(
                 "tagForm".into(),
@@ -817,6 +869,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                 serde_json::json!({ "text": "", "contact_id": cid }),
             );
             obj.insert("interactions".into(), serde_json::json!(interaction_rows));
+            obj.insert("mailingHistory".into(), history_data);
         }
     }
 
