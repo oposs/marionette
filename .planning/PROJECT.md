@@ -2,42 +2,47 @@
 
 ## What This Is
 
-OpenSDUI is an open protocol specification for server-driven UI. Marionette is its reference implementation: a Svelte 5 + Flowbite frontend library paired with a Rust + Axum backend toolkit. The backend controls what the frontend renders using three primitives — components, data, and messages. A demo CRM validates the protocol and showcases the implementation quality.
+OpenSDUI is an open protocol specification for server-driven UI. Marionette is its reference implementation: a Svelte 5 + Flowbite frontend library paired with a Rust + Axum backend toolkit. The backend controls what the frontend renders using three primitives — components, data, and messages. A demo CRM validates the protocol end-to-end with authentication, CRUD, search/filtering, and Listmonk integration.
 
 ## Core Value
 
 The protocol must be clean, well-specified, and demonstrate that server-driven UI can be done right — enabling rapid business app development where backend developers control UI without requiring frontend expertise.
 
+## Current State
+
+**Shipped:** v1.0 MVP (2026-04-08)
+
+**What's built:**
+- OpenAPI 3.1 protocol specification (6 message types, adjacency list components, JSON Pointer data binding)
+- Svelte 5 frontend library: 20+ SDUI components, reactive data store, dirty tracking, WebSocket transport, URL routing
+- Rust backend toolkit: derive macros, action routing, WebSocket sessions, SeaORM persistence
+- CRM demo: auth/roles, company/contact CRUD, notes, tags, search/filtering, interaction timeline, Listmonk sync
+
+**Tech stack:** Rust (Axum, SeaORM, tokio), Svelte 5 (Flowbite, Vite), SQLite, ~53k LOC across 273 files
+
 ## Requirements
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ OpenAPI 3.1 specification defining components, data, messages — v1.0
+- ✓ Protocol manual explaining concepts, patterns, and rationale — v1.0
+- ✓ Svelte 5 + Flowbite component library — v1.0
+- ✓ Renders component adjacency lists from server — v1.0
+- ✓ Handles data binding via JSON Pointers — v1.0
+- ✓ Handles message passing to/from server — v1.0
+- ✓ Axum integration for serving SDUI responses — v1.0
+- ✓ SeaORM patterns for data persistence — v1.0
+- ✓ Rust macros for ergonomic component construction — v1.0
+- ✓ Multi-user authentication with roles — v1.0
+- ✓ Companies management (CRUD) — v1.0
+- ✓ Contacts management (CRUD, belong to companies) — v1.0
+- ✓ Interactions/activity tracking per contact — v1.0
+- ✓ Listmonk integration: sync contacts to lists — v1.0
+- ✓ Listmonk integration: view mailing history per contact — v1.0
 
 ### Active
 
-**Protocol**
-- [ ] OpenAPI 3.1 specification defining components, data, messages
-- [ ] Protocol manual explaining concepts, patterns, and rationale
-
-**Frontend Library (Marionette Svelte)**
-- [ ] Svelte 5 + Flowbite component library
-- [ ] Renders component adjacency lists from server
-- [ ] Handles data binding via JSON Pointers
-- [ ] Handles message passing to/from server
-
-**Backend Toolkit (Marionette Rust)**
-- [ ] Axum integration for serving SDUI responses
-- [ ] SeaORM patterns for data persistence
-- [ ] Rust macros for ergonomic component construction
-
-**Demo CRM**
-- [ ] Multi-user authentication with roles
-- [ ] Companies management (CRUD)
-- [ ] Contacts management (CRUD, belong to companies)
-- [ ] Interactions/activity tracking per contact
-- [ ] Listmonk integration: sync contacts to lists
-- [ ] Listmonk integration: view mailing history per contact
+(None yet — define for next milestone)
 
 ### Out of Scope
 
@@ -78,13 +83,18 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Three primitives: Components, Data, Messages | Minimal surface area, covers all SDUI needs | — Pending |
-| Components as flat adjacency list | Simpler than nested trees, easier to diff and patch, inspired by A2UI | — Pending |
-| Data binding via JSON Pointers | Standard, well-understood, enables precise targeting | — Pending |
-| Stateless protocol | Simplifies debugging, enables horizontal scaling, session state lives in backend | — Pending |
-| Component types as open strings | Extensibility without protocol changes, frontend validates | — Pending |
-| No capability negotiation | Frontend library bundled with app, always knows full component set | — Pending |
-| Rust macros for component construction | Ergonomic DX, avoids verbose JSON/YAML in backend code | — Pending |
+| Three primitives: Components, Data, Messages | Minimal surface area, covers all SDUI needs | ✓ Good |
+| Components as flat adjacency list | Simpler than nested trees, easier to diff and patch, inspired by A2UI | ✓ Good |
+| Data binding via JSON Pointers | Standard, well-understood, enables precise targeting | ✓ Good |
+| Stateless protocol | Simplifies debugging, enables horizontal scaling, session state lives in backend | ✓ Good |
+| Component types as open strings | Extensibility without protocol changes, frontend validates | ✓ Good |
+| No capability negotiation | Frontend library bundled with app, always knows full component set | ✓ Good |
+| Rust macros for component construction | Ergonomic DX, avoids verbose JSON/YAML in backend code | ✓ Good |
+| serde tagged enum for protocol messages | Clean serialization with type discriminator | ✓ Good |
+| mpsc channel for WebSocket reader/writer | Avoids Arc<Mutex> complexity on sender | ✓ Good |
+| Type-erased AppState extension | Avoids leaking app types into library crate | ✓ Good |
+| OnceLock for external service clients | Simple global access from handlers | ⚠️ Revisit — consider DI pattern for testability |
+| SQLite for demo CRM | Simplest persistence for demo, zero config | ✓ Good |
 
 ---
-*Last updated: 2026-01-23 after initialization*
+*Last updated: 2026-04-08 after v1.0 milestone*
