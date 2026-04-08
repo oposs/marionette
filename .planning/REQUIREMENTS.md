@@ -75,27 +75,27 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| FOUND-03 | — | Pending |
-| SHELL-01 | — | Pending |
-| SHELL-02 | — | Pending |
-| SHELL-03 | — | Pending |
-| SHELL-04 | — | Pending |
-| TABLE-01 | — | Pending |
-| TABLE-02 | — | Pending |
-| TABLE-03 | — | Pending |
-| FORM-01 | — | Pending |
-| FORM-02 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
+| FOUND-01 | Phase 10 | Pending |
+| FOUND-02 | Phase 10 | Pending |
+| FOUND-03 | Phase 10 | Pending |
+| SHELL-01 | Phase 12 | Pending |
+| SHELL-02 | Phase 12 | Pending |
+| SHELL-03 | Phase 12 | Pending |
+| SHELL-04 | Phase 12 | Pending |
+| TABLE-01 | Phase 13 | Pending |
+| TABLE-02 | Phase 13 | Pending |
+| TABLE-03 | Phase 13 | Pending |
+| FORM-01 | Phase 14 | Pending |
+| FORM-02 | Phase 14 | Pending |
+| COMP-01 | Phase 11 | Pending |
+| COMP-02 | Phase 11 | Pending |
+| COMP-03 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 after initial definition*
+*Last updated: 2026-04-08 after roadmap creation*

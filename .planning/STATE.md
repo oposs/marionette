@@ -4,10 +4,10 @@ milestone: v1.1
 milestone_name: shadcn-svelte + High-Level Components
 status: active
 stopped_at: null
-last_updated: "2026-04-08T16:00:00.000Z"
+last_updated: "2026-04-08T17:00:00.000Z"
 last_activity: 2026-04-08
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,68 +21,41 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** v1.1 — Replace Flowbite with shadcn-svelte, add high-level organisational components
+**Current focus:** Phase 10 - Foundation (shadcn-svelte install, CSS rewrite, Flowbite removal)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-08 — Milestone v1.1 started
+Phase: 10 of 15 (Foundation)
+Plan: 0 of 0 in current phase (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-08 — v1.1 roadmap created (6 phases, 15 requirements)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 32
+- Total plans completed: 32 (v1.0)
 - Total execution time: ~148 minutes
 - Average duration: ~4.6 min/plan
 
-**By Phase:**
+**By Phase (v1.0 archived):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| Phase 01 P01 | 39min | 2 tasks | 22 files |
-| Phase 01 P02 | 6min | 1 tasks | 3 files |
-| Phase 01 P03 | 1min | 2 tasks | 2 files |
-| Phase 02 P01 | 4min | 2 tasks | 9 files |
-| Phase 02 P02 | 2min | 1 tasks | 1 files |
-| Phase 02 P03 | 1min | 2 tasks | 6 files |
-| Phase 03 P01 | 5min | 2 tasks | 12 files |
-| Phase 03 P02 | 6min | 2 tasks | 9 files |
-| Phase 03 P03 | 3min | 2 tasks | 11 files |
-| Phase 03 P04 | 3min | 2 tasks | 11 files |
-| Phase 03 P05 | 4min | 2 tasks | 10 files |
-| Phase 03 P06 | 6min | 2 tasks | 14 files |
-| Phase 04 P01 | 2min | 2 tasks | 7 files |
-| Phase 04 P02 | 5min | 2 tasks | 13 files |
-| Phase 04 P03 | 6min | 2 tasks | 6 files |
-| Phase 04 P04 | 5min | 2 tasks | 6 files |
-| Phase 04 P05 | 12min | 2 tasks | 6 files |
-| Phase 05 P01 | 5min | 2 tasks | 8 files |
-| Phase 05 P02 | 10min | 2 tasks | 10 files |
-| Phase 06 P01 | 7min | 2 tasks | 16 files |
-| Phase 06 P02 | 3min | 2 tasks | 3 files |
-| Phase 06 P03 | 3min | 2 tasks | 5 files |
-| Phase 07 P01 | 2min | 2 tasks | 8 files |
-| Phase 07 P02 | 2min | 2 tasks | 3 files |
-| Phase 07 P03 | 4min | 2 tasks | 4 files |
-| Phase 08 P01 | 3min | 2 tasks | 12 files |
-| Phase 08 P02 | 4min | 2 tasks | 5 files |
-| Phase 08 P03 | 4min | 2 tasks | 2 files |
-| Phase 08 P04 | 2min | 2 tasks | 4 files |
-| Phase 09 P01 | 2min | 2 tasks | 11 files |
-| Phase 09 P02 | 6min | 2 tasks | 9 files |
-| Phase 09 P03 | 3min | 2 tasks | 3 files |
+| v1.0 (9 phases) | 32 | ~148min | ~4.6min |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Full decision log archived in milestones/v1.0-ROADMAP.md.
+Recent decisions affecting current work:
+
+- [v1.1]: Clean break from Flowbite -- no gradual migration, CSS conflicts make dual-stack untenable
+- [v1.1]: No TanStack Table -- client-side sort/filter contradicts SDUI server-driven model
+- [v1.1]: Keep custom virtual scroll -- TanStack Virtual has Svelte 5 issues (GitHub #866)
 
 ### Pending Todos
 
@@ -90,10 +63,12 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- Exact shadcn Sidebar sub-component API for Svelte 5 needs verification (Phase 12)
+- Toast replacement strategy (Sonner vs shadcn Toast) needs decision (Phase 11)
+- Field components without Superforms approach needs validation (Phase 14)
 
 ## Session Continuity
 
 Last session: 2026-04-08
-Stopped at: Milestone v1.0 shipped
+Stopped at: v1.1 roadmap created, ready to plan Phase 10
 Resume file: None
