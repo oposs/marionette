@@ -8,6 +8,18 @@ OpenSDUI is an open protocol specification for server-driven UI. Marionette is i
 
 The protocol must be clean, well-specified, and demonstrate that server-driven UI can be done right — enabling rapid business app development where backend developers control UI without requiring frontend expertise.
 
+## Current Milestone: v1.1 shadcn-svelte + High-Level Components
+
+**Goal:** Replace Flowbite with shadcn-svelte and add high-level organisational components to Marionette so apps get professional screens out of the box without reinventing layout patterns.
+
+**Target features:**
+- Clean break: Flowbite → shadcn-svelte for all component rendering
+- AppShell component: nav area, header, footer, content — works on desktop and mobile with responsive behavior
+- Form component: structured layout with action buttons, special widgets, proper spacing and visual hierarchy
+- DataTable component: infinite scroll, built-in filtering, sorting
+- Review and consolidate backend component builders to match
+- CRM demo fully migrated to new components
+
 ## Current State
 
 **Shipped:** v1.0 MVP (2026-04-08)
@@ -42,7 +54,12 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 
 ### Active
 
-(None yet — define for next milestone)
+- [ ] Replace Flowbite with shadcn-svelte across all frontend components
+- [ ] AppShell component: responsive nav/header/footer/content layout
+- [ ] Form component: structured layout with actions and special widgets
+- [ ] DataTable component: infinite scroll, filtering, sorting
+- [ ] Backend builders reviewed and consolidated for new component types
+- [ ] CRM demo migrated to new components end-to-end
 
 ### Out of Scope
 
@@ -73,7 +90,7 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 ## Constraints
 
 - **Tech Stack (Backend)**: Rust, Axum, SeaORM, utoipa, tokio — per TOOLING.md
-- **Tech Stack (Frontend)**: Svelte 5, Flowbite, Vite — per TOOLING.md
+- **Tech Stack (Frontend)**: Svelte 5, shadcn-svelte, Vite — per TOOLING.md
 - **Build System**: Makefile-based builds with standard targets
 - **Testing**: Unit (Vitest), Component (Playwright component), E2E (Playwright)
 - **CI/CD**: GitHub Actions workflows
@@ -97,4 +114,22 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 | SQLite for demo CRM | Simplest persistence for demo, zero config | ✓ Good |
 
 ---
-*Last updated: 2026-04-08 after v1.0 milestone*
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-04-08 after v1.1 milestone start*

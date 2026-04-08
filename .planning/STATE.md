@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: completed
-stopped_at: Milestone v1.0 shipped
-last_updated: "2026-04-08T14:01:24.782Z"
+milestone: v1.1
+milestone_name: shadcn-svelte + High-Level Components
+status: active
+stopped_at: null
+last_updated: "2026-04-08T16:00:00.000Z"
 last_activity: 2026-04-08
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 32
-  completed_plans: 32
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** v1.0 MVP shipped — planning next milestone
+**Current focus:** v1.1 — Replace Flowbite with shadcn-svelte, add high-level organisational components
 
 ## Current Position
 
-Phase: 9 of 9 (all complete)
-Plan: All complete
-Status: completed
-Last activity: 2026-04-08
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-08 — Milestone v1.1 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
