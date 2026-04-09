@@ -7,6 +7,7 @@ export { default as ConnectionBanner } from './components/core/ConnectionBanner.
 
 // Registry
 export { register, getComponent, registerAll } from './registry/registry';
+export { getIcon, registerIcon } from './registry/icons';
 
 // Store
 export { getData, setData, applyPatch, setFullState, resetStore } from './store/data.svelte';
