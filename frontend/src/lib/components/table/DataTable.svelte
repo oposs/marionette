@@ -113,7 +113,7 @@
 					<Table.Row class="bg-muted text-muted-foreground text-xs uppercase font-semibold">
 						{#each columns as col (col.key)}
 							<Table.Head
-								class="{col.sortable ? 'cursor-pointer hover:bg-accent' : ''}"
+								class={col.sortable ? 'cursor-pointer hover:bg-accent' : ''}
 								onclick={() => handleSort(col)}
 							>
 								{col.label}
