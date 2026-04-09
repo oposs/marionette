@@ -590,17 +590,17 @@ None -- existing test infrastructure covers all phase requirements. No new test 
 | A3 | Dark mode sidebar tokens (`--sidebar-*`) are part of standard Zinc theme | Architecture Patterns | Low -- sidebar tokens are standard shadcn but exact OKLCH values may differ |
 | A4 | `tw-animate-css` is auto-installed by shadcn-svelte CLI init | Standard Stack | Low -- if not, manual `npm install tw-animate-css` is trivial |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact shadcn-svelte init behavior with existing app.css**
    - What we know: CLI overwrites app.css with its template
    - What's unclear: Does it merge or fully replace? Does it detect Tailwind v4 automatically?
-   - Recommendation: Back up app.css before init, then merge safelist line after
+   - RESOLVED: Back up grid safelist before init, replace full app.css after with OKLCH theme — see Plan 01 Task 1 Step 1/3
 
 2. **ConfirmDialog stub shares ModalSurface overlay logic**
    - What we know: ConfirmDialog currently renders inside ModalSurface's `<Modal>` wrapper
    - What's unclear: Should the stub have its own overlay or rely on ModalSurface?
-   - Recommendation: ConfirmDialog renders inside ModalSurface (current pattern) -- it's a content component, not a standalone overlay. Keep as-is but replace Flowbite Button imports with stub buttons.
+   - RESOLVED: ConfirmDialog renders as inline content inside ModalSurface overlay — stub provides title/message/buttons only, no own overlay — see Plan 02 Task 1
 
 ## Sources
 
