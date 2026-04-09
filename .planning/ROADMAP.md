@@ -46,7 +46,11 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. app.css uses OKLCH semantic color tokens and shadcn theme system with no Flowbite plugin references
   3. Zero Flowbite packages remain in package.json and zero Flowbite imports exist in any source file
   4. The frontend compiles and the dev server starts without errors
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 10-01-PLAN.md — shadcn-svelte init + OKLCH CSS theme + Surface.svelte semantic tokens
+- [ ] 10-02-PLAN.md — Stub all 17 Flowbite components + remove Flowbite packages
+- [ ] 10-03-PLAN.md — Visual verification checkpoint
 **UI hint**: yes
 
 ### Phase 11: Leaf Component Migration
@@ -124,7 +128,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 7. CRM Core | v1.0 | 3/3 | Complete | 2026-03-22 |
 | 8. CRM Features | v1.0 | 4/4 | Complete | 2026-03-23 |
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
-| 10. Foundation | v1.1 | 0/0 | Not started | - |
+| 10. Foundation | v1.1 | 0/3 | Planning complete | - |
 | 11. Leaf Component Migration | v1.1 | 0/0 | Not started | - |
 | 12. AppShell | v1.1 | 0/0 | Not started | - |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
@@ -133,4 +137,4 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 
 ---
 *Created: 2026-01-24*
-*Updated: 2026-04-08 -- v1.1 roadmap added*
+*Updated: 2026-04-09 -- Phase 10 plans created*
