@@ -28,7 +28,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 **Milestone Goal:** Replace Flowbite with shadcn-svelte and add high-level organisational components (AppShell, enhanced DataTable, enhanced FormScreen) so apps get professional screens out of the box.
 
-- [ ] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies
+- [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
 - [ ] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons
 - [ ] **Phase 12: AppShell** - Responsive sidebar shell with header/footer, CSS variable theming, and backend builder
 - [ ] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility
@@ -48,9 +48,9 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   4. The frontend compiles and the dev server starts without errors
 **Plans**: 3 plans
 Plans:
-- [ ] 10-01-PLAN.md — shadcn-svelte init + OKLCH CSS theme + Surface.svelte semantic tokens
-- [ ] 10-02-PLAN.md — Stub all 17 Flowbite components + remove Flowbite packages
-- [ ] 10-03-PLAN.md — Visual verification checkpoint
+- [x] 10-01-PLAN.md — shadcn-svelte init + OKLCH CSS theme + Surface.svelte semantic tokens
+- [x] 10-02-PLAN.md — Stub all 17 Flowbite components + remove Flowbite packages
+- [x] 10-03-PLAN.md — Visual verification checkpoint
 **UI hint**: yes
 
 ### Phase 11: Leaf Component Migration
@@ -128,7 +128,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 7. CRM Core | v1.0 | 3/3 | Complete | 2026-03-22 |
 | 8. CRM Features | v1.0 | 4/4 | Complete | 2026-03-23 |
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
-| 10. Foundation | v1.1 | 0/3 | Planning complete | - |
+| 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 0/0 | Not started | - |
 | 12. AppShell | v1.1 | 0/0 | Not started | - |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
