@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: true
 preset: zinc-default-0.25rem
 created: 2026-04-09
+revised: 2026-04-09
 ---
 
 # Phase 11 — UI Design Contract
@@ -32,7 +33,7 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px (0.25rem) | Icon-to-label gaps inside buttons, inline padding |
-| sm | 8px (0.5rem) | Compact element spacing: checkbox-to-label, input internal padding |
+| sm | 8px (0.5rem) | Compact element spacing: checkbox-to-label, label-to-input gap, input internal padding |
 | md | 16px (1rem) | Default element spacing: form field gaps, card padding, dialog body padding |
 | lg | 24px (1.5rem) | Section padding: dialog header/footer padding, form section gaps |
 | xl | 32px (2rem) | Layout gaps: page margins, major content areas |
@@ -48,11 +49,13 @@ Exceptions: Touch targets for interactive controls (Button, Checkbox, Select tri
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px (0.875rem) | 400 (regular) | 1.5 (21px) | Table cells, form descriptions, toast body, error messages |
-| Label | 14px (0.875rem) | 500 (medium) | 1.43 (20px) | Form field labels, nav item text, checkbox labels, button text |
+| Label | 14px (0.875rem) | 600 (semibold) | 1.43 (20px) | Form field labels, nav item text, checkbox labels, button text |
 | Heading | 20px (1.25rem) | 600 (semibold) | 1.2 (24px) | Dialog titles, form section headings, Heading component (h1-h3) |
 | Small | 12px (0.75rem) | 400 (regular) | 1.33 (16px) | Error validation text below fields, muted helper text |
 
 Notes:
+- Two font weights only: 400 (regular) and 600 (semibold). No weight 500 (medium) is used.
+- Label text uses `font-semibold` (600), not `font-medium` (500). Any Tailwind class `font-medium` must be replaced with `font-semibold`.
 - shadcn-svelte components use Tailwind's `text-sm` (14px) as baseline -- do not override this.
 - Heading component renders semantic h1-h6 tags; use `text-xl` (20px) for h1/h2 and `text-base` (16px) for h3-h6.
 - No Display size needed for Phase 11 (no hero/banner components).
@@ -92,18 +95,19 @@ Other semantic tokens in use:
 - Variant mapping: `props.color="red"` -> `variant="destructive"`, `props.outline=true` -> `variant="outline"`, default -> `variant="default"`
 - Size: shadcn `default` (36px height, 16px horizontal padding, 14px text)
 - Icon + label: 8px gap between icon and label text
+- Icon-only buttons: Must include `aria-label` derived from `props.ariaLabel` or `props.label`. If neither is provided, use the icon name as a fallback aria-label.
 - Disabled state: `opacity-50 cursor-not-allowed` (shadcn default)
 - Loading state: Replace icon with `Loader2` spinning at `animate-spin`
 
 ### TextInput
-- Label above input with 6px (gap-1.5) vertical spacing
+- Label above input with 8px (gap-2) vertical spacing
 - Input height: 36px (shadcn default `h-9`)
 - Border: `border-input` default, `ring-ring` on focus
 - Error state: `border-destructive` border, error message in `text-destructive text-xs` below input with 4px top margin
 - Placeholder text: `text-muted-foreground`
 
 ### SelectInput
-- Label above trigger with 6px (gap-1.5) vertical spacing
+- Label above trigger with 8px (gap-2) vertical spacing
 - Trigger height: 36px matching TextInput
 - Dropdown content: `bg-popover` with `border-border`, 4px border-radius (`--radius`)
 - Selected item: `bg-accent` highlight
@@ -113,10 +117,10 @@ Other semantic tokens in use:
 - 16px square checkbox (shadcn default)
 - 8px gap between checkbox and label
 - Checked fill: `bg-primary` with white checkmark
-- Label: 14px medium weight, same line as checkbox (flex row, items-center)
+- Label: 14px semibold (weight 600), same line as checkbox (flex row, items-center)
 
 ### DataTable
-- Table header: `bg-muted` background, `text-muted-foreground` uppercase 12px font-medium
+- Table header: `bg-muted` background, `text-muted-foreground` uppercase 12px font-semibold
 - Table rows: `border-b border-border` between rows
 - Sortable column header: cursor-pointer, chevron icon (12px) right of header text, 4px gap
 - Active sort: `text-foreground` (not muted), filled chevron
@@ -136,6 +140,7 @@ Other semantic tokens in use:
 - Footer: right-aligned buttons with 8px gap
 - Destructive confirm: `variant="destructive"`, cancel: `variant="outline"`
 - Non-destructive confirm: `variant="default"`, cancel: `variant="outline"`
+- Cancel label: server-driven via `props.cancelLabel` (e.g. "Keep Contact", "Go Back"). No hardcoded default -- server must provide both `confirmLabel` and `cancelLabel`.
 
 ### ToastSurface
 - Position: bottom-right viewport corner, 16px from edges
@@ -188,7 +193,7 @@ Other semantic tokens in use:
 
 ### ConnectionBanner
 - Full-width bar at top, `bg-destructive text-primary-foreground`, 8px vertical padding
-- Text: 14px medium, centered
+- Text: 14px semibold, centered
 - Visible only when connection is lost
 
 ### FallbackComponent (dev-only)
@@ -216,11 +221,11 @@ Other semantic tokens in use:
 | Error state (field) | `{field label} is required` / `Invalid {field label}` (server-driven via SDUI protocol) |
 | Error state (connection) | `Connection lost. Reconnecting...` |
 | Error state (component) | `Something went wrong displaying this component.` |
-| Destructive confirmation (ConfirmDialog) | Title: server-driven `props.title` (e.g. "Delete Contact?") / Body: server-driven `props.message` / Confirm: server-driven `props.confirmLabel` (e.g. "Delete") / Cancel: `Cancel` (hardcoded default) |
+| Destructive confirmation (ConfirmDialog) | Title: server-driven `props.title` (e.g. "Delete Contact?") / Body: server-driven `props.message` / Confirm: server-driven `props.confirmLabel` (e.g. "Delete") / Cancel: server-driven `props.cancelLabel` (e.g. "Keep Contact") |
 | Toast default | Server-driven `props.message` |
 | Fallback icon tooltip | `Unknown icon: {name}` (dev-only, shown via `title` attribute on CircleHelp fallback) |
 
-Note: This is an SDUI application. Almost all user-facing copy is server-driven via component `props`. The frontend hardcodes only structural copy (connection errors, fallback states). The server is the source of truth for all business-domain copy.
+Note: This is an SDUI application. Almost all user-facing copy is server-driven via component `props`. The frontend hardcodes only structural copy (connection errors, fallback states). The server is the source of truth for all business-domain copy. The ConfirmDialog cancel label is server-driven (`props.cancelLabel`) -- no hardcoded "Cancel" default.
 
 ---
 
