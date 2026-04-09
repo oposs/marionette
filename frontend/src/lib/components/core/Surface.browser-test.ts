@@ -18,12 +18,12 @@ test('renders loading skeleton when no tree is set', async () => {
 		props: { name: 'test-surface' },
 	});
 
-	// LoadingSkeleton renders animated pulse divs
+	// LoadingSkeleton renders shadcn Skeleton components
 	const container = screen.baseElement.querySelector('[data-surface="test-surface"]');
 	expect(container).toBeTruthy();
-	// Should show skeleton (pulse animation divs) when no tree set
-	const pulseElements = container!.querySelectorAll('.animate-pulse');
-	expect(pulseElements.length).toBeGreaterThan(0);
+	// Should show skeleton elements when no tree set
+	const skeletons = container!.querySelectorAll('[data-slot="skeleton"]');
+	expect(skeletons.length).toBeGreaterThan(0);
 });
 
 test('renders component tree from surface state', async () => {

@@ -7,7 +7,6 @@ import NavItem from './NavItem.svelte';
 import NavGroup from './NavGroup.svelte';
 import type { ComponentNode } from '$lib/transport/messages';
 
-// Mock sendAction so we can verify navigate dispatches
 vi.mock('$lib/transport/dispatcher', () => ({
 	sendAction: vi.fn(),
 }));
@@ -17,6 +16,16 @@ import { sendAction } from '$lib/transport/dispatcher';
 beforeEach(() => {
 	clearRegistry();
 	vi.clearAllMocks();
+});
+
+test('renders nav element with aria-label', async () => {
+	const screen = await render(SideNav, {
+		props: { props: { ariaLabel: 'Main navigation' }, surface: 'test' },
+	});
+
+	const nav = screen.baseElement.querySelector('nav');
+	expect(nav).toBeTruthy();
+	expect(nav!.getAttribute('aria-label')).toBe('Main navigation');
 });
 
 test('sidebar renders with nav items as children', async () => {
