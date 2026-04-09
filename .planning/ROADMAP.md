@@ -62,7 +62,13 @@ Plans:
   2. All icons render using lucide-svelte with no flowbite-svelte-icons imports anywhere
   3. Existing component tests pass with the new implementations (or are updated to match new markup)
   4. The demo page renders all component types without errors
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 11-01-PLAN.md — Install shadcn-svelte primitives + icon registry
+- [ ] 11-02-PLAN.md — Migrate form components (Button, TextInput, SelectInput, Checkbox, Form) + tests
+- [ ] 11-03-PLAN.md — Migrate popup/table components (ModalSurface, ConfirmDialog, ToastSurface, DataTable) + tests
+- [ ] 11-04-PLAN.md — Migrate layout/nav/core/feedback components + tests
+- [ ] 11-05-PLAN.md — Migrate screen components (FormScreen, TableScreen) + tests + visual verification
 **UI hint**: yes
 
 ### Phase 12: AppShell
@@ -129,7 +135,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 8. CRM Features | v1.0 | 4/4 | Complete | 2026-03-23 |
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
-| 11. Leaf Component Migration | v1.1 | 0/0 | Not started | - |
+| 11. Leaf Component Migration | v1.1 | 0/5 | Planning complete | - |
 | 12. AppShell | v1.1 | 0/0 | Not started | - |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
@@ -137,4 +143,4 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 
 ---
 *Created: 2026-01-24*
-*Updated: 2026-04-09 -- Phase 10 plans created*
+*Updated: 2026-04-09 -- Phase 11 plans created*
