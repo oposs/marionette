@@ -437,22 +437,20 @@ import { Button, buttonVariants } from '$lib/components/ui/button';
 | A3 | Dialog.Root accepts `open` and `onOpenChange` props | Dialog pattern | Must verify; critical for ModalSurface |
 | A4 | FormScreen/TableScreen screen components are in scope for this phase | Component mapping | CONTEXT.md lists 18 components in defaults.ts; screens are not in defaults.ts but listed in code_context |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Toast Decision D-04 Conflicts with Reality**
+1. **Toast Decision D-04 Conflicts with Reality** — RESOLVED: Keep custom ToastSurface
    - What we know: D-04 says "shadcn Toast (bits-ui Radix Toast primitive) -- not Sonner." However, bits-ui does NOT have a toast component (confirmed: feature request only, GitHub discussion #1173). shadcn-svelte's toast IS Sonner (`svelte-sonner`).
-   - What's unclear: Should we use Sonner (the shadcn-svelte standard), keep the current custom ToastSurface (which works and is SDUI-driven), or build a custom toast on bits-ui primitives?
-   - Recommendation: **Keep the current custom ToastSurface** for this phase. It works, it's SDUI-driven (server sends toast events to the `toast` surface), and replacing it with Sonner would break the SDUI pattern. The styling can be updated to use shadcn tokens (already partially done). Revisit in a later phase if needed.
+   - Resolution: **Keep the current custom ToastSurface** for this phase. It works, it's SDUI-driven (server sends toast events to the `toast` surface), and replacing it with Sonner would break the SDUI pattern. The styling is updated to use shadcn semantic tokens. Addressed in Plan 11-03.
    - [VERIFIED: bits-ui toast is only a feature request -- github.com/huntabyte/bits-ui/discussions/1173] [CITED: shadcn-svelte.com/docs/components/sonner]
 
-2. **Screen Components (FormScreen, TableScreen) Scope**
+2. **Screen Components (FormScreen, TableScreen) Scope** — RESOLVED: Include in scope
    - What we know: defaults.ts has 18 registrations. FormScreen and TableScreen are NOT in defaults.ts -- they are rendered differently (via direct import in screen routing, not via SDUI registry).
-   - What's unclear: Are they in scope for Phase 11?
-   - Recommendation: Include them since CONTEXT.md code_context lists them as "Components to Migrate" and they have hardcoded `text-gray-*` classes that need semantic token replacement. But they are lower priority than the 18 registered components.
+   - Resolution: Included in scope since CONTEXT.md code_context lists them as "Components to Migrate" and they have hardcoded `text-gray-*` classes that need semantic token replacement. Addressed in Plan 11-05 (Wave 3, after registered components).
 
-3. **FallbackComponent Uses Hardcoded `border-red-500 bg-red-50 text-red-700`**
+3. **FallbackComponent Uses Hardcoded `border-red-500 bg-red-50 text-red-700`** — RESOLVED: Replace with semantic tokens
    - What we know: Dev-only component uses raw color classes.
-   - Recommendation: Replace with `border-destructive bg-destructive/10 text-destructive` for consistency, but this is cosmetic and low priority.
+   - Resolution: Replace with `border-destructive bg-destructive/10 text-destructive` for consistency. Addressed in Plan 11-04.
 
 ## Validation Architecture
 
