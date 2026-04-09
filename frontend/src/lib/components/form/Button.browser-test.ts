@@ -13,12 +13,24 @@ beforeEach(() => {
 	vi.clearAllMocks();
 });
 
-test('renders button with label', async () => {
+test('renders with label text', async () => {
 	const screen = await render(Button, {
 		props: { props: { label: 'Save' }, surface: 'test' },
 	});
 
 	await expect.element(screen.getByText('Save')).toBeVisible();
+});
+
+test('renders destructive variant for color=red', async () => {
+	const screen = await render(Button, {
+		props: { props: { label: 'Delete', color: 'red' }, surface: 'test' },
+	});
+
+	const button = screen.getByRole('button');
+	await expect.element(button).toBeVisible();
+	// shadcn destructive variant applies destructive styling classes
+	const el = button.element() as HTMLButtonElement;
+	expect(el.className).toContain('destructive');
 });
 
 test('dispatches action on click', async () => {
@@ -40,13 +52,22 @@ test('dispatches action on click', async () => {
 	);
 });
 
-test('renders with custom color and size', async () => {
+test('renders disabled state', async () => {
 	const screen = await render(Button, {
-		props: {
-			props: { label: 'Delete', color: 'red', size: 'lg' },
-			surface: 'test',
-		},
+		props: { props: { label: 'Save', disabled: true }, surface: 'test' },
 	});
 
-	await expect.element(screen.getByText('Delete')).toBeVisible();
+	const button = screen.getByRole('button');
+	await expect.element(button).toBeDisabled();
+});
+
+test('renders icon when props.icon set', async () => {
+	const screen = await render(Button, {
+		props: { props: { label: 'Add', icon: 'plus' }, surface: 'test' },
+	});
+
+	await expect.element(screen.getByText('Add')).toBeVisible();
+	// Icon should render as SVG inside button
+	const button = screen.getByRole('button').element() as HTMLButtonElement;
+	expect(button.querySelector('svg')).toBeTruthy();
 });

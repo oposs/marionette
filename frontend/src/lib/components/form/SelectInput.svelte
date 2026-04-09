@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as Select from '$lib/components/ui/select';
+	import { Label } from '$lib/components/ui/label';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
@@ -23,42 +25,36 @@
 		(props.options as Array<{ value: string; label: string }>) ?? []
 	);
 
-	function handleChange(e: Event) {
+	function handleValueChange(newValue: string) {
 		if (bind) {
-			const target = e.currentTarget as HTMLSelectElement;
-			setData(surface, bind, target.value);
+			setData(surface, bind, newValue);
+			clearDirty(bind, (op) => setData(surface, op.path, op.value));
 		}
 	}
 
-	function handleFocus() {
-		if (bind) markDirty(bind);
-	}
-
-	function handleBlur() {
-		if (bind) {
-			clearDirty(bind, (op) => setData(surface, op.path, op.value));
+	function handleOpenChange(open: boolean) {
+		if (open && bind) {
+			markDirty(bind);
 		}
 	}
 </script>
 
-<div class="w-full">
+<div class="grid w-full gap-2">
 	{#if props.label}
-		<label class="mb-2 block text-sm font-medium text-foreground">
-			{props.label}
-		</label>
+		<Label class="font-semibold">{props.label}</Label>
 	{/if}
-	<select
-		disabled={props.disabled as boolean}
-		onchange={handleChange}
-		onfocus={handleFocus}
-		onblur={handleBlur}
-		class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-	>
-		{#if props.placeholder}
-			<option value="" disabled selected={!value}>{props.placeholder}</option>
-		{/if}
-		{#each options as opt (opt.value)}
-			<option value={opt.value} selected={opt.value === value}>{opt.label}</option>
-		{/each}
-	</select>
+	<Select.Root type="single" value={value} onValueChange={handleValueChange} onOpenChange={handleOpenChange} disabled={props.disabled as boolean}>
+		<Select.Trigger class="w-full">
+			{#if value && options.find(o => o.value === value)}
+				<span>{options.find(o => o.value === value)?.label}</span>
+			{:else}
+				<span class="text-muted-foreground">{props.placeholder ?? 'Select...'}</span>
+			{/if}
+		</Select.Trigger>
+		<Select.Content>
+			{#each options as opt (opt.value)}
+				<Select.Item value={opt.value} label={opt.label} />
+			{/each}
+		</Select.Content>
+	</Select.Root>
 </div>

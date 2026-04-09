@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
@@ -49,13 +51,11 @@
 	}
 </script>
 
-<div class="w-full">
+<div class="grid w-full gap-2">
 	{#if props.label}
-		<label class="mb-2 block text-sm font-medium text-foreground">
-			{props.label}
-		</label>
+		<Label class="font-semibold">{props.label}</Label>
 	{/if}
-	<input
+	<Input
 		type={(props.type as string) ?? 'text'}
 		placeholder={props.placeholder as string}
 		required={props.required as boolean}
@@ -64,11 +64,11 @@
 		oninput={handleInput}
 		onfocus={handleFocus}
 		onblur={handleBlur}
-		class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {fieldError ? 'border-destructive' : ''}"
+		class={fieldError ? 'border-destructive' : ''}
 	/>
 	{#if fieldError}
-		<p class="mt-1 text-sm text-destructive">{fieldError}</p>
+		<p class="text-xs text-destructive">{fieldError}</p>
 	{:else if props.helperText}
-		<p class="mt-1 text-sm text-muted-foreground">{props.helperText}</p>
+		<p class="text-xs text-muted-foreground">{props.helperText}</p>
 	{/if}
 </div>
