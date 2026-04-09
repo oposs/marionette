@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Select, Label } from 'flowbite-svelte';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
@@ -44,21 +43,22 @@
 
 <div class="w-full">
 	{#if props.label}
-		<Label class="mb-2">{props.label}</Label>
+		<label class="mb-2 block text-sm font-medium text-foreground">
+			{props.label}
+		</label>
 	{/if}
-	<Select
-		{value}
+	<select
 		disabled={props.disabled as boolean}
-		placeholder={props.placeholder as string}
 		onchange={handleChange}
 		onfocus={handleFocus}
 		onblur={handleBlur}
+		class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 	>
 		{#if props.placeholder}
-			<option value="" disabled selected>{props.placeholder}</option>
+			<option value="" disabled selected={!value}>{props.placeholder}</option>
 		{/if}
 		{#each options as opt (opt.value)}
-			<option value={opt.value}>{opt.label}</option>
+			<option value={opt.value} selected={opt.value === value}>{opt.label}</option>
 		{/each}
-	</Select>
+	</select>
 </div>

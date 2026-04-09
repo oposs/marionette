@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 
 	import type { Snippet } from 'svelte';
 
@@ -10,12 +10,12 @@
 	{@render children()}
 
 	{#snippet failed(error, reset)}
-		<div class="border border-orange-400 bg-orange-50 p-4">
+		<div class="border border-destructive/40 bg-destructive/10 p-4 rounded-md">
 			<div class="flex items-center gap-2">
-				<ExclamationCircleOutline class="w-5 h-5 text-orange-500" />
-				<p class="text-orange-700 text-sm">Something went wrong rendering this component.</p>
+				<AlertCircle class="size-5 text-destructive" />
+				<p class="text-destructive text-sm">Something went wrong rendering this component.</p>
 			</div>
-			<p class="text-orange-500 text-xs mt-1">Try refreshing the page.</p>
+			<p class="text-destructive/70 text-xs mt-1">Try refreshing the page.</p>
 		</div>
 	{/snippet}
 </svelte:boundary>

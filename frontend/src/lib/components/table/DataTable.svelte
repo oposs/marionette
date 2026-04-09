@@ -1,13 +1,6 @@
 <script lang="ts">
-	import {
-		Table,
-		TableHead,
-		TableBody,
-		TableHeadCell,
-		TableBodyRow,
-		TableBodyCell,
-	} from 'flowbite-svelte';
-	import { ChevronUpOutline, ChevronDownOutline } from 'flowbite-svelte-icons';
+	import ChevronUp from '@lucide/svelte/icons/chevron-up';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { getData } from '$lib/store/data.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
@@ -114,38 +107,40 @@
 >
 	<div style="height: {totalHeight}px; position: relative;">
 		<div style="transform: translateY({offsetY}px);">
-			<Table>
-				<TableHead>
-					{#each columns as col (col.key)}
-						<TableHeadCell
-							class={col.sortable ? 'cursor-pointer hover:bg-gray-100' : ''}
-							onclick={() => handleSort(col)}
-						>
-							{col.label}
-							{#if sortColumn === col.key}
-								{#if sortDir === 'asc'}
-									<ChevronUpOutline class="w-4 h-4 inline" />
-								{:else if sortDir === 'desc'}
-									<ChevronDownOutline class="w-4 h-4 inline" />
+			<table class="w-full text-left text-sm">
+				<thead class="bg-muted text-xs uppercase text-foreground">
+					<tr>
+						{#each columns as col (col.key)}
+							<th
+								class="px-6 py-3 {col.sortable ? 'cursor-pointer hover:bg-accent' : ''}"
+								onclick={() => handleSort(col)}
+							>
+								{col.label}
+								{#if sortColumn === col.key}
+									{#if sortDir === 'asc'}
+										<ChevronUp class="size-4 inline" />
+									{:else if sortDir === 'desc'}
+										<ChevronDown class="size-4 inline" />
+									{/if}
 								{/if}
-							{/if}
-						</TableHeadCell>
-					{/each}
-				</TableHead>
-				<TableBody>
+							</th>
+						{/each}
+					</tr>
+				</thead>
+				<tbody>
 					{#each visibleRows as [rowKey, rowData] (rowKey)}
-						<TableBodyRow
+						<tr
 							style="height: {ROW_HEIGHT}px"
-							class={action ? 'cursor-pointer' : ''}
+							class="border-b border-border bg-background hover:bg-accent {action ? 'cursor-pointer' : ''}"
 							onclick={() => handleRowClick(String(rowData[rowIdKey] ?? rowKey))}
 						>
 							{#each columns as col (col.key)}
-								<TableBodyCell>{String(rowData[col.key] ?? '')}</TableBodyCell>
+								<td class="px-6 py-4 text-muted-foreground">{String(rowData[col.key] ?? '')}</td>
 							{/each}
-						</TableBodyRow>
+						</tr>
 					{/each}
-				</TableBody>
-			</Table>
+				</tbody>
+			</table>
 		</div>
 	</div>
 </div>

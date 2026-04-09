@@ -2,8 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import { getData } from '$lib/store/data.svelte';
-	import { Alert } from 'flowbite-svelte';
-	import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 
 	let {
 		props = {},
@@ -31,14 +30,12 @@
 
 {#if errors.length > 0}
 	{#each errors as error}
-		<Alert color="red" class="mb-2">
-			{#snippet icon()}
-				<ExclamationCircleOutline class="w-5 h-5" />
-			{/snippet}
-			{error.message}
+		<div class="mb-2 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+			<AlertCircle class="size-5 shrink-0" />
+			<span class="text-sm">{error.message}</span>
 			{#if error.path}
-				<span class="text-xs text-red-400 ml-1">{error.path}</span>
+				<span class="text-xs opacity-60 ml-1">{error.path}</span>
 			{/if}
-		</Alert>
+		</div>
 	{/each}
 {/if}

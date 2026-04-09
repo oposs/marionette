@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Checkbox as FlowbiteCheckbox } from 'flowbite-svelte';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
@@ -28,10 +27,13 @@
 	}
 </script>
 
-<FlowbiteCheckbox
-	{checked}
-	disabled={props.disabled as boolean}
-	onchange={handleChange}
->
+<label class="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+	<input
+		type="checkbox"
+		checked={checked}
+		disabled={props.disabled as boolean}
+		onchange={handleChange}
+		class="size-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+	/>
 	{#if props.label}{props.label}{/if}
-</FlowbiteCheckbox>
+</label>

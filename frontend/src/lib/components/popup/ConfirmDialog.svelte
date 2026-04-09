@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Modal, Button } from 'flowbite-svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
@@ -37,20 +36,25 @@
 
 <div class="p-4">
 	{#if title}
-		<h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+		<h3 class="mb-4 text-lg font-semibold text-foreground">{title}</h3>
 	{/if}
 	{#if message}
-		<p class="mb-6 text-gray-500 dark:text-gray-400">{message}</p>
+		<p class="mb-6 text-muted-foreground">{message}</p>
 	{/if}
 	<div class="flex justify-end gap-3">
-		<Button color="alternative" onclick={handleCancel}>
+		<button
+			type="button"
+			class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+			onclick={handleCancel}
+		>
 			{cancelLabel}
-		</Button>
-		<Button
-			color={destructive ? 'red' : 'primary'}
+		</button>
+		<button
+			type="button"
+			class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 {destructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'}"
 			onclick={handleConfirm}
 		>
 			{confirmLabel}
-		</Button>
+		</button>
 	</div>
 </div>

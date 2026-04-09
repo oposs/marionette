@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Modal } from 'flowbite-svelte';
-	import type { ModalProps } from 'flowbite-svelte';
 	import { getSurfaceTree } from '$lib/store/surfaces.svelte';
 	import NodeRenderer from '$lib/components/core/NodeRenderer.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
@@ -12,26 +10,27 @@
 		tree ? ((tree.nodes[tree.root]?.props ?? {}) as Record<string, unknown>) : {}
 	);
 
-	// Map size prop to Flowbite Modal size: sm -> xs, md -> sm, lg -> md (Flowbite's sizes are one step larger)
-	const sizeMap: Record<string, ModalProps['size']> = {
-		sm: 'xs',
-		md: 'sm',
-		lg: 'md',
-	};
-	let modalSize = $derived(sizeMap[(rootProps.size as string) ?? 'md'] ?? 'sm');
-
 	function handleClose() {
 		sendAction('close-modal');
 	}
 </script>
 
-<Modal
-	open={isOpen}
-	size={modalSize}
-	dismissable
-	onclose={handleClose}
->
-	{#if tree}
-		<NodeRenderer nodeId={tree.root} nodes={tree.nodes} surface="modal" />
-	{/if}
-</Modal>
+{#if isOpen}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+		onclick={handleClose}
+		onkeydown={(e) => e.key === 'Escape' && handleClose()}
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="relative w-full max-w-md rounded-lg bg-background shadow-lg"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={() => {}}
+		>
+			{#if tree}
+				<NodeRenderer nodeId={tree.root} nodes={tree.nodes} surface="modal" />
+			{/if}
+		</div>
+	</div>
+{/if}

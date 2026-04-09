@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Button as FlowbiteButton } from 'flowbite-svelte';
-	import type { ButtonProps } from 'flowbite-svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import { getAllData } from '$lib/store/data.svelte';
 	import type { ComponentAction, PatchOperation } from '$lib/transport/messages';
@@ -39,14 +37,21 @@
 			);
 		}
 	}
+
+	let colorClass = $derived(
+		(props.color as string) === 'red'
+			? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+			: (props.outline as boolean)
+				? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+				: 'bg-primary text-primary-foreground hover:bg-primary/90'
+	);
 </script>
 
-<FlowbiteButton
-	color={(props.color as ButtonProps['color']) ?? 'blue'}
-	size={(props.size as ButtonProps['size']) ?? 'md'}
+<button
+	type="button"
+	class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 w-full md:w-auto disabled:opacity-50 disabled:pointer-events-none {colorClass}"
 	disabled={props.disabled as boolean}
-	outline={props.outline as boolean}
 	onclick={handleClick}
 >
 	{props.label ?? ''}
-</FlowbiteButton>
+</button>

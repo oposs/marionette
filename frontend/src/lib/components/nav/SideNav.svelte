@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import { Sidebar, SidebarWrapper } from 'flowbite-svelte';
 
 	let {
 		props = {},
@@ -18,8 +17,8 @@
 	} = $props();
 </script>
 
-<Sidebar ariaLabel={props.ariaLabel as string | undefined} alwaysOpen={true} position="static">
-	<SidebarWrapper>
+<nav aria-label={props.ariaLabel as string ?? 'Sidebar'} class="h-full">
+	<div class="h-full overflow-y-auto py-4 px-3">
 		{@render children?.()}
-	</SidebarWrapper>
-</Sidebar>
+	</div>
+</nav>

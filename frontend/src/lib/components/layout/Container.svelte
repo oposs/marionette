@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import { Card } from 'flowbite-svelte';
 
 	let {
 		props = {},
@@ -29,8 +28,18 @@
 	let paddingClass = $derived(
 		paddingMap[(props.padding as string) ?? 'md'] ?? 'p-4'
 	);
+
+	let isCard = $derived(Boolean(props.card));
 </script>
 
-<Card class="{paddingClass} {(props.class as string) ?? ''}">
-	{@render children?.()}
-</Card>
+{#if isCard}
+	<div class="flex items-start md:items-center justify-center min-h-0 md:min-h-[60vh]">
+		<div class="w-full max-w-md rounded-lg border border-border bg-card shadow-sm {paddingClass} {(props.class as string) ?? ''}">
+			{@render children?.()}
+		</div>
+	</div>
+{:else}
+	<div class="flex flex-col flex-1 min-h-0 {paddingClass} {(props.class as string) ?? ''}">
+		{@render children?.()}
+	</div>
+{/if}

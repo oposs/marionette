@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import { SidebarGroup } from 'flowbite-svelte';
 
 	let {
 		props = {},
@@ -18,6 +17,6 @@
 	} = $props();
 </script>
 
-<SidebarGroup>
+<div class="space-y-1">
 	{@render children?.()}
-</SidebarGroup>
+</div>

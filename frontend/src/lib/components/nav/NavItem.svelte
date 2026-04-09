@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import { SidebarItem } from 'flowbite-svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import { getData } from '$lib/store/data.svelte';
 
@@ -33,9 +32,9 @@
 	}
 </script>
 
-<SidebarItem
-	label={props.label as string ?? ''}
-	href={props.href as string | undefined}
-	active={isActive}
+<button
+	class="flex w-full items-center rounded-md px-3 py-2 text-sm {isActive ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}"
 	onclick={handleClick}
-/>
+>
+	{props.label ?? ''}
+</button>

@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Toast } from 'flowbite-svelte';
 	import { fly } from 'svelte/transition';
-	import type { ToastProps } from 'flowbite-svelte';
 
 	interface ToastItem {
 		id: string;
@@ -12,11 +10,11 @@
 
 	let toasts: ToastItem[] = $state([]);
 
-	const severityToColor: Record<string, ToastProps['color']> = {
-		success: 'green',
-		error: 'red',
-		warning: 'yellow',
-		info: 'blue',
+	const severityClass: Record<string, string> = {
+		success: 'border-green-500/30 bg-green-50 text-green-800',
+		error: 'border-destructive/30 bg-destructive/10 text-destructive',
+		warning: 'border-yellow-500/30 bg-yellow-50 text-yellow-800',
+		info: 'border-border bg-background text-foreground',
 	};
 
 	export function addToast(event: {
@@ -38,16 +36,17 @@
 	}
 </script>
 
-<div class="fixed top-4 right-4 z-[60] flex flex-col gap-2" style="max-width: 384px;">
+<div class="fixed top-4 left-4 right-4 md:left-auto z-[60] flex flex-col gap-2 md:max-w-sm">
 	{#each toasts as toast (toast.id)}
 		<div transition:fly={{ x: 100, duration: 200 }}>
-			<Toast
-				color={severityToColor[toast.severity] ?? 'blue'}
-				dismissable
-				onclick={() => removeToast(toast.id)}
-			>
-				{toast.message}
-			</Toast>
+			<div class="flex items-center justify-between rounded-md border p-4 shadow-md {severityClass[toast.severity] ?? severityClass.info}">
+				<span class="text-sm">{toast.message}</span>
+				<button
+					class="ml-4 text-current opacity-50 hover:opacity-100"
+					onclick={() => removeToast(toast.id)}
+					aria-label="Dismiss"
+				>&times;</button>
+			</div>
 		</div>
 	{/each}
 </div>

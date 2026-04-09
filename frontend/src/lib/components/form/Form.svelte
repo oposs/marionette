@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Helper } from 'flowbite-svelte';
 	import { getData } from '$lib/store/data.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
@@ -31,11 +30,11 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4">
+<form onsubmit={handleSubmit} class="space-y-4 shrink-0 overflow-y-auto">
 	{#if Array.isArray(formErrors) && formErrors.length > 0}
-		<div class="rounded-lg bg-red-50 p-4">
+		<div class="rounded-lg bg-destructive/10 p-4">
 			{#each formErrors as error}
-				<Helper class="text-red-600">{error}</Helper>
+				<p class="text-sm text-destructive">{error}</p>
 			{/each}
 		</div>
 	{/if}

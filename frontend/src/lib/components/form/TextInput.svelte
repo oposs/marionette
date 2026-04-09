@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Input, Label, Helper } from 'flowbite-svelte';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
@@ -52,9 +51,11 @@
 
 <div class="w-full">
 	{#if props.label}
-		<Label class="mb-2">{props.label}</Label>
+		<label class="mb-2 block text-sm font-medium text-foreground">
+			{props.label}
+		</label>
 	{/if}
-	<Input
+	<input
 		type={(props.type as string) ?? 'text'}
 		placeholder={props.placeholder as string}
 		required={props.required as boolean}
@@ -63,11 +64,11 @@
 		oninput={handleInput}
 		onfocus={handleFocus}
 		onblur={handleBlur}
-		color={fieldError ? 'red' : undefined}
+		class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {fieldError ? 'border-destructive' : ''}"
 	/>
 	{#if fieldError}
-		<Helper class="mt-1 text-red-600">{fieldError}</Helper>
+		<p class="mt-1 text-sm text-destructive">{fieldError}</p>
 	{:else if props.helperText}
-		<Helper class="mt-1">{props.helperText}</Helper>
+		<p class="mt-1 text-sm text-muted-foreground">{props.helperText}</p>
 	{/if}
 </div>
