@@ -17,7 +17,7 @@
 	} = $props();
 </script>
 
-<nav aria-label={props.ariaLabel as string ?? 'Sidebar'} class="h-full">
+<nav aria-label={props.ariaLabel as string ?? 'Sidebar'} class="flex flex-col h-full bg-sidebar-background">
 	<div class="h-full overflow-y-auto py-4 px-3">
 		{@render children?.()}
 	</div>

@@ -3,6 +3,8 @@
 	import type { ComponentAction } from '$lib/transport/messages';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import { getData } from '$lib/store/data.svelte';
+	import { Button as ShadcnButton } from '$lib/components/ui/button';
+	import { getIcon } from '$lib/registry/icons';
 
 	let {
 		props = {},
@@ -22,6 +24,10 @@
 		bind ? Boolean(getData(surface, bind)) : Boolean(props.active)
 	);
 
+	let IconComponent = $derived(
+		props.icon ? getIcon(props.icon as string) : undefined
+	);
+
 	function handleClick(e: Event) {
 		e.preventDefault();
 		if (action) {
@@ -32,9 +38,13 @@
 	}
 </script>
 
-<button
-	class="flex w-full items-center rounded-md px-3 py-2 text-sm {isActive ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}"
+<ShadcnButton
+	variant="ghost"
+	class="w-full justify-start gap-2 {isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-muted-foreground'}"
 	onclick={handleClick}
 >
+	{#if IconComponent}
+		<IconComponent class="size-4" />
+	{/if}
 	{props.label ?? ''}
-</button>
+</ShadcnButton>

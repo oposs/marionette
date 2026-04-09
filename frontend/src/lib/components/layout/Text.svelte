@@ -21,11 +21,19 @@
 		bind ? (getData(surface, bind) as string) ?? '' : (props.text as string) ?? ''
 	);
 	let isLabel = $derived((props.variant as string) === 'label');
+	let isMuted = $derived(Boolean(props.muted));
 	let isInline = $derived(Boolean(props.inline));
+
+	let colorClass = $derived(isMuted ? 'text-muted-foreground' : 'text-foreground');
+	let textClass = $derived(
+		isLabel
+			? `text-sm font-semibold leading-[1.4] ${colorClass}`
+			: `text-sm leading-[1.5] ${colorClass}`
+	);
 </script>
 
 {#if isInline}
-	<span class={isLabel ? 'text-sm font-semibold leading-[1.4]' : 'text-sm leading-[1.5]'}>{text}</span>
+	<span class={textClass}>{text}</span>
 {:else}
-	<p class={isLabel ? 'text-sm font-semibold leading-[1.4]' : 'text-sm leading-[1.5]'}>{text}</p>
+	<p class={textClass}>{text}</p>
 {/if}

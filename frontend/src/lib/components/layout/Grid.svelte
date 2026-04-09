@@ -32,10 +32,14 @@
 	let layoutClass = $derived(
 		useFlex
 			? `flex flex-wrap ${gapClass}`
-			: `grid grid-cols-${cols} ${gapClass} ${flow === 'col' ? 'grid-flow-col' : ''}`
+			: `grid ${gapClass} ${flow === 'col' ? 'grid-flow-col' : ''}`
+	);
+
+	let gridStyle = $derived(
+		useFlex ? undefined : `grid-template-columns: repeat(${cols}, 1fr)`
 	);
 </script>
 
-<div class={layoutClass}>
+<div class={layoutClass} style={gridStyle}>
 	{@render children?.()}
 </div>

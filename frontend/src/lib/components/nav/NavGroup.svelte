@@ -17,6 +17,9 @@
 	} = $props();
 </script>
 
-<div class="space-y-1">
+<div class="mt-2 space-y-1">
+	{#if props.label}
+		<p class="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground">{props.label}</p>
+	{/if}
 	{@render children?.()}
 </div>
