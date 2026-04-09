@@ -12,8 +12,8 @@
 
 	// Surface-specific layout classes
 	const layoutClasses: Record<string, string> = {
-		main: 'bg-white p-6 overflow-y-auto min-w-[320px] flex-1',
-		sidebar: 'bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto w-64 shrink-0',
+		main: 'bg-background p-6 overflow-y-auto min-w-[320px] flex-1',
+		sidebar: 'bg-sidebar-background border-r border-sidebar-border p-4 overflow-y-auto w-64 shrink-0',
 		modal: '',
 		toast: '',
 	};
