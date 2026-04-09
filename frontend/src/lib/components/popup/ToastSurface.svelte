@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import X from '@lucide/svelte/icons/x';
 
 	interface ToastItem {
 		id: string;
@@ -11,10 +12,10 @@
 	let toasts: ToastItem[] = $state([]);
 
 	const severityClass: Record<string, string> = {
-		success: 'border-green-500/30 bg-green-50 text-green-800',
+		success: 'border-primary/30 bg-primary/10 text-foreground',
 		error: 'border-destructive/30 bg-destructive/10 text-destructive',
-		warning: 'border-yellow-500/30 bg-yellow-50 text-yellow-800',
-		info: 'border-border bg-background text-foreground',
+		warning: 'border-yellow-500/30 bg-yellow-950/10 text-foreground dark:bg-yellow-950 dark:text-foreground',
+		info: 'border-border bg-card text-foreground',
 	};
 
 	export function addToast(event: {
@@ -36,16 +37,16 @@
 	}
 </script>
 
-<div class="fixed top-4 left-4 right-4 md:left-auto z-[60] flex flex-col gap-2 md:max-w-sm">
+<div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm">
 	{#each toasts as toast (toast.id)}
 		<div transition:fly={{ x: 100, duration: 200 }}>
-			<div class="flex items-center justify-between rounded-md border p-4 shadow-md {severityClass[toast.severity] ?? severityClass.info}">
+			<div class="flex items-center justify-between rounded-md border p-4 shadow-lg {severityClass[toast.severity] ?? severityClass.info}">
 				<span class="text-sm">{toast.message}</span>
 				<button
 					class="ml-4 text-current opacity-50 hover:opacity-100"
 					onclick={() => removeToast(toast.id)}
 					aria-label="Dismiss"
-				>&times;</button>
+				><X class="size-4" /></button>
 			</div>
 		</div>
 	{/each}
