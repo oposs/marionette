@@ -5,6 +5,7 @@
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
+	import * as Table from '$lib/components/ui/table';
 
 	const ROW_HEIGHT = 48;
 	const BUFFER = 3;
@@ -107,12 +108,12 @@
 >
 	<div style="height: {totalHeight}px; position: relative;">
 		<div style="transform: translateY({offsetY}px);">
-			<table class="w-full text-left text-sm">
-				<thead class="bg-muted text-xs uppercase text-foreground">
-					<tr>
+			<Table.Root>
+				<Table.Header>
+					<Table.Row class="bg-muted text-muted-foreground text-xs uppercase font-semibold">
 						{#each columns as col (col.key)}
-							<th
-								class="px-6 py-3 {col.sortable ? 'cursor-pointer hover:bg-accent' : ''}"
+							<Table.Head
+								class={col.sortable ? 'cursor-pointer hover:bg-accent' : ''}
 								onclick={() => handleSort(col)}
 							>
 								{col.label}
@@ -123,24 +124,24 @@
 										<ChevronDown class="size-4 inline" />
 									{/if}
 								{/if}
-							</th>
+							</Table.Head>
 						{/each}
-					</tr>
-				</thead>
-				<tbody>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
 					{#each visibleRows as [rowKey, rowData] (rowKey)}
-						<tr
+						<Table.Row
 							style="height: {ROW_HEIGHT}px"
-							class="border-b border-border bg-background hover:bg-accent {action ? 'cursor-pointer' : ''}"
+							class="border-b border-border bg-background hover:bg-muted/50 {action ? 'cursor-pointer' : ''}"
 							onclick={() => handleRowClick(String(rowData[rowIdKey] ?? rowKey))}
 						>
 							{#each columns as col (col.key)}
-								<td class="px-6 py-4 text-muted-foreground">{String(rowData[col.key] ?? '')}</td>
+								<Table.Cell class="px-6 py-4 text-sm text-foreground">{String(rowData[col.key] ?? '')}</Table.Cell>
 							{/each}
-						</tr>
+						</Table.Row>
 					{/each}
-				</tbody>
-			</table>
+				</Table.Body>
+			</Table.Root>
 		</div>
 	</div>
 </div>

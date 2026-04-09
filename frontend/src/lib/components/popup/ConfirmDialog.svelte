@@ -2,6 +2,8 @@
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button as ShadcnButton } from '$lib/components/ui/button';
 
 	let {
 		props = {},
@@ -34,27 +36,21 @@
 	}
 </script>
 
-<div class="p-4">
-	{#if title}
-		<h3 class="mb-4 text-lg font-semibold text-foreground">{title}</h3>
-	{/if}
-	{#if message}
-		<p class="mb-6 text-muted-foreground">{message}</p>
-	{/if}
-	<div class="flex justify-end gap-3">
-		<button
-			type="button"
-			class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-			onclick={handleCancel}
-		>
+<div>
+	<Dialog.Header>
+		{#if title}
+			<Dialog.Title>{title}</Dialog.Title>
+		{/if}
+		{#if message}
+			<Dialog.Description>{message}</Dialog.Description>
+		{/if}
+	</Dialog.Header>
+	<Dialog.Footer>
+		<ShadcnButton variant="outline" onclick={handleCancel}>
 			{cancelLabel}
-		</button>
-		<button
-			type="button"
-			class="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 {destructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'}"
-			onclick={handleConfirm}
-		>
+		</ShadcnButton>
+		<ShadcnButton variant={destructive ? 'destructive' : 'default'} onclick={handleConfirm}>
 			{confirmLabel}
-		</button>
-	</div>
+		</ShadcnButton>
+	</Dialog.Footer>
 </div>

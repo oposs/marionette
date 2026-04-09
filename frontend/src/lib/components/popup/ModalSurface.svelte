@@ -2,6 +2,7 @@
 	import { getSurfaceTree } from '$lib/store/surfaces.svelte';
 	import NodeRenderer from '$lib/components/core/NodeRenderer.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	let tree = $derived(getSurfaceTree('modal'));
 	let isOpen = $derived(tree !== undefined);
@@ -15,22 +16,10 @@
 	}
 </script>
 
-{#if isOpen}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-		onclick={handleClose}
-		onkeydown={(e) => e.key === 'Escape' && handleClose()}
-	>
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="relative w-full max-w-md rounded-lg bg-background shadow-lg"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={() => {}}
-		>
-			{#if tree}
-				<NodeRenderer nodeId={tree.root} nodes={tree.nodes} surface="modal" />
-			{/if}
-		</div>
-	</div>
-{/if}
+<Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+	<Dialog.Content class="sm:max-w-lg">
+		{#if tree}
+			<NodeRenderer nodeId={tree.root} nodes={tree.nodes} surface="modal" />
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>
