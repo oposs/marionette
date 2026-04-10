@@ -50,7 +50,7 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
 async fn handle_demo_click(_ctx: HandlerContext) -> ActionResult {
     Ok(vec![ProtocolMessage::Patch(PatchMessage {
         id: None,
-        patch: vec![PatchOperation {
+        patch: vec![PatchOperation::Set {
             path: "/message".into(),
             value: serde_json::json!("Button was clicked!"),
         }],

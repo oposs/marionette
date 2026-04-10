@@ -179,7 +179,7 @@ mod tests {
     fn patch_round_trip() {
         let msg = ProtocolMessage::Patch(PatchMessage {
             id: None,
-            patch: vec![PatchOperation {
+            patch: vec![PatchOperation::Set {
                 path: "/user/name".into(),
                 value: json!("Bob"),
             }],
@@ -202,7 +202,7 @@ mod tests {
             source: Some("btn-1".into()),
             payload: Some(json!({"confirmed": true})),
             optimistic: Some(OptimisticUpdate {
-                patch: vec![PatchOperation {
+                patch: vec![PatchOperation::Set {
                     path: "/saving".into(),
                     value: json!(true),
                 }],

@@ -129,7 +129,7 @@ mod tests {
         box_handler(|_ctx| async move {
             Ok(vec![ProtocolMessage::Patch(PatchMessage {
                 id: None,
-                patch: vec![PatchOperation {
+                patch: vec![PatchOperation::Set {
                     path: "/test".into(),
                     value: serde_json::json!("ok"),
                 }],
