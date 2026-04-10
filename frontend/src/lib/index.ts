@@ -14,6 +14,7 @@ export { getData, setData, applyPatch, setFullState, resetStore } from './store/
 export { markDirty, clearDirty, isDirty } from './store/dirty.svelte';
 export { applyOptimistic, confirmOptimistic, rollbackOptimistic } from './store/optimistic.svelte';
 export { setSurfaceTree, getSurfaceTree, clearSurfaceTree } from './store/surfaces.svelte';
+export { addToast, removeToast, getToasts } from './store/toasts.svelte';
 
 // Transport
 export { sendAction } from './transport/dispatcher';

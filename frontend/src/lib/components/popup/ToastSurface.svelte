@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import X from '@lucide/svelte/icons/x';
+	import { getToasts, removeToast } from '$lib/store/toasts.svelte';
 
-	interface ToastItem {
-		id: string;
-		severity: string;
-		message: string;
-		duration: number;
-	}
-
-	let toasts: ToastItem[] = $state([]);
+	// Toast state lives in the module-level store so that the dispatcher (and
+	// any other non-component code) can call `addToast` via a plain import.
+	// An instance-level `export function` inside a .svelte <script> is not
+	// reachable as a module-scope symbol in Svelte 5.
+	let toasts = $derived(getToasts());
 
 	const severityClass: Record<string, string> = {
 		success: 'border-primary/30 bg-primary/10 text-foreground',
@@ -17,24 +15,6 @@
 		warning: 'border-yellow-500/30 bg-yellow-950/10 text-foreground dark:bg-yellow-950 dark:text-foreground',
 		info: 'border-border bg-card text-foreground',
 	};
-
-	export function addToast(event: {
-		name: string;
-		hint?: Record<string, unknown>;
-	}): void {
-		const id = crypto.randomUUID();
-		const severity = (event.hint?.severity as string) ?? 'info';
-		const message = (event.hint?.message as string) ?? event.name;
-		const duration = (event.hint?.duration as number) ?? 5000;
-
-		toasts.push({ id, severity, message, duration });
-
-		setTimeout(() => removeToast(id), duration);
-	}
-
-	function removeToast(id: string): void {
-		toasts = toasts.filter((t) => t.id !== id);
-	}
 </script>
 
 <div class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 max-w-sm">

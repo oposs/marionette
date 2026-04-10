@@ -1,6 +1,7 @@
 import { render } from 'vitest-browser-svelte';
 import { expect, test, vi, beforeEach, afterEach } from 'vitest';
 import ToastSurface from './ToastSurface.svelte';
+import { addToast } from '$lib/store/toasts.svelte';
 
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -20,9 +21,8 @@ test('renders empty when no toasts', async () => {
 
 test('renders toast after addToast', async () => {
 	const result = await render(ToastSurface);
-	const component = result.component as unknown as { addToast: (event: { name: string; hint?: Record<string, unknown> }) => void };
 
-	component.addToast({
+	addToast({
 		name: 'test-toast',
 		hint: { message: 'Hello World', severity: 'success', duration: 5000 },
 	});
@@ -38,9 +38,8 @@ test('removes toast on dismiss click', async () => {
 	vi.useRealTimers();
 
 	const result = await render(ToastSurface);
-	const component = result.component as unknown as { addToast: (event: { name: string; hint?: Record<string, unknown> }) => void };
 
-	component.addToast({
+	addToast({
 		name: 'test-toast',
 		hint: { message: 'Dismiss me', severity: 'info', duration: 60000 },
 	});
