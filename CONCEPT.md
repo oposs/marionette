@@ -101,8 +101,10 @@ Binding: `bind: "/users"` with `keyPath: "id"`. Patches target by key:
 
 ```yaml
 type: "patch"
-data:
-  - path: "/users/u-123/name"
+surface: "main"
+patch:
+  - op: "set"
+    path: "/users/u-123/name"
     value: "Alicia"
 ```
 
@@ -136,10 +138,19 @@ data: { ... }
 
 ```yaml
 type: "patch"
-data:
-  - path: "/user/name"
+surface: "main"
+patch:
+  - op: "set"
+    path: "/user/name"
     value: "Bob"
+  - op: "set-node"
+    id: "contact-canton"
+    component:
+      type: "select"
+      bind: "/contact/canton"
 ```
+
+**patch** — incrementally update a surface's data and/or component tree. A patch message targets one surface and carries a batch of ops: `set` (data), `set-node` / `delete-node` / `set-children` / `insert-child` / `remove-child` (tree). Ops apply in declared order, all-or-nothing. Mix freely. The tree-mutation ops are how the "easy to patch — update one node by ID" claim above is implemented. See `spec/PROTOCOL.md §patch` for the full op reference and examples.
 
 ```yaml
 type: "event"

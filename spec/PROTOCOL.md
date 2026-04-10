@@ -1,6 +1,6 @@
 # OpenSDUI Protocol Specification
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 
 OpenSDUI is a server-driven UI protocol built on three primitives: **components**, **data**, and **messages**. A server describes what to render, a client knows how to render it. All communication flows over a single WebSocket connection using JSON text frames.
 
@@ -36,7 +36,7 @@ The initial HTTP GET request serves the application shell (static files). Once l
 Client                              Server
   |                                    |
   |  ---- WebSocket CONNECT /ws ---->  |
-  |  <--- hello { version: "1.0.0" }  |
+  |  <--- hello { version: "1.1.0" }  |
   |  ---- action { name: "navigate",  |
   |         payload: { url: "/" } } -> |
   |  <--- render { surface: "main",   |
@@ -87,7 +87,7 @@ The `hello` message communicates the protocol version to the client. No response
 
 ```yaml
 type: hello
-version: "1.0.0"
+version: "1.1.0"
 ```
 
 ### render
@@ -159,35 +159,69 @@ data:
 ### patch
 
 - **Direction:** Server to client
-- **Purpose:** Incrementally update data without re-rendering the component tree
-- **When to use:** When data changes but the component structure remains the same (field updates, collection modifications, loading state changes)
+- **Purpose:** Incrementally update a surface's data and/or component tree without a full re-render
+- **When to use:** When part of a surface changes -- a data field, an added form row, a swapped-in sub-component -- and you want to preserve focus, cursor position, and unrelated component state
 
-A `patch` message contains an array of `PatchOperation` objects. Each operation sets a new value at a JSON Pointer path within the surface's data. Patch messages do NOT modify the component tree -- only data.
+A `patch` message targets exactly one surface (via the required `surface` field) and carries a batch of `PatchOperation` entries applied in declared order, all-or-nothing. Data ops and node-tree ops can be mixed freely in one batch.
 
 **Fields:**
 
-| Field   | Type            | Required | Description                                    |
-|---------|-----------------|----------|------------------------------------------------|
-| `type`  | string          | yes      | Always `"patch"`                               |
-| `id`    | string          | no       | Correlation ID                                 |
-| `patch` | PatchOperation[] | yes     | Array of path/value operations to apply         |
+| Field     | Type              | Required | Description                                       |
+|-----------|-------------------|----------|---------------------------------------------------|
+| `type`    | string            | yes      | Always `"patch"`                                  |
+| `id`      | string            | no       | Correlation ID                                    |
+| `surface` | string            | yes      | Target surface name (e.g., `"main"`, `"content"`) |
+| `patch`   | PatchOperation[]  | yes      | Operations applied in declared order              |
 
-Each `PatchOperation` has:
+Each `PatchOperation` is a tagged object discriminated by `op`:
 
-| Field   | Type   | Required | Description                          |
-|---------|--------|----------|--------------------------------------|
-| `path`  | string | yes      | JSON Pointer to the data location    |
-| `value` | any    | yes      | New value to set at the path         |
+#### Data operations
 
-**Example -- update a contact's phone number:**
+| `op`  | Payload fields     | Effect                                               |
+|-------|--------------------|------------------------------------------------------|
+| `set` | `path`, `value`    | Set `value` at JSON Pointer `path` in surface data   |
+
+#### Node tree operations
+
+| `op`            | Payload fields                | Effect                                                                            |
+|-----------------|-------------------------------|-----------------------------------------------------------------------------------|
+| `set-node`      | `id`, `component`             | Replace (or create) the component at node `id` in the surface's adjacency list    |
+| `delete-node`   | `id`                          | Remove the node with `id` from the adjacency list                                 |
+| `set-children`  | `id`, `children: string[]`    | Replace `id`'s children array with the given ordered list of child IDs            |
+| `insert-child`  | `parent`, `index`, `childId`  | Insert `childId` into `parent`'s children array at zero-based `index`             |
+| `remove-child`  | `parent`, `childId`           | Remove `childId` from `parent`'s children array                                   |
+
+**Root immutability:** A `root` pointer is immutable for the lifetime of a `Render`. Node patches can replace the component AT the root ID (via `set-node`) or mutate its children, but cannot re-point `root` to a different ID. Top-level transitions (login → shell, error → recovery) use a full `render` message instead.
+
+**Unknown ops:** A `PatchMessage` containing an `op` not in this table is an error. Clients surface this as a stale-client prompt and should reload. Protocol version negotiation via `HelloMessage.version` is the mechanism for forward compatibility -- see §Protocol Versioning and §Stale Client Handling.
+
+**Focus preservation:** Frontends applying node patches must mutate node map entries in place rather than replacing parent tree objects wholesale. This guarantees that a focused input field retains its focus and cursor position across arbitrary patches to sibling nodes in the same surface.
+
+**Example -- data + tree ops mixed, swap a form field on country select:**
 
 ```yaml
 type: patch
+surface: content
 patch:
-  - path: "/contacts/c-007/phone"
-    value: "+41 44 632 1111"
-  - path: "/contacts/c-007/updatedAt"
-    value: "2026-03-18T10:30:00Z"
+  - op: set
+    path: "/contact/country"
+    value: "CH"
+  - op: insert-child
+    parent: contact-form
+    index: 4
+    childId: contact-canton
+  - op: set-node
+    id: contact-canton
+    component:
+      type: select
+      bind: "/contact/canton"
+      props:
+        label: "Canton"
+        options:
+          - { value: "ZH", label: "Zürich" }
+          - { value: "BE", label: "Bern" }
+  - op: delete-node
+    id: contact-us-state
 ```
 
 ### action
@@ -722,7 +756,7 @@ The protocol version is communicated via the `HelloMessage` sent by the server o
 
 ```yaml
 type: hello
-version: "1.0.0"
+version: "1.1.0"
 ```
 
 ### Deployment Model
