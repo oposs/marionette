@@ -63,3 +63,35 @@ These predate Phase 12 (present before the shadcn Sidebar install). Likely missi
 - All 58 unit tests under `vitest --run` passing
 
 **Recommended resolution:** Folded into Phase 13 (form screens) or a targeted popup-fix plan — selector updates only, no behavior changes.
+
+## From 12-08-demo-and-e2e
+
+### TextInput `input_type` -> `type` prop mismatch
+
+**Discovered during:** Task 2 writing the node-patch-focus E2E test (the login form's password field had to be selected by grid wrapper rather than `input[type="password"]`).
+
+**Scope:** `frontend/src/lib/components/form/TextInput.svelte` reads `props.type` for the HTML input `type` attribute, while the backend builder (`backend/crates/marionette/src/builders/standard.rs::TextInput`) has a `input_type: Option<String>` field that the `#[derive(ComponentBuilder)]` macro serializes under the key `"input_type"`. The two don't match, so **the login password field has never actually rendered as `type="password"` since the AppShell migration** — it has always been `type="text"` (or the browser default) exposing the password as plaintext in the DOM.
+
+**Severity:** Low for the pre-deployment posture (no real users, no real credentials, admin password is a demo literal). Higher if the CRM ever ships — a plaintext-rendering password field is a UX bug at minimum and a soft information-disclosure surface in certain environments.
+
+**Pre-existing:** Yes. The divergence predates Plan 12-08. The commit introducing the `input_type` builder field probably expected the frontend to read `props.input_type` (or the macro to convert snake_case to camelCase). Neither happened.
+
+**Fix options:**
+1. Change `TextInput.svelte` to read `props.input_type ?? props.type ?? 'text'` (quick, preserves backward compat).
+2. Change the macro to emit camelCase keys (`inputType`), then update `TextInput.svelte` to read `props.inputType`. Bigger scope — affects every builder with snake_case optional fields.
+3. Rename the backend builder field to `type` (requires `r#type` or a rename attribute since `type` is a reserved word).
+
+**Recommended resolution:** Option 1 as a one-line fix in Phase 13 or as a targeted `fix()` commit. Until then, Plan 12-08's E2E test locates the password input via its grid wrapper.
+
+### Stale `integration.spec.ts` / `protocol-conformance.spec.ts` assertions
+
+**Discovered during:** Task 2 / Task 3 baseline check.
+
+**Scope:**
+- `frontend/tests/e2e/integration.spec.ts` asserts `getByText('Welcome to Marionette')` and `getByText('Click Me')` — these strings come from the pre-CRM demo app and no longer appear after the Plan 12-07 CRM integration landed. Those tests fail against the current crm-demo backend.
+- `frontend/tests/e2e/protocol-conformance.spec.ts` (original contents) asserts the same strings in its `patch message` case.
+
+**Pre-existing:** Yes. These tests were written against an older demo backend and never updated when the CRM replaced it. Plan 12-08's new tests don't rely on them.
+
+**Recommended resolution:** Plan 12-08's Task 3 extends `protocol-conformance.spec.ts` to cover the new node-op shapes. The old "Welcome to Marionette" assertion cases should be removed or rewritten against the CRM landing screen in a follow-up cleanup commit.
+

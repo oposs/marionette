@@ -1,29 +1,69 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { captureWebSocketFrames } from '../helpers/ws-capture';
 import { createValidator } from '../helpers/schema-validator';
 
-test('hello message conforms to schema', async ({ page }) => {
+// -----------------------------------------------------------------------------
+// Phase 12 Plan 08 Task 3 — protocol conformance E2E.
+//
+// Validates that live WebSocket frames from the crm-demo backend match the
+// updated OpenSDUI schemas (node-patching additions + PatchMessage.surface
+// + HelloMessage version bump to 1.1.0). The new node-op coverage is driven
+// by the country-change flow added in Plan 08 Task 1, which emits a
+// PatchMessage containing Set + RemoveChild + DeleteNode + SetNode +
+// InsertChild ops on the `content` surface.
+// -----------------------------------------------------------------------------
+
+async function login(page: Page): Promise<void> {
+	const emailInput = page
+		.locator('div.grid:has(label:has-text("Email"))')
+		.getByRole('textbox');
+	const passwordInput = page
+		.locator('div.grid:has(label:has-text("Password"))')
+		.getByRole('textbox');
+	await emailInput.fill('admin@localhost');
+	await passwordInput.fill('admin');
+	await page.getByRole('button', { name: /log in/i }).click();
+	await expect(page.getByText('Contact Management')).toBeVisible({ timeout: 10000 });
+}
+
+test('hello message conforms to schema and reports version 1.1.0', async ({ page }) => {
 	const frames = captureWebSocketFrames(page);
 	await page.goto('/');
 
-	await expect.poll(() => frames.filter((f) => f.data.type === 'hello').length, {
-		timeout: 10000,
-	}).toBeGreaterThan(0);
+	await expect
+		.poll(
+			() =>
+				frames.filter(
+					(f) => f.direction === 'received' && f.data.type === 'hello',
+				).length,
+			{ timeout: 10000 },
+		)
+		.toBeGreaterThan(0);
 
-	const helloFrame = frames.find((f) => f.data.type === 'hello')!;
+	// The server hello — the client also sends its own hello frame in the
+	// opposite direction, so filter on direction to avoid picking up the
+	// client's copy by mistake.
+	const helloFrame = frames.find(
+		(f) => f.direction === 'received' && f.data.type === 'hello',
+	)!;
 	const validator = createValidator();
 	const valid = validator.validateHello(helloFrame.data);
 	expect(valid, `Schema errors: ${validator.getErrors()}`).toBe(true);
+	// Phase 12 protocol version bump gate (Plan 02 + Plan 03 + D-A5).
+	expect(helloFrame.data.version).toBe('1.1.0');
 });
 
 test('render message conforms to schema', async ({ page }) => {
 	const frames = captureWebSocketFrames(page);
 	await page.goto('/');
 
-	await expect.poll(
-		() => frames.filter((f) => f.direction === 'received' && f.data.type === 'render').length,
-		{ timeout: 10000 },
-	).toBeGreaterThan(0);
+	await expect
+		.poll(
+			() =>
+				frames.filter((f) => f.direction === 'received' && f.data.type === 'render').length,
+			{ timeout: 10000 },
+		)
+		.toBeGreaterThan(0);
 
 	const renderFrame = frames.find(
 		(f) => f.direction === 'received' && f.data.type === 'render',
@@ -37,10 +77,13 @@ test('action message conforms to schema', async ({ page }) => {
 	const frames = captureWebSocketFrames(page);
 	await page.goto('/');
 
-	await expect.poll(
-		() => frames.filter((f) => f.direction === 'sent' && f.data.type === 'action').length,
-		{ timeout: 10000 },
-	).toBeGreaterThan(0);
+	await expect
+		.poll(
+			() =>
+				frames.filter((f) => f.direction === 'sent' && f.data.type === 'action').length,
+			{ timeout: 10000 },
+		)
+		.toBeGreaterThan(0);
 
 	const actionFrame = frames.find(
 		(f) => f.direction === 'sent' && f.data.type === 'action',
@@ -50,23 +93,92 @@ test('action message conforms to schema', async ({ page }) => {
 	expect(valid, `Schema errors: ${validator.getErrors()}`).toBe(true);
 });
 
-test('patch message conforms to schema', async ({ page }) => {
+test('patch message with node tree ops conforms to schema', async ({ page }) => {
+	// Drive the Plan 08 country-change flow which emits a PatchMessage
+	// on the `content` surface with a mix of Set + RemoveChild +
+	// DeleteNode + SetNode + InsertChild ops. Also captures a second
+	// PatchMessage on the `toasts` sub-surface (D-B15).
 	const frames = captureWebSocketFrames(page);
 	await page.goto('/');
+	await login(page);
 
-	// Wait for heading then click the button
-	await expect(page.getByText('Welcome to Marionette')).toBeVisible({ timeout: 10000 });
-	await page.getByText('Click Me').click();
+	await page.getByRole('button', { name: 'New Contact' }).click();
+	await expect(page.getByRole('heading', { name: 'New Contact' })).toBeVisible({
+		timeout: 5000,
+	});
 
-	await expect.poll(
-		() => frames.filter((f) => f.direction === 'received' && f.data.type === 'patch').length,
-		{ timeout: 10000 },
-	).toBeGreaterThan(0);
+	// Trigger the country-change flow via the E2E test hook — avoids
+	// timing hazards with shadcn Select focus.
+	await page.evaluate(() => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hook = (window as any).__mrnSendAction as
+			| ((name: string, payload?: Record<string, unknown>, source?: string) => void)
+			| undefined;
+		if (!hook) throw new Error('__mrnSendAction test hook not exposed');
+		hook(
+			'contact_country_change',
+			{ contactForm: { country: 'CH' } },
+			'contact-form-country',
+		);
+	});
 
-	const patchFrame = frames.find(
-		(f) => f.direction === 'received' && f.data.type === 'patch',
-	)!;
+	// Wait for at least one patch frame from the country-change response.
+	await expect
+		.poll(
+			() =>
+				frames.filter(
+					(f) =>
+						f.direction === 'received' &&
+						f.data.type === 'patch' &&
+						Array.isArray((f.data as { patch?: unknown[] }).patch) &&
+						((f.data as { patch: unknown[] }).patch as Array<{ op: string }>).some(
+							(op) => op.op !== 'set',
+						),
+				).length,
+			{ timeout: 10000 },
+		)
+		.toBeGreaterThan(0);
+
+	// Find the content-surface patch (the demo's primary payload).
+	const contentPatch = frames.find(
+		(f) =>
+			f.direction === 'received' &&
+			f.data.type === 'patch' &&
+			(f.data as { surface?: string }).surface === 'content' &&
+			((f.data as { patch: Array<{ op: string }> }).patch as Array<{ op: string }>).some(
+				(op) => ['set-node', 'insert-child', 'delete-node', 'remove-child'].includes(op.op),
+			),
+	);
+	expect(contentPatch, 'expected a content-surface PatchMessage with node ops').toBeDefined();
+	expect((contentPatch!.data as { surface: string }).surface).toBe('content');
+
+	// Validate against the updated spec/schemas/message.yaml PatchMessage.
 	const validator = createValidator();
-	const valid = validator.validatePatch(patchFrame.data);
+	const valid = validator.validatePatch(contentPatch!.data);
 	expect(valid, `Schema errors: ${validator.getErrors()}`).toBe(true);
+
+	// Sanity-check the op distribution: the demo patch must contain
+	// all five new PatchOperation variants at least once across the
+	// two PatchMessages it emits (content + toasts).
+	const allPatchFrames = frames.filter(
+		(f) => f.direction === 'received' && f.data.type === 'patch',
+	);
+	const allOps = new Set<string>();
+	for (const frame of allPatchFrames) {
+		const patch = (frame.data as { patch?: Array<{ op: string }> }).patch ?? [];
+		for (const op of patch) allOps.add(op.op);
+	}
+	expect(allOps.has('set')).toBe(true);
+	expect(allOps.has('set-node')).toBe(true);
+	expect(allOps.has('insert-child')).toBe(true);
+	expect(allOps.has('delete-node')).toBe(true);
+	expect(allOps.has('remove-child')).toBe(true);
+
+	// Validate each toasts-surface PatchMessage as well (D-B15 gate).
+	const toastsPatch = allPatchFrames.find(
+		(f) => (f.data as { surface?: string }).surface === 'toasts',
+	);
+	expect(toastsPatch, 'expected a toasts-surface PatchMessage').toBeDefined();
+	const validToasts = validator.validatePatch(toastsPatch!.data);
+	expect(validToasts, `toasts schema errors: ${validator.getErrors()}`).toBe(true);
 });

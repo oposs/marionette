@@ -96,14 +96,14 @@ describe('WebSocket transport', () => {
     expect(ws.isConnected()).toBe(true);
   });
 
-  it('sends hello message { type: "hello", version: "1.0.0" } on open', () => {
+  it('sends hello message { type: "hello", version: "1.1.0" } on open', () => {
     const onMsg = vi.fn();
     ws.connect('ws://test/ws', onMsg);
     MockWebSocket.latest().simulateOpen();
 
     const sent = MockWebSocket.latest().sent;
     expect(sent).toHaveLength(1);
-    expect(JSON.parse(sent[0])).toEqual({ type: 'hello', version: '1.0.0' });
+    expect(JSON.parse(sent[0])).toEqual({ type: 'hello', version: '1.1.0' });
   });
 
   it('onmessage parses JSON and calls provided onMessage callback', () => {

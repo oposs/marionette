@@ -48,8 +48,8 @@ function doConnect(url: string): void {
     connected = true;
     reconnectDelay = 1000;
     publishConnectionStatus('connected');
-    // Send hello
-    send({ type: 'hello', version: '1.0.0' });
+    // Send hello — Phase 12 protocol version bump (D-A5).
+    send({ type: 'hello', version: '1.1.0' });
   };
 
   socket.onmessage = (event: MessageEvent) => {
