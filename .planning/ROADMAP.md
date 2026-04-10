@@ -30,7 +30,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
 - [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
-- [ ] **Phase 12: AppShell** - Responsive sidebar shell with header/footer, CSS variable theming, and backend builder
+- [ ] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top
 - [ ] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility
 - [ ] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections
 - [ ] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue
@@ -71,16 +71,19 @@ Plans:
 - [x] 11-05-PLAN.md — Migrate screen components (FormScreen, TableScreen) + tests + visual verification
 **UI hint**: yes
 
-### Phase 12: AppShell
-**Goal**: Applications get a professional responsive shell with collapsible sidebar, header, and footer out of the box
+### Phase 12: Protocol Node Patching + AppShell
+**Goal**: The OpenSDUI protocol supports incremental component-tree mutation (closing the gap between CONCEPT.md's "patch by node ID" promise and the implemented data-only PatchMessage), and applications get a professional responsive shell built as a normal SDUI component on top of that capability
 **Depends on**: Phase 11
-**Requirements**: SHELL-01, SHELL-02, SHELL-03, SHELL-04
+**Requirements**: PATCH-01, PATCH-02, PATCH-03, SHELL-01, SHELL-02, SHELL-03, SHELL-04
 **Success Criteria** (what must be TRUE):
-  1. AppShell renders a collapsible sidebar on desktop and a sheet overlay on mobile using shadcn Sidebar composable
-  2. Header area displays app title and user menu; footer area displays status and version info
-  3. Shell styling uses CSS variable theming via `--sidebar-*` tokens for consistent appearance
-  4. Backend AppShell builder exists following the FormScreen/TableScreen pattern with slot-based child references
-  5. The CRM app renders inside the AppShell with working navigation between screens
+  1. `PatchMessage` carries both data operations and component-tree operations (set-node, delete-node, set-children) in a single atomic batch, with one applied-in-declared-order semantics documented in `spec/PROTOCOL.md` and schema-defined in `spec/schemas/data.yaml` + `spec/schemas/message.yaml`
+  2. Frontend surface store applies node patches reactively without remounting unrelated nodes: a focused text-input retains focus and cursor position across arbitrary node patches to sibling nodes (focus-preservation test proves this)
+  3. Protocol version reported by `HelloMessage` bumps to `"1.1.0"` and `CONCEPT.md` is updated so its "easy to patch — update one node by ID" claim matches the actual protocol
+  4. AppShell renders a collapsible sidebar on desktop and a sheet overlay on mobile using shadcn Sidebar composable
+  5. Header area displays app title and user menu; footer area displays status and version info
+  6. Shell styling uses CSS variable theming via `--sidebar-*` tokens for consistent appearance
+  7. AppShell is a normal first-class SDUI component: registered in `frontend/src/lib/registry/defaults.ts`, hand-written backend builder in `backend/crates/marionette/src/builders/` following the same recipe any other high-level structural component would use, with slot children addressed by name in props referencing top-level adjacency-list nodes (no special protocol superpowers)
+  8. The CRM app renders inside the AppShell with working navigation between screens, and at least one interactive flow demonstrates node-level mutation end-to-end (e.g., a select change that swaps a field in place without clobbering sibling focus)
 **Plans**: TBD
 **UI hint**: yes
 
@@ -136,7 +139,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. AppShell | v1.1 | 0/0 | Not started | - |
+| 12. Protocol Node Patching + AppShell | v1.1 | 0/0 | Not started | - |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |

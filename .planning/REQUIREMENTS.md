@@ -13,12 +13,18 @@ Requirements for shadcn-svelte migration and high-level components. Each maps to
 - [ ] **FOUND-02**: app.css rewritten with OKLCH semantic color tokens and shadcn theme system (no Flowbite plugin)
 - [ ] **FOUND-03**: All Flowbite packages (flowbite-svelte, flowbite-svelte-icons, flowbite plugin) removed with zero residual imports
 
+### Protocol Extension
+
+- [ ] **PATCH-01**: `PatchMessage` carries both data operations and component-tree operations (at minimum `set-node`, `delete-node`, `set-children`) in a single atomic batch. All ops in one message are applied in declared order, all-or-nothing. Frontend and backend Rust types reflect the expanded shape; `spec/schemas/data.yaml`, `spec/schemas/message.yaml`, and `spec/openapi.yaml` define it canonically.
+- [ ] **PATCH-02**: Frontend surface store applies node patches reactively without remounting unrelated nodes. A text-input that has focus and a cursor position retains both across arbitrary node patches targeting sibling nodes. Proven by an automated focus-preservation test.
+- [ ] **PATCH-03**: `spec/PROTOCOL.md` documents the node-patch semantics and `CONCEPT.md`'s "easy to patch — update one node by ID" claim is reconciled with the actual protocol. `HelloMessage.version` bumps to `"1.1.0"`.
+
 ### AppShell
 
 - [ ] **SHELL-01**: AppShell component renders a collapsible sidebar on desktop and sheet overlay on mobile using shadcn Sidebar composable
 - [ ] **SHELL-02**: AppShell provides header and footer areas for title/user menu and status/version info
 - [ ] **SHELL-03**: AppShell uses CSS variable theming (`--sidebar-*` tokens) for consistent styling
-- [ ] **SHELL-04**: Backend hand-written AppShell builder follows FormScreen/TableScreen pattern with slot-based child references
+- [ ] **SHELL-04**: AppShell is a normal first-class SDUI component — registered in `frontend/src/lib/registry/defaults.ts` and built by a hand-written backend builder in `backend/crates/marionette/src/builders/` following the same recipe any other high-level structural component would use. Slot children (header, sidebar, footer, main) are addressed by name in props and resolve to top-level adjacency-list node IDs. No special protocol superpowers.
 
 ### DataTable
 
@@ -78,6 +84,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | FOUND-01 | Phase 10 | Pending |
 | FOUND-02 | Phase 10 | Pending |
 | FOUND-03 | Phase 10 | Pending |
+| PATCH-01 | Phase 12 | Pending |
+| PATCH-02 | Phase 12 | Pending |
+| PATCH-03 | Phase 12 | Pending |
 | SHELL-01 | Phase 12 | Pending |
 | SHELL-02 | Phase 12 | Pending |
 | SHELL-03 | Phase 12 | Pending |
@@ -92,10 +101,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | COMP-03 | Phase 15 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 15 total
-- Mapped to phases: 15
+- v1.1 requirements: 18 total
+- Mapped to phases: 18
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-08*
-*Last updated: 2026-04-08 after roadmap creation*
+*Last updated: 2026-04-10 — Phase 12 rescoped to include protocol node patching (PATCH-01, PATCH-02, PATCH-03) as prerequisite for AppShell*
