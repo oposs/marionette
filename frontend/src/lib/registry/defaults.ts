@@ -24,6 +24,7 @@ import DataTable from '../components/table/DataTable.svelte';
 import ModalSurface from '../components/popup/ModalSurface.svelte';
 import ToastSurface from '../components/popup/ToastSurface.svelte';
 import ConfirmDialog from '../components/popup/ConfirmDialog.svelte';
+import SurfaceMount from '../components/core/SurfaceMount.svelte';
 
 export function registerDefaults(): void {
 	registerAll({
@@ -45,5 +46,6 @@ export function registerDefaults(): void {
 		'modal': ModalSurface,
 		'toast': ToastSurface,
 		'confirm-dialog': ConfirmDialog,
+		'surface-mount': SurfaceMount,
 	});
 }
