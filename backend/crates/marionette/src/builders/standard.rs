@@ -1,4 +1,4 @@
-//! Standard component builders for all 18 protocol component types.
+//! Standard component builders for all 19 protocol component types.
 //!
 //! Each component type is defined as a struct with `#[derive(ComponentBuilder)]`,
 //! which generates a fluent builder API.
@@ -111,6 +111,20 @@ pub struct NavItem {
 #[component(type = "nav-group")]
 pub struct NavGroup {
     pub label: String,
+}
+
+// -- Sub-surface mounting --
+
+/// Mount a named sub-surface at this position in the tree.
+///
+/// `SurfaceMount` is a leaf node that renders `<Surface name={props.name}/>`
+/// on the frontend, recursively mounting another surface's tree. Used by
+/// `AppShell` (and future tabs, split-panes, etc.) to compose content surfaces
+/// into a shell surface.
+#[derive(ComponentBuilder)]
+#[component(type = "surface-mount")]
+pub struct SurfaceMount {
+    pub name: String,
 }
 
 // -- Form components --
@@ -268,8 +282,27 @@ mod tests {
     }
 
     #[test]
-    fn all_18_standard_types() {
-        // Verify each of the 18 standard component types compiles and builds
+    fn surface_mount_builder() {
+        let (id, component) = SurfaceMount::new("content").build();
+        assert!(!id.is_empty());
+        assert!(id.starts_with("surface-mount-"));
+        assert_eq!(component.r#type, "surface-mount");
+        let props = component.props.as_ref().unwrap();
+        assert_eq!(props["name"], "content");
+        assert!(component.children.is_none());
+        assert!(component.bind.is_none());
+        assert!(component.action.is_none());
+    }
+
+    #[test]
+    fn surface_mount_builder_custom_id() {
+        let (id, _) = SurfaceMount::new("modal").id("shell-modal-mount").build();
+        assert_eq!(id, "shell-modal-mount");
+    }
+
+    #[test]
+    fn all_19_standard_types() {
+        // Verify each of the 19 standard component types compiles and builds
         let types = vec![
             Button::new("x").build().1.r#type,
             TextInput::new("x").build().1.r#type,
@@ -282,6 +315,7 @@ mod tests {
             SideNav::new().build().1.r#type,
             NavItem::new("x", "y").build().1.r#type,
             NavGroup::new("x").build().1.r#type,
+            SurfaceMount::new("x").build().1.r#type,
             Form::new().build().1.r#type,
             DataTable::new(vec![]).build().1.r#type,
             Modal::new("x").build().1.r#type,
@@ -293,8 +327,8 @@ mod tests {
 
         let expected = vec![
             "button", "text-input", "select", "checkbox", "container", "grid",
-            "heading", "text", "side-nav", "nav-item", "nav-group", "form",
-            "data-table", "modal", "toast", "confirm-dialog", "spinner", "error-display",
+            "heading", "text", "side-nav", "nav-item", "nav-group", "surface-mount",
+            "form", "data-table", "modal", "toast", "confirm-dialog", "spinner", "error-display",
         ];
 
         assert_eq!(types, expected);

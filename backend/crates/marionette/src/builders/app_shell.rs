@@ -1,4 +1,4 @@
-//! Hand-written AppShell builder — scaffold.
+//! Hand-written `AppShell` builder — scaffold.
 //! Real implementation lands in Plan 05.
 
 #![allow(dead_code, unused_imports)]
