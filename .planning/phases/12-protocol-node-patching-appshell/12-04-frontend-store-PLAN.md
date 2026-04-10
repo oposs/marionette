@@ -764,10 +764,13 @@ test('setNode on focused node does replace it (not a focus-preservation guarante
 	});
 	await tick();
 
-	// No assertion on document.activeElement — this test documents that
-	// patching THE focused node is not covered by D-A6. D-A6 only covers
-	// patching siblings of the focused node.
-	expect(true).toBe(true);
+	// D-A6 does NOT promise focus preservation when the focused node itself
+	// is replaced — only sibling patches. Instead of a no-op assertion, this
+	// test documents that the patch was actually applied by asserting the
+	// new label appears in the DOM. Focus state after the replacement is
+	// explicitly unspecified and not asserted here.
+	const label = screen.baseElement.querySelector('label');
+	expect(label?.textContent).toContain('Changed');
 });
 ```
 
