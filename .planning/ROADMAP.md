@@ -148,7 +148,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete   | 2026-04-10 |
+| 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
