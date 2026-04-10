@@ -22,6 +22,7 @@ async fn start_test_server(router: ActionRouter) -> String {
         router,
         db: mock_db(),
         login_form: None,
+        listmonk: None,
     });
 
     let app = axum::Router::new()
@@ -42,6 +43,7 @@ fn echo_handler() -> marionette::router::BoxedHandler {
     marionette::router::box_handler(|_ctx| async move {
         Ok(vec![ProtocolMessage::Patch(PatchMessage {
             id: None,
+            surface: "main".into(),
             patch: vec![PatchOperation::Set {
                 path: "/echo".into(),
                 value: serde_json::json!("ok"),
@@ -62,7 +64,7 @@ async fn ws_connects_and_receives_hello() {
 
     match proto {
         ProtocolMessage::Hello(HelloMessage { version }) => {
-            assert_eq!(version, "1.0.0");
+            assert_eq!(version, "1.1.0");
         }
         other => panic!("Expected Hello, got {other:?}"),
     }
