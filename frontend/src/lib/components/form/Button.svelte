@@ -42,7 +42,10 @@
 				...surfaceData
 			};
 			sendAction(
-				action.name ?? action.type,
+				// Do NOT fall back to action.type here: `type` is a protocol
+				// classifier (e.g. 'destructive'), not a backend action name.
+				// If the server omits `name`, use a generic literal.
+				action.name ?? 'button-click',
 				payload,
 				action.target,
 				optimisticField ? { patch: optimisticField.patch } : undefined

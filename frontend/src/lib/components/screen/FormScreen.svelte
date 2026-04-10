@@ -47,7 +47,9 @@
 			...(act.payload as Record<string, unknown> ?? {}),
 			...surfaceData,
 		};
-		sendAction(act.name ?? act.type, payload, act.target);
+		// Do NOT fall back to act.type: that field is a UI variant classifier,
+		// not a backend action name. Use an explicit literal instead.
+		sendAction(act.name ?? 'toolbar-action', payload, act.target);
 	}
 
 	function handleSubmit(e: SubmitEvent) {
@@ -99,7 +101,7 @@
 			<div class="flex justify-end gap-2 pt-4 border-t border-border">
 				{#each actions as act}
 					<ShadcnButton
-						variant={act.type === 'destructive' ? 'destructive' : (act.type as import('$lib/components/ui/button').ButtonVariant) || 'default'}
+						variant={(act.variant as import('$lib/components/ui/button').ButtonVariant) ?? 'default'}
 						onclick={() => handleAction(act)}
 					>
 						{act.name ?? ''}

@@ -32,6 +32,13 @@ export interface ComponentAction {
 	name?: string;
 	target?: string;
 	idPath?: string;
+	/**
+	 * Optional UI button variant hint (e.g. 'default' | 'destructive' |
+	 * 'outline' | 'ghost' | 'link' | 'secondary'). Purely cosmetic — separate
+	 * from `type`, which is a protocol classifier, and from `name`, which is
+	 * the backend action identifier.
+	 */
+	variant?: string;
 	[key: string]: unknown;
 }
 
