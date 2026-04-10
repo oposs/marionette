@@ -84,7 +84,16 @@ Plans:
   6. Shell styling uses CSS variable theming via `--sidebar-*` tokens for consistent appearance
   7. AppShell is a normal first-class SDUI component: registered in `frontend/src/lib/registry/defaults.ts`, hand-written backend builder in `backend/crates/marionette/src/builders/` following the same recipe any other high-level structural component would use, with slot children addressed by name in props referencing top-level adjacency-list nodes (no special protocol superpowers)
   8. The CRM app renders inside the AppShell with working navigation between screens, and at least one interactive flow demonstrates node-level mutation end-to-end (e.g., a select change that swaps a field in place without clobbering sibling focus)
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 12-01-scaffolding-PLAN.md — Install shadcn sidebar/toast, rename --sidebar tokens, create Wave 1+ scaffold files
+- [ ] 12-02-protocol-crate-PLAN.md — Rewrite PatchOperation as tagged enum + add PatchMessage.surface + bump HelloMessage to 1.1.0
+- [ ] 12-03-protocol-spec-schemas-PLAN.md — Update spec/schemas/data.yaml oneOf + message.yaml surface + PROTOCOL.md + CONCEPT.md
+- [ ] 12-04-frontend-store-PLAN.md — TS PatchOperation union + init.ts fix + fine-grained surfaces store + focus-preservation test
+- [ ] 12-05-backend-builders-PLAN.md — SurfaceMount derived builder + hand-written AppShell builder with 6 slot methods
+- [ ] 12-06-frontend-shell-components-PLAN.md — AppShell.svelte + SurfaceMount.svelte + registry + +layout.svelte collapse + ConnectionBanner retirement
+- [ ] 12-07-crm-integration-PLAN.md — handle_navigate builds AppShell + migrate handlers to surface "content" + interactive verification checkpoint
+- [ ] 12-08-demo-and-e2e-PLAN.md — Country-select demo on contact form + node-patch-focus E2E + shell-nav E2E + protocol-conformance schema validation
 **UI hint**: yes
 
 ### Phase 13: DataTable Enhancements
