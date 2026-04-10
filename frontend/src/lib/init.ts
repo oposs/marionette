@@ -81,6 +81,18 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 
 	// Connect WebSocket and route messages through the dispatcher
 	connect(wsUrl, handleMessage);
+
+	// E2E test hook: expose sendAction on window so Playwright tests can
+	// dispatch protocol actions programmatically (Phase 12 Plan 08's D-A6
+	// focus-preservation test needs to trigger `contact_country_change`
+	// WITHOUT moving keyboard focus off the currently-focused text input).
+	// This is a narrow, intentional test-only surface and is safe in
+	// production: anything an attacker can do via `window.__mrnSendAction`
+	// they can already do by crafting a raw WebSocket ActionMessage.
+	if (typeof window !== 'undefined') {
+		(window as unknown as { __mrnSendAction: typeof sendAction }).__mrnSendAction =
+			sendAction;
+	}
 }
 
 /**
