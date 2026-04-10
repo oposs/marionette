@@ -29,7 +29,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Milestone Goal:** Replace Flowbite with shadcn-svelte and add high-level organisational components (AppShell, enhanced DataTable, enhanced FormScreen) so apps get professional screens out of the box.
 
 - [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
-- [ ] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons
+- [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
 - [ ] **Phase 12: AppShell** - Responsive sidebar shell with header/footer, CSS variable theming, and backend builder
 - [ ] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility
 - [ ] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections
@@ -64,11 +64,11 @@ Plans:
   4. The demo page renders all component types without errors
 **Plans**: 5 plans
 Plans:
-- [ ] 11-01-PLAN.md — Install shadcn-svelte primitives + icon registry
-- [ ] 11-02-PLAN.md — Migrate form components (Button, TextInput, SelectInput, Checkbox, Form) + tests
-- [ ] 11-03-PLAN.md — Migrate popup/table components (ModalSurface, ConfirmDialog, ToastSurface, DataTable) + tests
-- [ ] 11-04-PLAN.md — Migrate layout/nav/core/feedback components + tests
-- [ ] 11-05-PLAN.md — Migrate screen components (FormScreen, TableScreen) + tests + visual verification
+- [x] 11-01-PLAN.md — Install shadcn-svelte primitives + icon registry
+- [x] 11-02-PLAN.md — Migrate form components (Button, TextInput, SelectInput, Checkbox, Form) + tests
+- [x] 11-03-PLAN.md — Migrate popup/table components (ModalSurface, ConfirmDialog, ToastSurface, DataTable) + tests
+- [x] 11-04-PLAN.md — Migrate layout/nav/core/feedback components + tests
+- [x] 11-05-PLAN.md — Migrate screen components (FormScreen, TableScreen) + tests + visual verification
 **UI hint**: yes
 
 ### Phase 12: AppShell
@@ -135,7 +135,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 8. CRM Features | v1.0 | 4/4 | Complete | 2026-03-23 |
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
-| 11. Leaf Component Migration | v1.1 | 0/5 | Planning complete | - |
+| 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
 | 12. AppShell | v1.1 | 0/0 | Not started | - |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
