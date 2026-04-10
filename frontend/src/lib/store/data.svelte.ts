@@ -7,6 +7,14 @@
 import type { PatchOperation } from '$lib/transport/messages.js';
 import { resolvePointer, setAtPointer } from './pointer.js';
 import { isDirty, queuePatch } from './dirty.svelte.js';
+import {
+	setNode,
+	deleteNode,
+	setChildren,
+	insertChild,
+	removeChild,
+	gcOrphans,
+} from './surfaces.svelte';
 
 const surfaces: Record<string, { data: Record<string, unknown> }> = $state({});
 
@@ -57,21 +65,49 @@ export function setFullState(surface: string, data: Record<string, unknown>): vo
 
 /**
  * Apply an array of patch operations to a surface's data.
- * Skips patches to dirty paths (queues them instead).
  *
- * Task 2 extends this to dispatch on the `op` discriminator and route node
- * ops (`set-node`, `delete-node`, `set-children`, `insert-child`,
- * `remove-child`) to the surface tree store.
+ * Dispatches on the `op` discriminator:
+ * - `set` — data op; routes through the dirty queue when the target path is
+ *   currently being edited (preserves user input per Phase 12 D-A6).
+ * - `set-node` / `delete-node` / `set-children` / `insert-child` /
+ *   `remove-child` — node-tree ops, delegated to `surfaces.svelte.ts` which
+ *   mutates the per-key proxy entries in place (required for focus
+ *   preservation under sibling patches — D-A6).
+ *
+ * After the batch is applied, runs a single `gcOrphans(surface)` pass (D-A8)
+ * so unreachable nodes created by the patch sequence are pruned once rather
+ * than after every individual op.
  */
 export function applyPatch(surface: string, operations: PatchOperation[]): void {
 	for (const op of operations) {
-		if (op.op !== 'set') continue;
-		if (isDirty(op.path)) {
-			queuePatch(op.path, op);
-		} else {
-			setData(surface, op.path, op.value);
+		switch (op.op) {
+			case 'set': {
+				if (isDirty(op.path)) {
+					queuePatch(op.path, op);
+				} else {
+					setAtPointer(getStore(surface).data, op.path, op.value);
+				}
+				break;
+			}
+			case 'set-node':
+				setNode(surface, op.id, op.component);
+				break;
+			case 'delete-node':
+				deleteNode(surface, op.id);
+				break;
+			case 'set-children':
+				setChildren(surface, op.id, op.children);
+				break;
+			case 'insert-child':
+				insertChild(surface, op.parent, op.index, op.childId);
+				break;
+			case 'remove-child':
+				removeChild(surface, op.parent, op.childId);
+				break;
 		}
 	}
+	// Run one GC pass per batch, scoped to the target surface (D-A8).
+	gcOrphans(surface);
 }
 
 /**
