@@ -28,13 +28,18 @@
 	function handleValueChange(newValue: string) {
 		if (bind) {
 			setData(surface, bind, newValue);
-			clearDirty(bind, (op) => setData(surface, op.path, op.value));
 		}
 	}
 
 	function handleOpenChange(open: boolean) {
-		if (open && bind) {
+		if (!bind) return;
+		if (open) {
 			markDirty(bind);
+		} else {
+			// Pair mark/clear with open/close (mirrors focus/blur in TextInput)
+			// so that dismissing the dropdown without a selection still clears
+			// the dirty flag and does not strand pending optimistic state.
+			clearDirty(bind, (op) => setData(surface, op.path, op.value));
 		}
 	}
 </script>
