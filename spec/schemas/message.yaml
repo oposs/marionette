@@ -65,6 +65,7 @@ PatchMessage:
   type: object
   required:
     - type
+    - surface
     - patch
   properties:
     type:
@@ -72,11 +73,16 @@ PatchMessage:
       const: patch
     id:
       $ref: "common.yaml#/MessageId"
+    surface:
+      $ref: "common.yaml#/Surface"
+      description: >-
+        Target surface name. One message targets exactly one surface; ops
+        apply in declared order, atomic per-surface.
     patch:
       type: array
       items:
         $ref: "data.yaml#/PatchOperation"
-      description: Array of patch operations to apply
+      description: Array of patch operations to apply in declared order
   additionalProperties: false
 
 ActionMessage:

@@ -1,15 +1,116 @@
 PatchOperation:
+  description: >-
+    A single patch operation. Data ops (`set`) update a JSON Pointer path in
+    the surface's data store; node ops mutate the surface's component adjacency
+    list. Operations in a `PatchMessage.patch` array are applied in declared
+    order, all-or-nothing. Mix data and node ops freely in one batch.
+  oneOf:
+    - $ref: "#/PatchOperationSet"
+    - $ref: "#/PatchOperationSetNode"
+    - $ref: "#/PatchOperationDeleteNode"
+    - $ref: "#/PatchOperationSetChildren"
+    - $ref: "#/PatchOperationInsertChild"
+    - $ref: "#/PatchOperationRemoveChild"
+  discriminator:
+    propertyName: op
+    mapping:
+      set: "#/PatchOperationSet"
+      set-node: "#/PatchOperationSetNode"
+      delete-node: "#/PatchOperationDeleteNode"
+      set-children: "#/PatchOperationSetChildren"
+      insert-child: "#/PatchOperationInsertChild"
+      remove-child: "#/PatchOperationRemoveChild"
+
+PatchOperationSet:
   type: object
-  required:
-    - path
-    - value
+  required: [op, path, value]
   properties:
+    op:
+      type: string
+      const: set
     path:
       type: string
       format: json-pointer
       description: JSON Pointer to the data location to update
     value:
       description: New value to set at the path
+  additionalProperties: false
+
+PatchOperationSetNode:
+  type: object
+  required: [op, id, component]
+  properties:
+    op:
+      type: string
+      const: set-node
+    id:
+      type: string
+      description: Node ID within the target surface's adjacency list
+    component:
+      $ref: "component.yaml#/Component"
+  additionalProperties: false
+
+PatchOperationDeleteNode:
+  type: object
+  required: [op, id]
+  properties:
+    op:
+      type: string
+      const: delete-node
+    id:
+      type: string
+      description: Node ID to remove from the adjacency list
+  additionalProperties: false
+
+PatchOperationSetChildren:
+  type: object
+  required: [op, id, children]
+  properties:
+    op:
+      type: string
+      const: set-children
+    id:
+      type: string
+      description: Parent node ID whose children array is replaced
+    children:
+      type: array
+      items:
+        type: string
+      description: Ordered list of child node IDs
+  additionalProperties: false
+
+PatchOperationInsertChild:
+  type: object
+  required: [op, parent, index, childId]
+  properties:
+    op:
+      type: string
+      const: insert-child
+    parent:
+      type: string
+      description: Parent node ID
+    index:
+      type: integer
+      minimum: 0
+      description: Zero-based insertion index
+    childId:
+      type: string
+      description: Child node ID to insert
+  additionalProperties: false
+
+PatchOperationRemoveChild:
+  type: object
+  required: [op, parent, childId]
+  properties:
+    op:
+      type: string
+      const: remove-child
+    parent:
+      type: string
+      description: Parent node ID
+    childId:
+      type: string
+      description: Child node ID to remove
   additionalProperties: false
 
 KeyedCollection:
