@@ -61,11 +61,29 @@
 	let visibleRows = $derived(rows.slice(visibleStart, visibleEnd));
 	let offsetY = $derived(visibleStart * ROW_HEIGHT);
 
-	// Prefetch trigger
+	// Prefetch trigger with in-flight guard: prevents duplicate fetch
+	// requests when multiple renders observe the same `rows.length` before
+	// the server response arrives.
+	let fetching = $state(false);
+
 	$effect(() => {
-		if (explicitTotalRows > 0 && visibleEnd > 0 && visibleEnd >= rows.length - CHUNK_SIZE * 2 && rows.length < explicitTotalRows) {
+		if (
+			!fetching &&
+			explicitTotalRows > 0 &&
+			visibleEnd > 0 &&
+			visibleEnd >= rows.length - CHUNK_SIZE * 2 &&
+			rows.length < explicitTotalRows
+		) {
+			fetching = true;
 			sendAction('fetch-rows', { offset: rows.length, limit: CHUNK_SIZE });
 		}
+	});
+
+	// Reset the guard whenever the row set changes — once new rows land we
+	// are free to prefetch the next chunk.
+	$effect(() => {
+		rows.length; // track
+		fetching = false;
 	});
 
 	function handleSort(col: ColumnDef) {
