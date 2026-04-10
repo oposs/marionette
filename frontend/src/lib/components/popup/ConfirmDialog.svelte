@@ -2,7 +2,6 @@
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
-	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button as ShadcnButton } from '$lib/components/ui/button';
 
 	let {
@@ -36,21 +35,29 @@
 	}
 </script>
 
+<!--
+	ConfirmDialog is rendered as a child of ModalSurface's Dialog.Content via
+	NodeRenderer. Because Svelte context set by Dialog.Root does not propagate
+	cleanly through NodeRenderer, using Dialog.Title / Dialog.Description here
+	would leave `aria-labelledby` / `aria-describedby` wiring broken and the
+	Dialog.Footer layout incorrect. Render plain markup that assumes the
+	wrapping Dialog.Content is supplied by ModalSurface.
+-->
 <div>
-	<Dialog.Header>
+	<div class="mb-4">
 		{#if title}
-			<Dialog.Title>{title}</Dialog.Title>
+			<h2 class="text-lg font-semibold">{title}</h2>
 		{/if}
 		{#if message}
-			<Dialog.Description>{message}</Dialog.Description>
+			<p class="text-sm text-muted-foreground mt-1">{message}</p>
 		{/if}
-	</Dialog.Header>
-	<Dialog.Footer>
+	</div>
+	<div class="flex justify-end gap-2 mt-6">
 		<ShadcnButton variant="outline" onclick={handleCancel}>
 			{cancelLabel}
 		</ShadcnButton>
 		<ShadcnButton variant={destructive ? 'destructive' : 'default'} onclick={handleConfirm}>
 			{confirmLabel}
 		</ShadcnButton>
-	</Dialog.Footer>
+	</div>
 </div>
