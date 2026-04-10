@@ -1041,27 +1041,27 @@ test('patch to sibling node preserves focus and cursor on focused input', async 
 | A7 | Per-screen CRM handlers that currently render to `surface: "main"` can be changed to `surface: "content"` without any other logic changes — the tree they build is identical. | Pitfall 6 | [VERIFIED from grep — 8 sites, all single-line changes] No risk. |
 | A8 | `setSurfaceTree` is called only on full `Render` messages, not during incremental updates. After Phase 12, `setSurfaceTree` remains the mechanism for `Render` (where wholesale replacement is correct) and `setNode`/`deleteNode`/etc. handle patches. | Pattern 1 | [VERIFIED from init.ts:33 — `setSurfaceTree` is only called in the render handler] No risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Toast primitive current status**
    - What we know: Phase 11 D-04 picked shadcn Toast; `components/ui/` currently has no `toast` directory
    - What's unclear: Is shadcn Toast installed under a different name, not yet installed, or did Phase 11 pivot silently to Sonner?
-   - Recommendation: Phase 12 Wave 0 task should `ls frontend/src/lib/components/ui/` and install if missing. Don't block research on this.
+   - RESOLVED (Plan 01 Task 1 — Wave 0 verify + install gate): Phase 12 Wave 0 task does `ls frontend/src/lib/components/ui/` and installs if missing. Non-blocking.
 
 2. **Location of AppShell hand-written builder: separate file vs. append to `standard.rs`?**
    - What we know: CONTEXT suggests new file `builders/app_shell.rs` is an option; no existing hand-written builders to mimic
    - What's unclear: Whether project style prefers one file per hand-written structural component or grouping in `standard.rs`
-   - Recommendation: New file `backend/crates/marionette/src/builders/app_shell.rs`. Reasoning: (1) the hand-written shape is substantively different from the derive-macro shape in `standard.rs`; (2) establishes a clear pattern for future structural components. Update `builders/mod.rs` to re-export.
+   - RESOLVED (Plan 05 — new file `backend/crates/marionette/src/builders/app_shell.rs`): The hand-written shape is substantively different from the derive-macro shape in `standard.rs` and establishes a clear pattern for future structural components. `builders/mod.rs` re-exports `app_shell::*`.
 
 3. **Does the frontend TypeScript `PatchOperation` union need JSDoc on each variant?**
    - What we know: Current type is a plain interface with 2 fields
    - What's unclear: Project JSDoc discipline on discriminated unions
-   - Recommendation: Brief JSDoc on each variant matching the spec/schemas/data.yaml descriptions. Low cost, high clarity.
+   - RESOLVED (Plan 04 Task 1 — union variants have per-variant JSDoc): Brief JSDoc on each variant matching the spec/schemas/data.yaml descriptions. Low cost, high clarity.
 
 4. **Protocol documentation order: tagged union example first or text-first?**
    - What we know: `spec/PROTOCOL.md §Messages > patch` currently has text-then-example
    - What's unclear: Whether node ops should get their own top-level subsection or inline within §patch
-   - Recommendation: Inline within §patch. Add a new "Node tree operations" sub-heading below the existing "Data operations" description; add one worked example per node op variant.
+   - RESOLVED (Plan 03 Task 2 — tagged-union worked example inline): Inline within §patch. New "Node tree operations" sub-heading below the existing "Data operations" description; one worked example per node op variant.
 
 ## Validation Architecture
 
