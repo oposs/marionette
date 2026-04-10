@@ -2,7 +2,7 @@
 phase: 12
 plan: 07
 type: execute
-wave: 3
+wave: 4
 depends_on: [12-05, 12-06]
 files_modified:
   - backend/crates/crm-demo/src/main.rs
@@ -22,7 +22,10 @@ must_haves:
     - "All CRM screen handlers render to surface 'content' (not 'main') — the only Rust code rendering into 'main' is the shell-building site in main.rs"
     - "Login flow still works: build_login_form renders to 'main' (pre-auth), login success triggers handle_navigate which renders shell into 'main' + screen into 'content'"
     - "Header includes a user menu that displays the logged-in user's name from /auth/currentUser"
-    - "Footer includes version info ('Marionette v1.1 · Protocol 1.1.0') and a connection status indicator"
+    - "Footer includes THREE children: version info ('Marionette v1.1 · Protocol 1.1.0'), a connection-status indicator bound to /system/connectionStatus (D-B6), and legal/copyright text"
+    - "NavItems bind to /nav/active/<slug> boolean paths; shell initial data seeds /nav/active/contacts = true so the landing contact_list nav item renders active (D-B13)"
+    - "Per-screen handlers emit a second PatchMessage targeting surface main that clears all /nav/active/* and sets /nav/active/<this-slug> = true (D-B13)"
+    - "Shell initial data includes /system/connectionStatus = 'connected' so the footer indicator renders with a value on first mount (D-B6)"
   artifacts:
     - path: "backend/crates/crm-demo/src/main.rs"
       provides: "handle_navigate builds AppShell"
@@ -134,21 +137,26 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
 
     // -- Build the sidebar sub-tree (SideNav with NavItems) --
     let mut nav_items: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    // Per D-B13: NavItems bind to /nav/active/<slug>; the per-screen handlers
+    // emit a PatchMessage (Set op) updating that path on every navigation.
     nav_items.push(
         NavItem::new("Home", "/")
             .id("nav-home")
+            .bind("/nav/active/home")
             .action(ComponentAction::click("navigate"))
             .build(),
     );
     nav_items.push(
         NavItem::new("Contacts", "/contacts")
             .id("nav-contacts")
+            .bind("/nav/active/contacts")
             .action(ComponentAction::click("contact_list"))
             .build(),
     );
     nav_items.push(
         NavItem::new("Companies", "/companies")
             .id("nav-companies")
+            .bind("/nav/active/companies")
             .action(ComponentAction::click("company_list"))
             .build(),
     );
@@ -156,12 +164,14 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         nav_items.push(
             NavItem::new("Users", "/users")
                 .id("nav-users")
+                .bind("/nav/active/users")
                 .action(ComponentAction::click("user_list"))
                 .build(),
         );
         nav_items.push(
             NavItem::new("Audit Log", "/audit")
                 .id("nav-audit")
+                .bind("/nav/active/audit")
                 .action(ComponentAction::click("audit_list"))
                 .build(),
         );
@@ -182,16 +192,30 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         .children(vec![header_title, header_user])
         .build_tree();
 
-    // -- Build the footer sub-tree (version + connection status + legal) --
+    // -- Build the footer sub-tree (version + connection status + legal, per D-B6) --
+    // The three footer children correspond verbatim to D-B6:
+    //   (1) version info   — static literal text
+    //   (2) connection status — data-bound Heading tracking /system/connectionStatus
+    //                           (this is the role the retired ConnectionBanner played;
+    //                            "less obtrusive than a top banner, always visible")
+    //   (3) legal/copyright — static literal text
     let footer_version = Heading::new("Marionette v1.1 · Protocol 1.1.0")
         .id("footer-version")
+        .build();
+    // D-B6: connection status indicator. A small data-bound Heading whose displayed
+    // text is populated by the frontend transport layer (see Plan 06 Task 4) via an
+    // internal `applyPatch('main', [{op:'set', path:'/system/connectionStatus', ...}])`
+    // on WebSocket connect/disconnect events. Initial value is seeded from shell_data.
+    let footer_status = Heading::new("connected")
+        .id("footer-connection-status")
+        .bind("/system/connectionStatus")
         .build();
     let footer_legal = Heading::new("© 2026 Marionette")
         .id("footer-legal")
         .build();
     let (footer_root, footer_desc) = Container::new()
         .id("shell-footer")
-        .children(vec![footer_version, footer_legal])
+        .children(vec![footer_version, footer_status, footer_legal])
         .build_tree();
 
     // -- Build the three sub-surface mounts --
@@ -228,7 +252,10 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     }
 
     // Initial shell data: auth info lives under /auth/currentUser for future
-    // data-bound user menus.
+    // data-bound user menus. /system/connectionStatus seeds the footer indicator
+    // (D-B6) so it renders with a value on first mount. /nav/active/contacts is
+    // seeded true because handle_navigate lands on the contact list by default
+    // (D-B13); all other nav items render inactive.
     let shell_data = serde_json::json!({
         "auth": {
             "currentUser": {
@@ -236,8 +263,17 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
                 "roles": session.roles,
             }
         },
+        "system": {
+            "connectionStatus": "connected"
+        },
         "nav": {
-            "active": {}
+            "active": {
+                "home": false,
+                "contacts": true,
+                "companies": false,
+                "users": false,
+                "audit": false
+            }
         }
     });
 
@@ -279,10 +315,16 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     - `grep -q 'surface: "sidebar"' backend/crates/crm-demo/src/main.rs` returns zero matches (the separate sidebar Render is gone)
     - `grep -q 'root: "app-shell-root".into()' backend/crates/crm-demo/src/main.rs` succeeds
     - `grep -q '"auth":' backend/crates/crm-demo/src/main.rs` succeeds (shell data contains auth.currentUser)
+    - `grep -n 'connectionStatus' backend/crates/crm-demo/src/main.rs` returns ≥ 2 hits (D-B6 gate: footer child construction + shell_data seed — the script must find both the Heading and the JSON initializer)
+    - `grep -q 'footer-connection-status' backend/crates/crm-demo/src/main.rs` succeeds (the footer child exists)
+    - `grep -q '"/system/connectionStatus"' backend/crates/crm-demo/src/main.rs` succeeds (the bind path is present)
+    - `grep -q '"/nav/active/contacts"' backend/crates/crm-demo/src/main.rs` succeeds (NavItem bind path — D-B13)
+    - `grep -q '"/nav/active/companies"' backend/crates/crm-demo/src/main.rs` succeeds
+    - `grep -cE '\.bind\("/nav/active/' backend/crates/crm-demo/src/main.rs` returns ≥ 3 (home, contacts, companies — users/audit added when is_admin, counted ≥ 3 for the always-on set)
     - `cd backend && cargo build -p crm-demo` exits 0
     - `cd backend && cargo clippy -p crm-demo -- -D warnings` exits 0
   </acceptance_criteria>
-  <done>handle_navigate builds an AppShell into main + delegates screen content to content sub-surface. Sidebar top-level Render is gone. crm-demo compiles cleanly under clippy pedantic.</done>
+  <done>handle_navigate builds an AppShell into main + delegates screen content to content sub-surface. Footer contains all three D-B6 children (version, connection status, legal). NavItems bind to /nav/active/<slug> per D-B13. Shell data seeds /system/connectionStatus and /nav/active. Sidebar top-level Render is gone. crm-demo compiles cleanly under clippy pedantic.</done>
 </task>
 
 <task type="auto">
@@ -324,33 +366,89 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
    ```
    For each match, confirm the `surface:` field. If it says `"main"`, change to `"content"`. If it already says something else (`"modal"`, `"content"`), leave it. The `listmonk.rs` and `note.rs` handlers should be inspected — if they render, they render into `"content"`.
 
-4. Verify the final state. Only two Rust source lines in the workspace should construct `surface: "main"`:
+4. **Per-handler nav active patch (D-B13 wiring).** For each screen handler that now returns a `Render` into `content`, append a second message to the returned `Vec<ProtocolMessage>`: a `PatchMessage` targeting surface `"main"` that clears the previous nav active state and sets the current one. This is the other half of the D-B13 wiring started in Task 1.
+
+   Helper snippet — copy verbatim into each handler file (contact.rs, company.rs, user.rs, audit.rs, interaction.rs) as a `fn nav_active_patch(slug: &str) -> ProtocolMessage` at module scope (NOT duplicated per function):
+
+   ```rust
+   /// Build a PatchMessage that marks `<slug>` as the active nav item and clears
+   /// all others. Emitted alongside every screen Render so the sidebar's
+   /// NavItem active indicators (bound to /nav/active/<slug>) stay in sync
+   /// with the currently-visible screen. Per D-B13.
+   fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
+       use marionette_protocol::{PatchMessage, PatchOperation};
+       let slugs = ["home", "contacts", "companies", "users", "audit"];
+       let ops: Vec<PatchOperation> = slugs
+           .iter()
+           .map(|s| PatchOperation::Set {
+               path: format!("/nav/active/{}", s),
+               value: serde_json::json!(*s == active_slug),
+           })
+           .collect();
+       marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+           id: None,
+           surface: "main".into(),
+           patch: ops,
+       })
+   }
+   ```
+
+   Then at each handler return site (the function constructing the Render into content), change:
+
+   ```rust
+   Ok(vec![ProtocolMessage::Render(RenderMessage { /* ... */ })])
+   ```
+   to:
+   ```rust
+   Ok(vec![
+       ProtocolMessage::Render(RenderMessage { /* ... */ }),
+       nav_active_patch("<slug>"),
+   ])
+   ```
+
+   Slug map per handler:
+   - `handlers/contact.rs` → `"contacts"` (both list and form sites use "contacts"; the form is a nested view of the same nav entry)
+   - `handlers/company.rs` → `"companies"`
+   - `handlers/user.rs` → `"users"`
+   - `handlers/audit.rs` → `"audit"`
+   - `handlers/interaction.rs` → `"contacts"` (interactions are reached via the contact screen in the CRM demo — if they are reached via a separate nav item in the current CRM, use whichever slug matches; verify by reading the nav construction in main.rs Task 1)
+
+   If a handler currently returns only one message (the Render), the new vec has two entries. If a handler returns multiple Renders (e.g., a landing screen + a modal), append exactly ONE `nav_active_patch(...)` at the end.
+
+5. Verify the final state. Only two Rust source lines in the workspace should construct `surface: "main"` as a **Render** target:
    - The shell Render inside `handle_navigate` in `main.rs` (Task 1)
    - `build_login_form` in `main.rs` line ~236
 
+   Note: after step 4 there are NEW `surface: "main"` references inside each handler's `nav_active_patch` helper — these are **Patch** messages, not Renders, and they are the D-B13 wiring. The grep must distinguish. Use:
    ```bash
-   grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/
+   grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/handlers/
    ```
-   Must return exactly those two lines (plus possibly comments). If any handler file still returns "main", it is a bug.
+   EXPECTED: exactly 5 matches, one per handler file, each inside the `nav_active_patch` helper. If any match is inside a `RenderMessage` construction, it is a bug — revert that handler to `"content"`.
 
-5. Run `cd backend && cargo build -p crm-demo` — must be green.
+6. Run `cd backend && cargo build -p crm-demo` — must be green.
 
-6. Run `cd backend && cargo test --workspace` — all existing handler tests must still pass. If any test asserts `surface == "main"` on a handler that now returns "content", update the assertion to `"content"`.
+7. Run `cd backend && cargo test --workspace` — all existing handler tests must still pass. If any test asserts `surface == "main"` on a handler that now returns "content", update the assertion to `"content"`. If any test asserts the returned vec has length 1, update to length 2 (or appropriate).
 
-7. Run `cd backend && cargo clippy --workspace -- -D warnings` — must be green.
+8. Run `cd backend && cargo clippy --workspace -- -D warnings` — must be green.
   </action>
   <verify>
-    <automated>cd backend &amp;&amp; cargo build -p crm-demo &amp;&amp; grep -rn 'surface:\s*"main"' crates/crm-demo/src/handlers/ ; test $? -eq 1 &amp;&amp; cargo test --workspace 2&gt;&amp;1 | tail -5</automated>
+    <automated>cd backend &amp;&amp; cargo build -p crm-demo &amp;&amp; test $(grep -rc 'fn nav_active_patch' crates/crm-demo/src/handlers/ | cut -d: -f2 | paste -sd+ | bc) -eq 5 &amp;&amp; cargo test --workspace 2&gt;&amp;1 | tail -5 &amp;&amp; cargo clippy --workspace -- -D warnings 2&gt;&amp;1 | tail -5</automated>
   </verify>
   <acceptance_criteria>
-    - `grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/handlers/` returns zero lines (NO handler renders to main)
-    - `grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/` returns at most 2 lines (both in `main.rs`)
-    - `grep -rc 'surface:\s*"content"' backend/crates/crm-demo/src/handlers/` returns at least 8 (matching the 8 sites listed in RESEARCH Finding 3)
+    - `grep -rc 'fn nav_active_patch' backend/crates/crm-demo/src/handlers/` returns exactly 5 (one per handler file: contact, company, user, audit, interaction)
+    - `grep -rn 'nav_active_patch("contacts")' backend/crates/crm-demo/src/handlers/contact.rs` returns ≥ 1
+    - `grep -rn 'nav_active_patch("companies")' backend/crates/crm-demo/src/handlers/company.rs` returns ≥ 1
+    - `grep -rn 'nav_active_patch("users")' backend/crates/crm-demo/src/handlers/user.rs` returns ≥ 1
+    - `grep -rn 'nav_active_patch("audit")' backend/crates/crm-demo/src/handlers/audit.rs` returns ≥ 1
+    - `grep -rc 'surface:\s*"content"' backend/crates/crm-demo/src/handlers/` returns at least 8 (the 8 Render sites listed in RESEARCH Finding 3)
+    - All handler Render sites target `surface: "content"` (no Render targets `"main"` in handlers/)
+    - The ONLY `surface: "main"` strings in `backend/crates/crm-demo/src/handlers/` are inside the `nav_active_patch` helpers (5 total — one per handler file)
+    - `grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/` returns at most 7 lines (5 nav_active_patch helpers + shell Render in main.rs + build_login_form in main.rs)
     - `cd backend && cargo build -p crm-demo` exits 0
     - `cd backend && cargo test --workspace` exits 0
     - `cd backend && cargo clippy --workspace -- -D warnings` exits 0
   </acceptance_criteria>
-  <done>All 8 non-auth handler render sites rewritten to surface "content". Only main.rs (shell + login) still targets "main". Workspace tests and clippy pedantic green.</done>
+  <done>All 8 non-auth handler render sites rewritten to surface "content". Every handler emits a `nav_active_patch` into `main` on every Render, wiring D-B13 NavItem active state. Only main.rs (shell + login) targets "main" for Renders; handler files target "main" only for the D-B13 nav-active Patch messages. Workspace tests and clippy pedantic green.</done>
 </task>
 
 <task type="checkpoint:human-verify" gate="blocking">
@@ -364,7 +462,7 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     Plan 05 + Plan 06 + Tasks 1-2 of Plan 07 combined: CRM backend builds AppShell, frontend renders it with shadcn Sidebar, navigation between screens updates `content` sub-surface without replacing the shell.
   </what-built>
   <action>
-Run a live end-to-end verification session. Walk through the 10 numbered steps below, noting any failures. This is a blocking human checkpoint — executor pauses for user confirmation before Wave 4 can start.
+Run a live end-to-end verification session. Walk through the 11 numbered steps below, noting any failures. This is a blocking human checkpoint — executor pauses for user confirmation before Wave 5 can start.
   </action>
   <how-to-verify>
 1. Run the backend: `cd backend && cargo run -p crm-demo` (or via `make dev` if that convenience exists).
@@ -373,31 +471,39 @@ Run a live end-to-end verification session. Walk through the 10 numbered steps b
 4. **Login flow**: the login form should still appear on `main` with zero visual changes vs. Phase 11. Log in with `admin@example.com` / the seeded password.
 5. **After login**: the page should replace the login form with the AppShell. You should see:
    - A collapsible sidebar on the left (desktop viewport)
+   - The "Contacts" nav item rendered in its **active** visual state (via the /nav/active/contacts bind — D-B13). Other nav items appear inactive.
    - A header at the top containing the Sidebar trigger (hamburger visible at narrow widths), "Marionette CRM" title, and "User: <your id>" text
    - The contact list as the main content area
-   - A footer at the bottom showing "Marionette v1.1 · Protocol 1.1.0" and copyright
-6. **Navigation**: click the "Companies" nav item in the sidebar. Expected behavior:
+   - A footer at the bottom with THREE elements (D-B6): "Marionette v1.1 · Protocol 1.1.0" (version), "connected" (connection-status indicator, data-bound to /system/connectionStatus), and "© 2026 Marionette" (legal)
+6. **Navigation + active state**: click the "Companies" nav item in the sidebar. Expected behavior:
    - The main content area updates to show the company list
    - The sidebar, header, and footer DO NOT re-render (visually no flicker)
+   - **The active visual state moves from "Contacts" to "Companies"** (this is the D-B13 round-trip: the handler's `nav_active_patch("companies")` patch flipped `/nav/active/contacts` → false and `/nav/active/companies` → true)
    - The browser URL (if routed) updates
-7. Repeat for "Contacts", "Users", "Audit Log". Each navigation should update only the content area.
-8. **Mobile check**: resize the browser to < 768px width. The sidebar should collapse into a sheet. Click the hamburger (Sidebar.Trigger) in the header — the sheet slides in from the left.
-9. **DevTools check**: open the WebSocket frames tab. Observe that clicking a nav item produces exactly ONE `render` message with `surface: "content"`. No `render` with `surface: "main"` after the initial login response.
-10. Open the browser console. There should be NO errors. Warnings about missing `children?` snippet on some components are acceptable if they pre-dated Phase 12.
+7. Repeat for "Contacts", "Users", "Audit Log". Each navigation should update only the content area AND the active state should move to the clicked item.
+8. **Connection status indicator (D-B6)**: in the backend terminal, press Ctrl+C to kill `cargo run -p crm-demo`. Wait 2 seconds. The footer's connection-status indicator should update to reflect the disconnected state (via Plan 06 Task 4's transport wiring). Restart the backend; the indicator should return to "connected". If the footer's status text does not change, the wiring in Plan 06 Task 4 is broken — abort this checkpoint.
+9. **Mobile check**: resize the browser to < 768px width. The sidebar should collapse into a sheet. Click the hamburger (Sidebar.Trigger) in the header — the sheet slides in from the left.
+10. **DevTools check**: open the WebSocket frames tab. Observe that clicking a nav item produces TWO messages: (a) a `render` message with `surface: "content"` and (b) a `patch` message with `surface: "main"` containing 5 `Set` ops targeting `/nav/active/*` paths (the `nav_active_patch` output). No `render` with `surface: "main"` after the initial login response.
+11. Open the browser console. There should be NO errors. Warnings about missing `children?` snippet on some components are acceptable if they pre-dated Phase 12.
 
-Confirm each of the 10 steps above. If any step fails, abort this checkpoint and return to Task 1 or Task 2 for diagnosis. The most likely failure mode is a `surface-mount` node referencing a sub-surface that was never rendered to — check the WebSocket frames and fix the handler.
+Confirm each of the 11 steps above. If any step fails, abort this checkpoint and return to Task 1, Task 2, or Plan 06 Task 4 for diagnosis. Likely failure modes:
+- **Footer shows no connection status**: Plan 06 Task 4 transport wiring missing or broken — grep for `/system/connectionStatus` in `frontend/src/lib/transport/websocket.svelte.ts`
+- **Active state does not move on nav click**: `nav_active_patch` not emitted by handler — grep for `nav_active_patch` in the specific handler file
+- **Surface-mount node references a sub-surface that was never rendered to**: check WebSocket frames and fix the handler
   </how-to-verify>
-  <resume-signal>Type "approved" if all 10 steps pass, or describe which step failed and what the symptom was.</resume-signal>
+  <resume-signal>Type "approved" if all 11 steps pass, or describe which step failed and what the symptom was.</resume-signal>
   <verify>
     <automated>echo "manual checkpoint — user confirms steps 1-10 visually; no automated command"</automated>
   </verify>
   <acceptance_criteria>
-    - All 10 verification steps confirmed pass by the user
+    - All 11 verification steps confirmed pass by the user
     - No console errors in the browser at any step
-    - WebSocket frame inspection confirms nav clicks produce only `surface: "content"` renders after the initial shell render
+    - WebSocket frame inspection confirms nav clicks produce one `render` targeting `"content"` AND one `patch` targeting `"main"` (the nav_active_patch), and NO `render` targets `"main"` after the initial login response
+    - Footer connection-status indicator reactively reflects backend up/down state (D-B6)
+    - Active nav state moves correctly on click (D-B13)
     - User types "approved" to resume
   </acceptance_criteria>
-  <done>User confirms the CRM boots into AppShell end-to-end with working navigation, mobile sidebar sheet, and no content-area flicker. Any failures trigger a return to Task 1 or Task 2 for fixes.</done>
+  <done>User confirms the CRM boots into AppShell end-to-end with working navigation, active nav state movement (D-B13), reactive connection-status indicator (D-B6), mobile sidebar sheet, and no content-area flicker. Any failures trigger a return to Task 1, Task 2, or Plan 06 Task 4 for fixes.</done>
 </task>
 
 </tasks>
@@ -423,20 +529,27 @@ Confirm each of the 10 steps above. If any step fails, abort this checkpoint and
 - `cd backend && cargo build -p crm-demo` exits 0
 - `cd backend && cargo test --workspace` exits 0
 - `cd backend && cargo clippy --workspace -- -D warnings` exits 0
-- `grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/handlers/` returns zero lines
+- `grep -rc 'fn nav_active_patch' backend/crates/crm-demo/src/handlers/` returns 5 (one per handler file — D-B13 wiring)
+- All handler `RenderMessage` constructions target `surface: "content"` (handlers never Render to "main")
 - `grep -c 'AppShell::new()' backend/crates/crm-demo/src/main.rs` ≥ 1
-- Human verification checkpoint (Task 3) confirms end-to-end shell rendering and navigation
+- `grep -c 'footer-connection-status' backend/crates/crm-demo/src/main.rs` ≥ 1 (D-B6 connection status indicator)
+- `grep -c '/system/connectionStatus' backend/crates/crm-demo/src/main.rs` ≥ 1 (footer Heading bind + shell_data seed)
+- Human verification checkpoint (Task 3) confirms end-to-end shell rendering, connection status indicator visibility, and navigation with active-state updates
 </verification>
 
 <success_criteria>
 - `handle_navigate` in main.rs builds an AppShell via `AppShell::new()` with all 6 slot methods populated
 - The shell is rendered into surface `"main"`; the initial content (contact list) is rendered into surface `"content"`
+- Sidebar NavItems bind to `/nav/active/<slug>` boolean data paths (D-B13)
+- Shell initial data seeds `/nav/active/contacts = true` (the landing screen) and `/system/connectionStatus = "connected"` (D-B6 footer indicator)
+- Footer contains THREE children: version info, connection-status Heading bound to `/system/connectionStatus` (D-B6), and legal/copyright
 - Sidebar nav items route via `click` actions (navigate / contact_list / company_list / user_list / audit_list), matching Phase 11 Action conventions
 - Admin-only nav items (Users, Audit) are gated by `is_admin`
-- All non-auth handler files render to surface `"content"` (8 sites migrated)
-- `main.rs` and `build_login_form` are the only remaining Rust sources that construct `surface: "main"`
+- All non-auth handler files Render to surface `"content"` (8 sites migrated)
+- Every non-auth handler also emits a `nav_active_patch(slug)` PatchMessage into `"main"` alongside its Render, keeping the sidebar active indicator in sync with the visible screen (D-B13)
+- `main.rs` (shell + login Renders) and the 5 handler `nav_active_patch` helpers are the only Rust sites that construct `surface: "main"`
 - Workspace tests and clippy pedantic are green
-- Interactive verification checkpoint passes: login → shell + contact list; nav click → content update only; mobile hamburger works
+- Interactive verification checkpoint passes: login → shell + contact list with "Contacts" nav item visually active; nav click → content update + active indicator moves; footer shows "connected" status; mobile hamburger works
 </success_criteria>
 
 <output>
