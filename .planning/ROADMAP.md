@@ -86,9 +86,9 @@ Plans:
   8. The CRM app renders inside the AppShell with working navigation between screens, and at least one interactive flow demonstrates node-level mutation end-to-end (e.g., a select change that swaps a field in place without clobbering sibling focus)
 **Plans**: 8 plans
 Plans:
-- [ ] 12-01-scaffolding-PLAN.md — Install shadcn sidebar/toast, rename --sidebar tokens, create Wave 1+ scaffold files
-- [ ] 12-02-protocol-crate-PLAN.md — Rewrite PatchOperation as tagged enum + add PatchMessage.surface + bump HelloMessage to 1.1.0
-- [ ] 12-03-protocol-spec-schemas-PLAN.md — Update spec/schemas/data.yaml oneOf + message.yaml surface + PROTOCOL.md + CONCEPT.md
+- [x] 12-01-scaffolding-PLAN.md — Install shadcn sidebar/toast, rename --sidebar tokens, create Wave 1+ scaffold files
+- [x] 12-02-protocol-crate-PLAN.md — Rewrite PatchOperation as tagged enum + add PatchMessage.surface + bump HelloMessage to 1.1.0
+- [x] 12-03-protocol-spec-schemas-PLAN.md — Update spec/schemas/data.yaml oneOf + message.yaml surface + PROTOCOL.md + CONCEPT.md
 - [ ] 12-04-frontend-store-PLAN.md — TS PatchOperation union + init.ts fix + fine-grained surfaces store + focus-preservation test
 - [ ] 12-05-backend-builders-PLAN.md — SurfaceMount derived builder + hand-written AppShell builder with 6 slot methods
 - [ ] 12-06-frontend-shell-components-PLAN.md — AppShell.svelte + SurfaceMount.svelte + registry + +layout.svelte collapse + ConnectionBanner retirement
@@ -148,7 +148,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. Protocol Node Patching + AppShell | v1.1 | 0/0 | Not started | - |
+| 12. Protocol Node Patching + AppShell | v1.1 | 3/8 | In Progress|  |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
