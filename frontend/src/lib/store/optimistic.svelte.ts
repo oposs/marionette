@@ -16,6 +16,10 @@ const pending = new Map<string, OptimisticEntry>();
 
 /**
  * Apply an optimistic update: snapshot current values, then apply patches.
+ *
+ * Only `set` (data) ops are snapshot/applied here. Optimistic node-tree ops
+ * are not yet supported — they would require snapshotting the entire
+ * surface tree, which is out of scope for Phase 12.
  */
 export function applyOptimistic(
 	correlationId: string,
@@ -24,6 +28,7 @@ export function applyOptimistic(
 ): void {
 	const snapshots = new Map<string, unknown>();
 	for (const op of operations) {
+		if (op.op !== 'set') continue;
 		snapshots.set(op.path, getData(surface, op.path));
 		setData(surface, op.path, op.value);
 	}

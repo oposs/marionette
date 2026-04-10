@@ -58,9 +58,14 @@ export function setFullState(surface: string, data: Record<string, unknown>): vo
 /**
  * Apply an array of patch operations to a surface's data.
  * Skips patches to dirty paths (queues them instead).
+ *
+ * Task 2 extends this to dispatch on the `op` discriminator and route node
+ * ops (`set-node`, `delete-node`, `set-children`, `insert-child`,
+ * `remove-child`) to the surface tree store.
  */
 export function applyPatch(surface: string, operations: PatchOperation[]): void {
 	for (const op of operations) {
+		if (op.op !== 'set') continue;
 		if (isDirty(op.path)) {
 			queuePatch(op.path, op);
 		} else {

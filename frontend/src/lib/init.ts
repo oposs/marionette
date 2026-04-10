@@ -43,8 +43,8 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 
 	registerHandler('patch', (raw: unknown) => {
 		const msg = raw as PatchMessage;
-		// Apply patch to main surface (protocol lacks surface field on patch messages)
-		applyPatch('main', msg.patch);
+		// Route by target surface (D-A3 — fixes the hardcoded-'main' bug).
+		applyPatch(msg.surface, msg.patch);
 		// Confirm optimistic update if correlated
 		if (msg.id) {
 			confirmOptimistic(msg.id);

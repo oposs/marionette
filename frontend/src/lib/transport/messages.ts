@@ -14,11 +14,58 @@ export type JsonPointer = string;
 /** Message correlation ID */
 export type MessageId = string;
 
-/** A single patch operation: set value at path, or delete if value is null */
-export interface PatchOperation {
+// --- Patch operations (discriminated union, matches Rust tagged enum) ---
+
+/** Data op: set a value at a JSON Pointer path. */
+export interface PatchOperationSet {
+	op: 'set';
 	path: string;
 	value: unknown;
 }
+
+/** Node op: replace (or create) the component at this node ID. */
+export interface PatchOperationSetNode {
+	op: 'set-node';
+	id: string;
+	component: ComponentNode;
+}
+
+/** Node op: delete the node with this ID. */
+export interface PatchOperationDeleteNode {
+	op: 'delete-node';
+	id: string;
+}
+
+/** Node op: replace the children array of the given node. */
+export interface PatchOperationSetChildren {
+	op: 'set-children';
+	id: string;
+	children: string[];
+}
+
+/** Node op: insert an existing child ID into a parent's children array at index. */
+export interface PatchOperationInsertChild {
+	op: 'insert-child';
+	parent: string;
+	index: number;
+	childId: string;
+}
+
+/** Node op: remove a child ID from a parent's children array. */
+export interface PatchOperationRemoveChild {
+	op: 'remove-child';
+	parent: string;
+	childId: string;
+}
+
+/** Tagged union of all patch operations. Discriminated by `op`. */
+export type PatchOperation =
+	| PatchOperationSet
+	| PatchOperationSetNode
+	| PatchOperationDeleteNode
+	| PatchOperationSetChildren
+	| PatchOperationInsertChild
+	| PatchOperationRemoveChild;
 
 /** Validation error returned by the server */
 export interface ValidationError {
@@ -70,10 +117,11 @@ export interface RenderMessage {
 	data: Record<string, unknown>;
 }
 
-/** Server patch message: incremental data updates */
+/** Server patch message: incremental update to one surface (data and/or tree ops). */
 export interface PatchMessage {
 	type: 'patch';
 	id?: string;
+	surface: string;
 	patch: PatchOperation[];
 }
 

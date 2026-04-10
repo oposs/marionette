@@ -28,25 +28,25 @@ describe('dirty tracking', () => {
 
 	it('queuePatch queues ops; clearDirty applies them via callback', () => {
 		markDirty('/user/name');
-		queuePatch('/user/name', { path: '/user/name', value: 'ServerUpdate' });
+		queuePatch('/user/name', { op: 'set', path: '/user/name', value: 'ServerUpdate' });
 
 		const applied: unknown[] = [];
 		clearDirty('/user/name', (op) => applied.push(op));
 
-		expect(applied).toEqual([{ path: '/user/name', value: 'ServerUpdate' }]);
+		expect(applied).toEqual([{ op: 'set', path: '/user/name', value: 'ServerUpdate' }]);
 	});
 
 	it('multiple queued patches applied in order on clearDirty', () => {
 		markDirty('/user/name');
-		queuePatch('/user/name', { path: '/user/name', value: 'First' });
-		queuePatch('/user/name', { path: '/user/name', value: 'Second' });
+		queuePatch('/user/name', { op: 'set', path: '/user/name', value: 'First' });
+		queuePatch('/user/name', { op: 'set', path: '/user/name', value: 'Second' });
 
 		const applied: unknown[] = [];
 		clearDirty('/user/name', (op) => applied.push(op));
 
 		expect(applied).toEqual([
-			{ path: '/user/name', value: 'First' },
-			{ path: '/user/name', value: 'Second' },
+			{ op: 'set', path: '/user/name', value: 'First' },
+			{ op: 'set', path: '/user/name', value: 'Second' },
 		]);
 	});
 });

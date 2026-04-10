@@ -98,7 +98,7 @@ describe('Message dispatcher', () => {
   });
 
   it('sendAction with optimistic patch includes optimistic field and calls applyOptimistic', () => {
-    const patch = [{ path: '/name', value: 'new' }];
+    const patch = [{ op: 'set' as const, path: '/name', value: 'new' }];
     sendAction('save', { id: '1' }, undefined, { patch });
 
     expect(send).toHaveBeenCalledWith({

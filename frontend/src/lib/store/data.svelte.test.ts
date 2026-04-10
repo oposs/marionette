@@ -44,8 +44,8 @@ describe('data store', () => {
 
 	it('applyPatch applies array of PatchOperations', () => {
 		applyPatch('main', [
-			{ path: '/user/name', value: 'Charlie' },
-			{ path: '/user/age', value: 30 },
+			{ op: 'set', path: '/user/name', value: 'Charlie' },
+			{ op: 'set', path: '/user/age', value: 30 },
 		]);
 		expect(getData('main', '/user/name')).toBe('Charlie');
 		expect(getData('main', '/user/age')).toBe(30);
@@ -54,13 +54,13 @@ describe('data store', () => {
 	it('applyPatch skips patches to dirty paths', () => {
 		setData('main', '/user/name', 'Original');
 		markDirty('/user/name');
-		applyPatch('main', [{ path: '/user/name', value: 'ServerValue' }]);
+		applyPatch('main', [{ op: 'set', path: '/user/name', value: 'ServerValue' }]);
 		expect(getData('main', '/user/name')).toBe('Original');
 	});
 
 	it('applyPatch with value null deletes the key', () => {
 		setData('main', '/user/name', 'Alice');
-		applyPatch('main', [{ path: '/user/name', value: null }]);
+		applyPatch('main', [{ op: 'set', path: '/user/name', value: null }]);
 		expect(getData('main', '/user/name')).toBeUndefined();
 	});
 

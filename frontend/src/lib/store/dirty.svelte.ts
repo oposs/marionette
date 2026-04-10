@@ -3,11 +3,15 @@
  *
  * While a field is dirty (user is editing), incoming server patches
  * for that path are queued. On clearDirty, queued patches are applied.
+ *
+ * Only `set` (data) ops flow through the dirty queue — node ops don't
+ * have a JSON Pointer path, so they bypass this machinery entirely and
+ * are dispatched directly by `applyPatch` in `data.svelte.ts`.
  */
-import type { PatchOperation } from '$lib/transport/messages.js';
+import type { PatchOperationSet } from '$lib/transport/messages.js';
 
 const dirtyPaths = new Set<string>();
-const pendingPatches = new Map<string, PatchOperation[]>();
+const pendingPatches = new Map<string, PatchOperationSet[]>();
 
 /**
  * Mark a path as dirty (user is editing this field).
@@ -20,7 +24,7 @@ export function markDirty(path: string): void {
  * Clear dirty state for a path and apply any queued patches.
  * The applyFn callback is called for each queued patch operation.
  */
-export function clearDirty(path: string, applyFn: (op: PatchOperation) => void): void {
+export function clearDirty(path: string, applyFn: (op: PatchOperationSet) => void): void {
 	dirtyPaths.delete(path);
 	const queued = pendingPatches.get(path);
 	if (queued) {
@@ -47,7 +51,7 @@ export function isDirty(path: string): boolean {
  * Queue a patch operation for a dirty path.
  * Will be applied when clearDirty is called.
  */
-export function queuePatch(path: string, op: PatchOperation): void {
+export function queuePatch(path: string, op: PatchOperationSet): void {
 	let queue = pendingPatches.get(path);
 	if (!queue) {
 		queue = [];

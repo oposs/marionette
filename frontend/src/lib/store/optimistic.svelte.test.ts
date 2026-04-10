@@ -11,20 +11,20 @@ describe('optimistic updates', () => {
 
 	it('applyOptimistic snapshots and applies patch', () => {
 		setData('main', '/user/name', 'Alice');
-		applyOptimistic('req-1', 'main', [{ path: '/user/name', value: 'Optimistic' }]);
+		applyOptimistic('req-1', 'main', [{ op: 'set', path: '/user/name', value: 'Optimistic' }]);
 		expect(getData('main', '/user/name')).toBe('Optimistic');
 	});
 
 	it('confirmOptimistic removes snapshot (no-op on data)', () => {
 		setData('main', '/user/name', 'Alice');
-		applyOptimistic('req-1', 'main', [{ path: '/user/name', value: 'Optimistic' }]);
+		applyOptimistic('req-1', 'main', [{ op: 'set', path: '/user/name', value: 'Optimistic' }]);
 		confirmOptimistic('req-1');
 		expect(getData('main', '/user/name')).toBe('Optimistic');
 	});
 
 	it('rollbackOptimistic restores original values', () => {
 		setData('main', '/user/name', 'Alice');
-		applyOptimistic('req-1', 'main', [{ path: '/user/name', value: 'Optimistic' }]);
+		applyOptimistic('req-1', 'main', [{ op: 'set', path: '/user/name', value: 'Optimistic' }]);
 		rollbackOptimistic('req-1');
 		expect(getData('main', '/user/name')).toBe('Alice');
 	});
