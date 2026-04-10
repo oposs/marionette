@@ -143,13 +143,40 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
         }
     });
 
-    Ok(vec![ProtocolMessage::Render(RenderMessage {
-        id: ctx.action.id.clone(),
+    Ok(vec![
+        ProtocolMessage::Render(RenderMessage {
+            id: ctx.action.id.clone(),
+            surface: "content".into(),
+            root: "interaction-form-root".into(),
+            nodes,
+            data,
+        }),
+        nav_active_patch("contacts"),
+    ])
+}
+
+/// Build a `PatchMessage` that marks `<active_slug>` as the active nav item and
+/// clears all others. Emitted alongside every screen Render so the sidebar's
+/// `NavItem` active indicators (bound to `/nav/active/<slug>`) stay in sync
+/// with the currently-visible screen. Interactions live under the contact
+/// screen in the CRM demo, so this handler activates the "contacts" nav
+/// entry. Per D-B13.
+fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
+    use marionette_protocol::data::PatchOperation;
+    use marionette_protocol::messages::PatchMessage;
+    let slugs = ["home", "contacts", "companies", "users", "audit"];
+    let ops: Vec<PatchOperation> = slugs
+        .iter()
+        .map(|s| PatchOperation::Set {
+            path: format!("/nav/active/{s}"),
+            value: serde_json::json!(*s == active_slug),
+        })
+        .collect();
+    marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+        id: None,
         surface: "main".into(),
-        root: "interaction-form-root".into(),
-        nodes,
-        data,
-    })])
+        patch: ops,
+    })
 }
 
 /// Handle the `interaction_save` action: validate, insert, audit, and re-render contact form.

@@ -132,13 +132,16 @@ async fn render_company_list(ctx: &HandlerContext) -> ActionResult {
 
     let data = serde_json::json!({ "companies": rows });
 
-    Ok(vec![ProtocolMessage::Render(RenderMessage {
-        id: ctx.action.id.clone(),
-        surface: "main".into(),
-        root: "company-list-root".into(),
-        nodes,
-        data,
-    })])
+    Ok(vec![
+        ProtocolMessage::Render(RenderMessage {
+            id: ctx.action.id.clone(),
+            surface: "content".into(),
+            root: "company-list-root".into(),
+            nodes,
+            data,
+        }),
+        nav_active_patch("companies"),
+    ])
 }
 
 /// Handle the `company_list` action: render a DataTable of all companies.
@@ -371,13 +374,38 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         nodes.insert(id, component);
     }
 
-    Ok(vec![ProtocolMessage::Render(RenderMessage {
-        id: ctx.action.id.clone(),
+    Ok(vec![
+        ProtocolMessage::Render(RenderMessage {
+            id: ctx.action.id.clone(),
+            surface: "content".into(),
+            root: "company-form-root".into(),
+            nodes,
+            data: merged_data,
+        }),
+        nav_active_patch("companies"),
+    ])
+}
+
+/// Build a `PatchMessage` that marks `<active_slug>` as the active nav item and
+/// clears all others. Emitted alongside every screen Render so the sidebar's
+/// `NavItem` active indicators (bound to `/nav/active/<slug>`) stay in sync
+/// with the currently-visible screen. Per D-B13.
+fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
+    use marionette_protocol::data::PatchOperation;
+    use marionette_protocol::messages::PatchMessage;
+    let slugs = ["home", "contacts", "companies", "users", "audit"];
+    let ops: Vec<PatchOperation> = slugs
+        .iter()
+        .map(|s| PatchOperation::Set {
+            path: format!("/nav/active/{s}"),
+            value: serde_json::json!(*s == active_slug),
+        })
+        .collect();
+    marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+        id: None,
         surface: "main".into(),
-        root: "company-form-root".into(),
-        nodes,
-        data: merged_data,
-    })])
+        patch: ops,
+    })
 }
 
 /// Handle the `company_save` action: create or update a company.
