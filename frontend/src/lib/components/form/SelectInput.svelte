@@ -1,8 +1,9 @@
 <script lang="ts">
 	import * as Select from '$lib/components/ui/select';
 	import { Label } from '$lib/components/ui/label';
-	import { getData, setData } from '$lib/store/data.svelte';
+	import { getAllData, getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
+	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
 	import type { Snippet } from 'svelte';
 
@@ -28,6 +29,19 @@
 	function handleValueChange(newValue: string) {
 		if (bind) {
 			setData(surface, bind, newValue);
+		}
+		// If a `change` action is wired, dispatch it to the backend with
+		// the full surface data payload (mirrors the Button pattern in
+		// `Button.svelte`). This is what Phase 12 Plan 08's country-select
+		// demo relies on to trigger node-patch flows (D-A6 focus
+		// preservation + D-B15 toast lifecycle).
+		if (action?.type === 'change' && action.name) {
+			const surfaceData = getAllData(surface) ?? {};
+			const payload = {
+				...((action.payload as Record<string, unknown>) ?? {}),
+				...surfaceData,
+			};
+			sendAction(action.name, payload, action.target);
 		}
 	}
 

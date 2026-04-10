@@ -290,9 +290,30 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         }
     });
 
+    // -- Seed the toasts sub-surface with an empty container root --
+    //
+    // D-B15 gate: the `toasts` sub-surface must exist with a root node
+    // before any `insert-child` op can reference `toasts-root` as a
+    // parent. This is the minimum surface initialization needed for
+    // Plan 08's country-change demo to land its toast patches.
+    // Without this Render, the first InsertChild from
+    // `contact_country_change` would target a non-existent parent and
+    // the toast would never appear.
+    let (toasts_root_tuple, toasts_root_descendants) = Container::new()
+        .id("toasts-root")
+        .build_tree();
+    let mut toasts_map: HashMap<String, marionette_protocol::Component> = HashMap::new();
+    let (toasts_root_id, toasts_root_component) = toasts_root_tuple;
+    toasts_map.insert(toasts_root_id.clone(), toasts_root_component);
+    for (id, component) in toasts_root_descendants {
+        toasts_map.insert(id, component);
+    }
+
     // -- Compose response messages --
     // Order: shell render first (must exist before content patches/renders
-    // can reference its nodes), then the content sub-surface render.
+    // can reference its nodes), then the content sub-surface render, then
+    // the toasts sub-surface seeding Render so the `toasts` sub-surface
+    // is ready for D-B15 node patches.
     let mut messages = Vec::new();
     messages.push(ProtocolMessage::Render(RenderMessage {
         id: None,
@@ -302,6 +323,13 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         data: shell_data,
     }));
     messages.append(&mut content_messages);
+    messages.push(ProtocolMessage::Render(RenderMessage {
+        id: None,
+        surface: "toasts".into(),
+        root: toasts_root_id,
+        nodes: toasts_map,
+        data: serde_json::json!({}),
+    }));
 
     Ok(messages)
 }
@@ -454,6 +482,16 @@ async fn main() {
         .action(
             "contact_delete",
             box_handler(handlers::contact::handle_contact_delete),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "contact_country_change",
+            box_handler(handlers::contact::handle_contact_country_change),
+            AuthRequirement::Authenticated,
+        )
+        .action(
+            "dismiss_toast",
+            box_handler(handlers::contact::handle_dismiss_toast),
             AuthRequirement::Authenticated,
         )
         .action(

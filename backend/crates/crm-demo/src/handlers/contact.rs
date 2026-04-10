@@ -479,7 +479,8 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     "email": found.contact_email,
                     "phone": found.contact_phone.as_deref().unwrap_or(""),
                     "title": found.contact_title.as_deref().unwrap_or(""),
-                    "company": found.contact_company.map(|id| id.to_string()).unwrap_or_default()
+                    "company": found.contact_company.map(|id| id.to_string()).unwrap_or_default(),
+                    "country": ""
                 }
             }),
             "Edit Contact",
@@ -493,7 +494,8 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     "email": "",
                     "phone": "",
                     "title": "",
-                    "company": ""
+                    "company": "",
+                    "country": ""
                 }
             }),
             "New Contact",
@@ -547,6 +549,38 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         .bind("/contactForm/company")
         .build();
 
+    // Country select — Phase 12 node-patch demo (D-A6 focus preservation).
+    // Changing the country dispatches `contact_country_change`, whose handler
+    // emits a PatchMessage that swaps country-specific fields in place via
+    // set-node + insert-child + delete-node + remove-child ops on the
+    // `content` surface, and additionally insert-child + set-node ops on
+    // the `toasts` sub-surface (D-B15 toast lifecycle demo).
+    let country_select = Select::new(
+        "Country",
+        vec![
+            SelectOption {
+                value: String::new(),
+                label: "Select...".into(),
+            },
+            SelectOption {
+                value: "CH".into(),
+                label: "Switzerland".into(),
+            },
+            SelectOption {
+                value: "US".into(),
+                label: "United States".into(),
+            },
+            SelectOption {
+                value: "DE".into(),
+                label: "Germany".into(),
+            },
+        ],
+    )
+    .id("contact-form-country")
+    .bind("/contactForm/country")
+    .action(ComponentAction::change("contact_country_change"))
+    .build();
+
     let save_button = Button::new("Save")
         .id("contact-form-save")
         .action(ComponentAction::submit("contact_save"))
@@ -565,6 +599,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             phone_input,
             title_input,
             company_select,
+            country_select,
             save_button,
             cancel_button,
         ])
@@ -1297,4 +1332,241 @@ pub async fn handle_contact_tag_remove(ctx: HandlerContext) -> ActionResult {
         session: ctx.session.clone(),
     };
     handle_contact_form(form_ctx).await
+}
+
+// -----------------------------------------------------------------------------
+// Phase 12 Plan 08 — country-select node-patch demo (D-A6, D-B15)
+// -----------------------------------------------------------------------------
+
+/// Handle the contact form's country-select change: swap country-specific
+/// fields in place via node patches (D-A6 focus-preservation demo) and
+/// insert a dismissable toast on the `toasts` sub-surface (D-B15 toast
+/// lifecycle demo).
+///
+/// The handler returns two atomic `PatchMessage`s in order:
+///
+/// 1. `surface: "content"` — a mix of `Set` (confirm new country value),
+///    `RemoveChild` + `DeleteNode` (tear down any previously-inserted
+///    country-specific field), and `SetNode` + `InsertChild` (insert the
+///    new country-specific field). Deleting a non-existent node is a
+///    no-op in the frontend store, so the three candidate IDs
+///    (`contact-ch-canton`, `contact-us-state`, `contact-de-bundesland`)
+///    are always cleaned up before insertion.
+/// 2. `surface: "toasts"` — `RemoveChild` + `DeleteNode` to wipe any
+///    stale toast with the same id, then `SetNode` + `InsertChild` to
+///    add a new toast node. The toast is a `Button` (so the click action
+///    is actually dispatched — `Heading` ignores `action`) that triggers
+///    `dismiss_toast` to close the D-B15 lifecycle.
+///
+/// # Errors
+///
+/// Returns `ActionError` only if a downstream extractor fails; the
+/// patch-building itself is infallible.
+#[allow(clippy::too_many_lines)]
+pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult {
+    use marionette_protocol::data::PatchOperation;
+    use marionette_protocol::messages::PatchMessage;
+    use marionette_protocol::{Component, ComponentAction};
+
+    // Extract the new country value. The Button / SelectInput payload
+    // pattern embeds the full surface data under the surface root, so the
+    // form values land at `payload.contactForm.country`. Fall back to
+    // `payload.country` for robustness under manual/scripted dispatches.
+    let payload = ctx.action.payload.clone().unwrap_or_default();
+    let country = payload
+        .get("contactForm")
+        .and_then(|v| v.get("country"))
+        .and_then(|v| v.as_str())
+        .or_else(|| payload.get("country").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    // -------- Content surface patch --------
+    let mut ops: Vec<PatchOperation> = Vec::new();
+
+    // (1) Authoritative write of the new country value — confirms the
+    // optimistic change the SelectInput already wrote locally.
+    ops.push(PatchOperation::Set {
+        path: "/contactForm/country".into(),
+        value: serde_json::json!(country),
+    });
+
+    // (2) Tear down any previously-inserted country-specific fields.
+    // `remove-child` and `delete-node` are no-ops if the target doesn't
+    // exist, so unconditionally clearing all three candidate IDs is safe.
+    for id in [
+        "contact-ch-canton",
+        "contact-us-state",
+        "contact-de-bundesland",
+    ] {
+        ops.push(PatchOperation::RemoveChild {
+            parent: "contact-form".into(),
+            child_id: id.into(),
+        });
+        ops.push(PatchOperation::DeleteNode { id: id.into() });
+    }
+
+    // (3) Insert the new country-specific field. Index 6 places it after
+    // the country select (contact-form children order: name, email, phone,
+    // title, company, country, save, cancel — country is at index 5 and
+    // the new field slots in at index 6).
+    let insert_index: usize = 6;
+
+    match country.as_str() {
+        "CH" => {
+            let (canton_id, canton_component) = Select::new(
+                "Canton",
+                vec![
+                    SelectOption {
+                        value: "ZH".into(),
+                        label: "Zürich".into(),
+                    },
+                    SelectOption {
+                        value: "BE".into(),
+                        label: "Bern".into(),
+                    },
+                    SelectOption {
+                        value: "GE".into(),
+                        label: "Geneva".into(),
+                    },
+                ],
+            )
+            .id("contact-ch-canton")
+            .bind("/contactForm/canton")
+            .build();
+            ops.push(PatchOperation::SetNode {
+                id: canton_id.clone(),
+                component: canton_component,
+            });
+            ops.push(PatchOperation::InsertChild {
+                parent: "contact-form".into(),
+                index: insert_index,
+                child_id: canton_id,
+            });
+        }
+        "US" => {
+            let (state_id, state_component) = TextInput::new("State")
+                .id("contact-us-state")
+                .bind("/contactForm/usState")
+                .build();
+            ops.push(PatchOperation::SetNode {
+                id: state_id.clone(),
+                component: state_component,
+            });
+            ops.push(PatchOperation::InsertChild {
+                parent: "contact-form".into(),
+                index: insert_index,
+                child_id: state_id,
+            });
+        }
+        "DE" => {
+            let (bundesland_id, bundesland_component) = TextInput::new("Bundesland")
+                .id("contact-de-bundesland")
+                .bind("/contactForm/bundesland")
+                .build();
+            ops.push(PatchOperation::SetNode {
+                id: bundesland_id.clone(),
+                component: bundesland_component,
+            });
+            ops.push(PatchOperation::InsertChild {
+                parent: "contact-form".into(),
+                index: insert_index,
+                child_id: bundesland_id,
+            });
+        }
+        _ => {}
+    }
+
+    let content_patch = ProtocolMessage::Patch(PatchMessage {
+        id: ctx.action.id.clone(),
+        surface: "content".into(),
+        patch: ops,
+    });
+
+    // -------- Toasts sub-surface patch (D-B15) --------
+    //
+    // The toast node is a `Button` (not a `Heading`) because the Button
+    // SDUI component is the one that dispatches click actions; Heading
+    // ignores its `action` field. The button's label carries the D-B15
+    // toast text the E2E test asserts on.
+    let toast_label = format!(
+        "Country set to {}",
+        match country.as_str() {
+            "CH" => "Switzerland",
+            "US" => "United States",
+            "DE" => "Germany",
+            _ => "none",
+        }
+    );
+    let mut toast_props = serde_json::Map::new();
+    toast_props.insert("label".into(), serde_json::json!(toast_label));
+    let toast_node = Component {
+        r#type: "button".into(),
+        props: Some(serde_json::Value::Object(toast_props)),
+        children: None,
+        bind: None,
+        action: Some(ComponentAction::click("dismiss_toast")),
+        visible: None,
+    };
+    let toasts_ops: Vec<PatchOperation> = vec![
+        // Idempotent cleanup of any stale toast with the same id.
+        PatchOperation::RemoveChild {
+            parent: "toasts-root".into(),
+            child_id: "toast-country-change".into(),
+        },
+        PatchOperation::DeleteNode {
+            id: "toast-country-change".into(),
+        },
+        // Insert the new toast node.
+        PatchOperation::SetNode {
+            id: "toast-country-change".into(),
+            component: toast_node,
+        },
+        PatchOperation::InsertChild {
+            parent: "toasts-root".into(),
+            index: 0,
+            child_id: "toast-country-change".into(),
+        },
+    ];
+    let toasts_patch = ProtocolMessage::Patch(PatchMessage {
+        id: None,
+        surface: "toasts".into(),
+        patch: toasts_ops,
+    });
+
+    Ok(vec![content_patch, toasts_patch])
+}
+
+/// D-B15 `dismiss_toast` handler: removes the toast node with the id carried
+/// in the action payload (or the fixed "toast-country-change" id if not
+/// supplied). Proves that `delete-node` works on the `toasts` sub-surface.
+///
+/// # Errors
+///
+/// Infallible in practice; signature returns `ActionResult` to match the
+/// handler trait.
+pub async fn handle_dismiss_toast(ctx: HandlerContext) -> ActionResult {
+    use marionette_protocol::data::PatchOperation;
+    use marionette_protocol::messages::PatchMessage;
+
+    let payload = ctx.action.payload.clone().unwrap_or_default();
+    let toast_id = payload
+        .get("toastId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("toast-country-change")
+        .to_string();
+
+    let ops = vec![
+        PatchOperation::RemoveChild {
+            parent: "toasts-root".into(),
+            child_id: toast_id.clone(),
+        },
+        PatchOperation::DeleteNode { id: toast_id },
+    ];
+
+    Ok(vec![ProtocolMessage::Patch(PatchMessage {
+        id: ctx.action.id.clone(),
+        surface: "toasts".into(),
+        patch: ops,
+    })])
 }
