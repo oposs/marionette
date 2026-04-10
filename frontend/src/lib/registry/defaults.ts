@@ -25,6 +25,7 @@ import ModalSurface from '../components/popup/ModalSurface.svelte';
 import ToastSurface from '../components/popup/ToastSurface.svelte';
 import ConfirmDialog from '../components/popup/ConfirmDialog.svelte';
 import SurfaceMount from '../components/core/SurfaceMount.svelte';
+import AppShell from '../components/shell/AppShell.svelte';
 
 export function registerDefaults(): void {
 	registerAll({
@@ -47,5 +48,6 @@ export function registerDefaults(): void {
 		'toast': ToastSurface,
 		'confirm-dialog': ConfirmDialog,
 		'surface-mount': SurfaceMount,
+		'app-shell': AppShell,
 	});
 }
