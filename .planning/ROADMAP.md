@@ -92,7 +92,7 @@ Plans:
 - [x] 12-04-frontend-store-PLAN.md — TS PatchOperation union + init.ts fix + fine-grained surfaces store + focus-preservation test
 - [x] 12-05-backend-builders-PLAN.md — SurfaceMount derived builder + hand-written AppShell builder with 6 slot methods
 - [x] 12-06-frontend-shell-components-PLAN.md — AppShell.svelte + SurfaceMount.svelte + registry + +layout.svelte collapse + ConnectionBanner retirement
-- [ ] 12-07-crm-integration-PLAN.md — handle_navigate builds AppShell + migrate handlers to surface "content" + interactive verification checkpoint
+- [x] 12-07-crm-integration-PLAN.md — handle_navigate builds AppShell + migrate handlers to surface "content" + interactive verification checkpoint
 - [ ] 12-08-demo-and-e2e-PLAN.md — Country-select demo on contact form + node-patch-focus E2E + shell-nav E2E + protocol-conformance schema validation
 **UI hint**: yes
 
@@ -148,7 +148,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. Protocol Node Patching + AppShell | v1.1 | 6/8 | In Progress|  |
+| 12. Protocol Node Patching + AppShell | v1.1 | 7/8 | In Progress|  |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
