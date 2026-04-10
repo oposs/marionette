@@ -53,14 +53,20 @@ pub struct RenderMessage {
     pub data: serde_json::Value,
 }
 
-/// Incremental data update via patch operations.
+/// Incremental update via patch operations applied to a single surface.
+///
+/// A `PatchMessage` targets exactly one surface and carries a batch of
+/// `PatchOperation` entries that are applied in declared order, all-or-nothing.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PatchMessage {
     /// Correlation ID.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<MessageId>,
 
-    /// Array of patch operations to apply.
+    /// Target surface name. Required — one message targets exactly one surface.
+    pub surface: Surface,
+
+    /// Array of patch operations to apply, in declared order.
     pub patch: Vec<PatchOperation>,
 }
 
@@ -132,10 +138,10 @@ mod tests {
     #[test]
     fn hello_round_trip() {
         let msg = ProtocolMessage::Hello(HelloMessage {
-            version: "1.0.0".into(),
+            version: "1.1.0".into(),
         });
         let json = serde_json::to_value(&msg).unwrap();
-        assert_eq!(json, json!({"type": "hello", "version": "1.0.0"}));
+        assert_eq!(json, json!({"type": "hello", "version": "1.1.0"}));
 
         let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, msg);
@@ -179,7 +185,8 @@ mod tests {
     fn patch_round_trip() {
         let msg = ProtocolMessage::Patch(PatchMessage {
             id: None,
-            patch: vec![PatchOperation {
+            surface: "main".into(),
+            patch: vec![PatchOperation::Set {
                 path: "/user/name".into(),
                 value: json!("Bob"),
             }],
@@ -187,11 +194,34 @@ mod tests {
 
         let json = serde_json::to_value(&msg).unwrap();
         assert_eq!(json["type"], "patch");
+        assert_eq!(json["surface"], "main");
+        assert_eq!(json["patch"][0]["op"], "set");
         assert_eq!(json["patch"][0]["path"], "/user/name");
         assert_eq!(json["patch"][0]["value"], "Bob");
 
         let deserialized: ProtocolMessage = serde_json::from_value(json).unwrap();
         assert_eq!(deserialized, msg);
+    }
+
+    #[test]
+    fn patch_message_surface_required() {
+        let v = json!({"type": "patch", "patch": []});
+        let result: Result<ProtocolMessage, _> = serde_json::from_value(v);
+        assert!(result.is_err(), "PatchMessage without surface must be rejected");
+    }
+
+    #[test]
+    fn patch_message_targets_non_main_surface() {
+        let msg = ProtocolMessage::Patch(PatchMessage {
+            id: Some("msg-1".into()),
+            surface: "modal".into(),
+            patch: vec![PatchOperation::DeleteNode { id: "old-modal".into() }],
+        });
+        let v = serde_json::to_value(&msg).unwrap();
+        assert_eq!(v["surface"], "modal");
+        assert_eq!(v["patch"][0]["op"], "delete-node");
+        let back: ProtocolMessage = serde_json::from_value(v).unwrap();
+        assert_eq!(back, msg);
     }
 
     #[test]
@@ -202,7 +232,7 @@ mod tests {
             source: Some("btn-1".into()),
             payload: Some(json!({"confirmed": true})),
             optimistic: Some(OptimisticUpdate {
-                patch: vec![PatchOperation {
+                patch: vec![PatchOperation::Set {
                     path: "/saving".into(),
                     value: json!(true),
                 }],
@@ -269,6 +299,7 @@ mod tests {
     fn optional_fields_omitted() {
         let msg = ProtocolMessage::Patch(PatchMessage {
             id: None,
+            surface: "main".into(),
             patch: vec![],
         });
 
@@ -295,7 +326,7 @@ mod tests {
     fn deserialize_from_spec_json() {
         // Hello
         let hello: ProtocolMessage =
-            serde_json::from_value(json!({"type": "hello", "version": "1.0.0"})).unwrap();
+            serde_json::from_value(json!({"type": "hello", "version": "1.1.0"})).unwrap();
         assert!(matches!(hello, ProtocolMessage::Hello(_)));
 
         // Render

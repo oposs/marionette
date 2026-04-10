@@ -77,7 +77,9 @@ async fn handle_session(
                 .map(|dt| dt.and_utc() < Utc::now())
                 .unwrap_or(true);
 
-                if !expired {
+                if expired {
+                    debug!(session_id = %ws_session.id, "Session cookie expired");
+                } else {
                     ws_session.user_id = model.session_user.map(|id| id.to_string());
                     ws_session.roles =
                         serde_json::from_str(&model.session_roles).unwrap_or_default();
@@ -86,8 +88,6 @@ async fn handle_session(
                         user_id = ?ws_session.user_id,
                         "Authenticated from cookie"
                     );
-                } else {
-                    debug!(session_id = %ws_session.id, "Session cookie expired");
                 }
             }
             Ok(None) => {
@@ -106,7 +106,7 @@ async fn handle_session(
 
     // Send hello message
     let hello = ProtocolMessage::Hello(HelloMessage {
-        version: "1.0.0".into(),
+        version: "1.1.0".into(),
     });
     if tx.send(hello).await.is_err() {
         warn!(session_id = %ws_session.id, "Failed to send hello -- writer closed");
@@ -115,14 +115,13 @@ async fn handle_session(
     }
 
     // Send login form to unauthenticated sessions
-    if ws_session.user_id.is_none() {
-        if let Some(ref login_form) = state.login_form {
-            if tx.send(login_form.clone()).await.is_err() {
-                warn!(session_id = %ws_session.id, "Failed to send login form");
-                write_task.abort();
-                return;
-            }
-        }
+    if ws_session.user_id.is_none()
+        && let Some(ref login_form) = state.login_form
+        && tx.send(login_form.clone()).await.is_err()
+    {
+        warn!(session_id = %ws_session.id, "Failed to send login form");
+        write_task.abort();
+        return;
     }
 
     // Reader loop: reads WS messages, dispatches actions, sends responses through tx
@@ -254,7 +253,11 @@ async fn handle_text_message(
         // render response data (the handler embeds it for us).
         for r in &responses {
             if let ProtocolMessage::Render(render) = r {
-                if let Some(user_id) = render.data.get("_auth_user_id").and_then(|v| v.as_i64()) {
+                if let Some(user_id) = render
+                    .data
+                    .get("_auth_user_id")
+                    .and_then(serde_json::Value::as_i64)
+                {
                     session.user_id = Some(user_id.to_string());
                 }
                 if let Some(role) = render.data.get("_auth_role").and_then(|v| v.as_str()) {

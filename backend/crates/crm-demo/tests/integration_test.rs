@@ -50,7 +50,8 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
 async fn handle_demo_click(_ctx: HandlerContext) -> ActionResult {
     Ok(vec![ProtocolMessage::Patch(PatchMessage {
         id: None,
-        patch: vec![PatchOperation {
+        surface: "main".into(),
+        patch: vec![PatchOperation::Set {
             path: "/message".into(),
             value: serde_json::json!("Button was clicked!"),
         }],
@@ -118,10 +119,10 @@ async fn hello_exchange() {
     let text = msg.into_text().unwrap();
     let value: serde_json::Value = serde_json::from_str(&text).unwrap();
     assert_eq!(value["type"], "hello");
-    assert_eq!(value["version"], "1.0.0");
+    assert_eq!(value["version"], "1.1.0");
 
     // Send client hello
-    let client_hello = serde_json::json!({"type": "hello", "version": "1.0.0"});
+    let client_hello = serde_json::json!({"type": "hello", "version": "1.1.0"});
     ws.send(Message::Text(serde_json::to_string(&client_hello).unwrap().into()))
         .await
         .unwrap();
