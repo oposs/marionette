@@ -2,7 +2,7 @@
 phase: 12
 plan: 08
 type: execute
-wave: 4
+wave: 5
 depends_on: [12-03, 12-04, 12-07]
 files_modified:
   - backend/crates/crm-demo/src/handlers/contact.rs
@@ -24,6 +24,7 @@ must_haves:
     - "CRM app runs inside AppShell with working nav between screens"
     - "Contact form includes a country-select field that triggers a node-patch flow swapping sibling fields in place with preserved focus"
     - "Protocol conformance E2E validates live wire messages against updated schemas"
+    - "Toast lifecycle (D-B15) demonstrated end-to-end: country-change handler emits insert-child on the toasts sub-surface root adding a small Heading node; a dismiss_toast action handler emits delete-node removing it. E2E test asserts the toast becomes visible, then dismissal makes it hidden."
   artifacts:
     - path: "backend/crates/marionette-protocol/src/data.rs"
       provides: "tagged PatchOperation enum with 6 variants"
@@ -97,6 +98,14 @@ must_haves:
       to: "ajv + data.yaml oneOf discriminator"
       via: "live wire message validation"
       pattern: "set-node"
+    - from: "country-change handler"
+      to: "toasts sub-surface"
+      via: "second PatchMessage with InsertChild + SetNode targeting surface 'toasts'"
+      pattern: "surface:\\s*\"toasts\""
+    - from: "dismiss_toast action"
+      to: "delete-node on toasts sub-surface"
+      via: "PatchMessage with DeleteNode + RemoveChild targeting surface 'toasts'"
+      pattern: "dismiss_toast"
 ---
 
 <objective>
@@ -280,22 +289,134 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
         _ => {}
     }
 
-    Ok(vec![marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+    // Build the primary patch on the content surface (the country-swap).
+    let content_patch = marionette_protocol::ProtocolMessage::Patch(PatchMessage {
         id: ctx.action.id.clone(),
         surface: "content".into(),
+        patch: ops,
+    });
+
+    // D-B15 toast lifecycle demo: on every country change, insert a toast
+    // notification into the `toasts` sub-surface root announcing the change.
+    // The toast is a small Heading node with a dismiss action that triggers
+    // `dismiss_toast`, which will emit delete-node to remove it. This proves
+    // the `insert-child` / `delete-node` operations work on a sub-surface
+    // other than `content` — closing success criterion 8 for Phase 12.
+    use marionette_protocol::Component;
+    let mut toast_props = serde_json::Map::new();
+    toast_props.insert(
+        "text".into(),
+        serde_json::json!(format!("Country set to {}", match country.as_str() {
+            "CH" => "Switzerland",
+            "US" => "United States",
+            "DE" => "Germany",
+            _ => "none",
+        })),
+    );
+    toast_props.insert("level".into(), serde_json::json!(6));
+    let toast_node = Component {
+        component_type: "heading".into(),
+        id: Some("toast-country-change".into()),
+        props: serde_json::Value::Object(toast_props),
+        bind: None,
+        action: Some(marionette_protocol::ComponentAction::click("dismiss_toast")),
+        children: None,
+    };
+    let toasts_ops: Vec<PatchOperation> = vec![
+        // Clean up any previously-inserted toast with the same id (idempotent)
+        PatchOperation::RemoveChild {
+            parent: "toasts-root".into(),
+            child_id: "toast-country-change".into(),
+        },
+        PatchOperation::DeleteNode {
+            id: "toast-country-change".into(),
+        },
+        // Insert the new toast node
+        PatchOperation::SetNode {
+            id: "toast-country-change".into(),
+            component: toast_node,
+        },
+        PatchOperation::InsertChild {
+            parent: "toasts-root".into(),
+            index: 0,
+            child_id: "toast-country-change".into(),
+        },
+    ];
+    let toasts_patch = marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+        id: None,
+        surface: "toasts".into(),
+        patch: toasts_ops,
+    });
+
+    Ok(vec![content_patch, toasts_patch])
+}
+
+/// D-B15 dismiss_toast handler: removes the toast node with the id carried
+/// in the action payload (or the fixed "toast-country-change" id if not
+/// supplied). Proves that `delete-node` works on the toasts sub-surface.
+pub async fn handle_dismiss_toast(ctx: HandlerContext) -> ActionResult {
+    use marionette_protocol::{PatchMessage, PatchOperation};
+    let payload = ctx.action.payload.clone().unwrap_or_default();
+    let toast_id = payload
+        .get("toastId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("toast-country-change")
+        .to_string();
+
+    let ops = vec![
+        PatchOperation::RemoveChild {
+            parent: "toasts-root".into(),
+            child_id: toast_id.clone(),
+        },
+        PatchOperation::DeleteNode { id: toast_id },
+    ];
+
+    Ok(vec![marionette_protocol::ProtocolMessage::Patch(PatchMessage {
+        id: ctx.action.id.clone(),
+        surface: "toasts".into(),
         patch: ops,
     })])
 }
 ```
 
+**Toasts sub-surface initialization**: the toasts sub-surface needs an initial `RenderMessage` (with an empty Container root id `toasts-root`) before the first `insert-child` op can reference it. Plan 07 Task 1 constructs a `SurfaceMount::new("toasts")` node but does NOT Render into the `toasts` surface. Add this seeding to Plan 07's `handle_navigate` OR here inside `handle_contact_country_change` (idempotent check for whether the surface has been rendered to before). **Simplest option**: at the end of `handle_navigate` in `main.rs`, append a third Render message seeding the `toasts` sub-surface with an empty Container node `toasts-root` as its root. Add this in Task 1 here as a follow-up edit to `main.rs`:
+
+```rust
+// Append to handle_navigate in main.rs BEFORE the final Ok(messages) —
+// seed the toasts sub-surface with an empty container so InsertChild
+// has a parent to target. D-B15 gate.
+let (toasts_root_id, toasts_container) = Container::new()
+    .id("toasts-root")
+    .children::<Vec<(String, marionette_protocol::Component)>>(vec![])
+    .build_tree();
+let mut toasts_nodes = HashMap::new();
+for (id, c) in toasts_container {
+    toasts_nodes.insert(id, c);
+}
+messages.push(ProtocolMessage::Render(RenderMessage {
+    id: None,
+    surface: "toasts".into(),
+    root: toasts_root_id,
+    nodes: toasts_nodes,
+    data: serde_json::json!({}),
+}));
+```
+
+The Render order (shell → content → toasts) is: shell first so SurfaceMount nodes exist, content next so the landing screen appears, toasts last so the empty region is ready to receive insert-child. Order matters: the frontend applies messages sequentially.
+
 Note: the `ComponentAction::change` helper — if it does not exist in the project, use `ComponentAction::click` (the SelectInput on the frontend may dispatch actions on change via a different constructor). Inspect `backend/crates/marionette-protocol/src/component.rs` for the `ComponentAction` helpers and pick the correct one. If only `click` / `submit` exist, add a new `change` constructor following the same pattern.
 
-3. Register the new handler in `backend/crates/crm-demo/src/main.rs` `action_router` chain:
+3. Register BOTH new handlers in `backend/crates/crm-demo/src/main.rs` `action_router` chain:
 
 ```rust
 .action(
     "contact_country_change",
     box_handler(handlers::contact::handle_contact_country_change),
+    AuthRequirement::Authenticated,
+)
+.action(
+    "dismiss_toast",
+    box_handler(handlers::contact::handle_dismiss_toast),
     AuthRequirement::Authenticated,
 )
 ```
@@ -310,15 +431,21 @@ Note: the `ComponentAction::change` helper — if it does not exist in the proje
   <acceptance_criteria>
     - `grep -q 'id("contact-country")' backend/crates/crm-demo/src/handlers/contact.rs` succeeds
     - `grep -q 'handle_contact_country_change' backend/crates/crm-demo/src/handlers/contact.rs` succeeds
+    - `grep -q 'handle_dismiss_toast' backend/crates/crm-demo/src/handlers/contact.rs` succeeds (D-B15)
     - `grep -q '"contact_country_change"' backend/crates/crm-demo/src/main.rs` succeeds
+    - `grep -q '"dismiss_toast"' backend/crates/crm-demo/src/main.rs` succeeds (D-B15 action registered)
     - `grep -q 'PatchOperation::InsertChild' backend/crates/crm-demo/src/handlers/contact.rs` succeeds
     - `grep -q 'PatchOperation::SetNode' backend/crates/crm-demo/src/handlers/contact.rs` succeeds
     - `grep -q 'PatchOperation::RemoveChild' backend/crates/crm-demo/src/handlers/contact.rs` succeeds
+    - `grep -q 'PatchOperation::DeleteNode' backend/crates/crm-demo/src/handlers/contact.rs` succeeds (D-B15 lifecycle)
+    - `grep -q 'surface: "toasts"' backend/crates/crm-demo/src/handlers/contact.rs` succeeds (D-B15 toast patches target the toasts sub-surface)
+    - `grep -q 'toasts-root' backend/crates/crm-demo/src/main.rs` succeeds (toasts sub-surface seeded in handle_navigate)
+    - `grep -q 'surface: "toasts"' backend/crates/crm-demo/src/main.rs` succeeds (the toasts Render in handle_navigate)
     - `cd backend && cargo build -p crm-demo` exits 0
     - `cd backend && cargo clippy --workspace -- -D warnings` exits 0
     - `cd backend && cargo test --workspace` exits 0
   </acceptance_criteria>
-  <done>Contact form has a Country select; changing it triggers a PatchMessage with mixed Set/SetNode/InsertChild/RemoveChild/DeleteNode ops targeting surface "content". Workspace compiles cleanly.</done>
+  <done>Contact form has a Country select; changing it triggers TWO PatchMessages: (a) mixed Set/SetNode/InsertChild/RemoveChild/DeleteNode ops on surface "content" swapping country-specific fields, and (b) InsertChild + SetNode on surface "toasts" adding a dismissable notification (D-B15). `handle_navigate` seeds the toasts sub-surface with an empty `toasts-root` Container so InsertChild has a parent. `handle_dismiss_toast` emits DeleteNode + RemoveChild on toasts to close the lifecycle. Workspace compiles cleanly.</done>
 </task>
 
 <task type="auto">
@@ -416,6 +543,34 @@ test.describe('Phase 12: node patch + focus preservation end-to-end', () => {
 		await expect(page.getByLabel('State')).toBeVisible({ timeout: 5000 });
 		await expect(page.getByLabel('Canton')).not.toBeVisible();
 	});
+
+	test('D-B15 toast lifecycle: country change inserts a toast; clicking it dismisses (delete-node)', async ({ page }) => {
+		// This test proves `insert-child` / `delete-node` ops work on the
+		// `toasts` sub-surface end-to-end. It complements the content-surface
+		// node patching proved by the other two tests by exercising a
+		// different sub-surface target.
+		await page.goto('/');
+		await page.getByLabel('Email').fill('admin@example.com');
+		await page.getByLabel('Password').fill('admin');
+		await page.getByRole('button', { name: /log in/i }).click();
+		await page.getByRole('button', { name: /new contact|add contact|new/i }).first().click();
+
+		// Trigger the country change — backend sends TWO PatchMessages:
+		// 1) mixed ops on 'content' swapping Canton field in
+		// 2) insert-child + set-node on 'toasts' adding a dismissable toast
+		await page.getByLabel('Country').selectOption({ label: 'Switzerland' });
+
+		// Assert the toast node text is visible (D-B15 insert-child proven)
+		await expect(page.getByText('Country set to Switzerland')).toBeVisible({ timeout: 5000 });
+
+		// Click the toast to trigger the dismiss_toast action — backend
+		// responds with a PatchMessage on 'toasts' containing delete-node
+		// + remove-child ops that remove the toast node.
+		await page.getByText('Country set to Switzerland').click();
+
+		// Assert the toast disappears (D-B15 delete-node proven)
+		await expect(page.getByText('Country set to Switzerland')).toBeHidden({ timeout: 5000 });
+	});
 });
 ```
 
@@ -439,9 +594,11 @@ If the focus assertion fails because the WebSocket is still using the old patch 
     - `grep -q 'selectionStart' frontend/tests/e2e/node-patch-focus.spec.ts` succeeds
     - `grep -q "selectOption.*Switzerland" frontend/tests/e2e/node-patch-focus.spec.ts` succeeds
     - `grep -q "selectOption.*United States" frontend/tests/e2e/node-patch-focus.spec.ts` succeeds
-    - `cd frontend && npx playwright test --config playwright.e2e.config.ts tests/e2e/node-patch-focus.spec.ts` exits 0 with 2 passing tests
+    - `grep -q "Country set to Switzerland" frontend/tests/e2e/node-patch-focus.spec.ts` succeeds (D-B15 toast text assertion)
+    - `grep -q "toBeHidden" frontend/tests/e2e/node-patch-focus.spec.ts` succeeds (D-B15 dismiss assertion)
+    - `cd frontend && npx playwright test --config playwright.e2e.config.ts tests/e2e/node-patch-focus.spec.ts` exits 0 with 3 passing tests (focus-preservation, country swap, D-B15 toast lifecycle)
   </acceptance_criteria>
-  <done>End-to-end focus-preservation test passes against a real backend. The country-select flow drives a PatchMessage with mixed ops and the Name field's focus and cursor position survive it.</done>
+  <done>End-to-end focus-preservation test passes against a real backend. The country-select flow drives a PatchMessage with mixed ops and the Name field's focus and cursor position survive it. The D-B15 toast lifecycle test proves insert-child + delete-node round-trip on the toasts sub-surface. All 3 tests in node-patch-focus.spec.ts pass.</done>
 </task>
 
 <task type="auto">
@@ -643,7 +800,7 @@ cd frontend && npx playwright test --config playwright.e2e.config.ts 2>&1 | tail
 - `cd frontend && npx vitest --config vitest-browser.config.ts --run` exits 0 (all browser tests)
 - `cd frontend && npx playwright test --config playwright.e2e.config.ts` exits 0 (full E2E suite)
 - Specific gated tests:
-  - `tests/e2e/node-patch-focus.spec.ts` — 2 passing
+  - `tests/e2e/node-patch-focus.spec.ts` — 3 passing (focus-preservation, country swap, D-B15 toast lifecycle)
   - `tests/e2e/shell-nav.spec.ts` — 2 passing
   - `tests/e2e/protocol-conformance.spec.ts` — existing + new node-op validation passing
 - `grep -rn 'surface:\s*"main"' backend/crates/crm-demo/src/handlers/` returns zero lines (Plan 07 verification)
