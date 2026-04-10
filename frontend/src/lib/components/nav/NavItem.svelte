@@ -31,7 +31,12 @@
 	function handleClick(e: Event) {
 		e.preventDefault();
 		if (action) {
-			sendAction(action.name, action.payload as Record<string, unknown> | undefined);
+			// Fall back through name -> type -> literal 'navigate' so we never
+			// dispatch an undefined action name to the backend.
+			sendAction(
+				action.name ?? action.type ?? 'navigate',
+				action.payload as Record<string, unknown> | undefined
+			);
 		} else {
 			sendAction('navigate', { path: (props.href as string) ?? '' });
 		}
