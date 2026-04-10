@@ -15,8 +15,9 @@ use axum::Router;
 use sea_orm_migration::MigratorTrait;
 use tower_http::services::{ServeDir, ServeFile};
 
+use marionette::builders::app_shell::AppShell;
 use marionette::builders::standard::{
-    Button, Container, Form, Heading, NavItem, SideNav, TextInput,
+    Button, Container, Form, Heading, NavItem, SideNav, SurfaceMount, TextInput,
 };
 use marionette::extractors::{FromHandlerContext, Session};
 use marionette::error::ActionResult;
@@ -118,71 +119,189 @@ async fn handle_login_action(ctx: HandlerContext) -> ActionResult {
     Ok(messages)
 }
 
-/// Handle the `navigate` action: default authenticated view is the contact list.
+/// Handle the `navigate` action: build `AppShell` + render the contact list
+/// into the `content` sub-surface as the default authenticated view.
+///
+/// Per D-B5/D-B6/D-B9/D-B11/D-B12/D-B13: the shell is rendered into the
+/// `main` surface exactly once; screen content lives in the `content`
+/// sub-surface so per-screen navigation patches the content region
+/// without tearing down the shell tree.
+#[allow(clippy::too_many_lines)]
 async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
     let session = Session::from_context(&ctx)?;
     let is_admin = session.roles.contains(&"admin".to_string());
+    let user_name = session
+        .user_id
+        .clone()
+        .unwrap_or_else(|| "User".to_string());
 
-    // Default authenticated view: show contact list
-    let mut messages = handlers::contact::handle_contact_list(HandlerContext {
+    // -- Build the content (screen) render first --
+    // The contact_list handler renders into surface "content" (Task 2) and
+    // also emits a nav_active_patch targeting /nav/active/contacts = true
+    // (Plan 07 Task 2 / D-B13). We append its messages after the shell
+    // Render below so they apply in order.
+    let mut content_messages = handlers::contact::handle_contact_list(HandlerContext {
         action: ctx.action.clone(),
         db: ctx.db.clone(),
         session: ctx.session.clone(),
     })
     .await?;
 
-    // Build sidebar navigation
+    // -- Build the sidebar sub-tree (SideNav with NavItems) --
+    // Per D-B13: NavItems bind to /nav/active/<slug>; the per-screen
+    // handlers emit a PatchMessage (Set op) updating that path on every
+    // navigation so the active indicator tracks the visible screen.
     let mut nav_items: Vec<(String, marionette_protocol::Component)> = Vec::new();
-    let home_item = NavItem::new("Home", "/")
-        .id("nav-home")
-        .action(ComponentAction::click("navigate"))
-        .build();
-    nav_items.push(home_item);
-
-    let contacts_item = NavItem::new("Contacts", "/contacts")
-        .id("nav-contacts")
-        .action(ComponentAction::click("contact_list"))
-        .build();
-    nav_items.push(contacts_item);
-
-    let companies_item = NavItem::new("Companies", "/companies")
-        .id("nav-companies")
-        .action(ComponentAction::click("company_list"))
-        .build();
-    nav_items.push(companies_item);
-
+    nav_items.push(
+        NavItem::new("Home", "/")
+            .id("nav-home")
+            .bind("/nav/active/home")
+            .action(ComponentAction::click("navigate"))
+            .build(),
+    );
+    nav_items.push(
+        NavItem::new("Contacts", "/contacts")
+            .id("nav-contacts")
+            .bind("/nav/active/contacts")
+            .action(ComponentAction::click("contact_list"))
+            .build(),
+    );
+    nav_items.push(
+        NavItem::new("Companies", "/companies")
+            .id("nav-companies")
+            .bind("/nav/active/companies")
+            .action(ComponentAction::click("company_list"))
+            .build(),
+    );
     if is_admin {
-        let users_item = NavItem::new("Users", "/users")
-            .id("nav-users")
-            .action(ComponentAction::click("user_list"))
-            .build();
-        nav_items.push(users_item);
-
-        let audit_item = NavItem::new("Audit Log", "/audit")
-            .id("nav-audit")
-            .action(ComponentAction::click("audit_list"))
-            .build();
-        nav_items.push(audit_item);
+        nav_items.push(
+            NavItem::new("Users", "/users")
+                .id("nav-users")
+                .bind("/nav/active/users")
+                .action(ComponentAction::click("user_list"))
+                .build(),
+        );
+        nav_items.push(
+            NavItem::new("Audit Log", "/audit")
+                .id("nav-audit")
+                .bind("/nav/active/audit")
+                .action(ComponentAction::click("audit_list"))
+                .build(),
+        );
     }
-
-    let side_nav_nodes = SideNav::new()
-        .id("side-nav")
+    let (sidebar_root, sidebar_desc) = SideNav::new()
+        .id("shell-side-nav")
         .children(nav_items)
+        .build_tree();
+
+    // -- Build the header sub-tree (title + user menu placeholder, D-B5) --
+    let header_title = Heading::new("Marionette CRM").id("header-title").build();
+    let header_user = Heading::new(format!("User: {user_name}"))
+        .id("header-user")
+        .build();
+    let (header_root, header_desc) = Container::new()
+        .id("shell-header")
+        .children(vec![header_title, header_user])
+        .build_tree();
+
+    // -- Build the footer sub-tree (D-B6: version + connection status + legal) --
+    // The three footer children correspond verbatim to D-B6:
+    //   (1) version info       — static literal text
+    //   (2) connection status  — data-bound Heading tracking
+    //                            /system/connectionStatus. This is the role
+    //                            the retired ConnectionBanner played: less
+    //                            obtrusive than a top banner, always visible.
+    //   (3) legal / copyright  — static literal text
+    let footer_version = Heading::new("Marionette v1.1 · Protocol 1.1.0")
+        .id("footer-version")
+        .build();
+    // D-B6 connection-status indicator. The text is populated by the frontend
+    // transport layer (Plan 06 Task 4) via an internal
+    // `applyPatch('main', [{op:'set', path:'/system/connectionStatus', ...}])`
+    // on WebSocket connect/disconnect events. Initial value seeded from
+    // shell_data below.
+    let footer_status = Heading::new("connected")
+        .id("footer-connection-status")
+        .bind("/system/connectionStatus")
+        .build();
+    let footer_legal = Heading::new("© 2026 Marionette")
+        .id("footer-legal")
+        .build();
+    let (footer_root, footer_desc) = Container::new()
+        .id("shell-footer")
+        .children(vec![footer_version, footer_status, footer_legal])
+        .build_tree();
+
+    // -- Build the three sub-surface mounts (D-B8) --
+    let content_mount = SurfaceMount::new("content")
+        .id("shell-content-mount")
+        .build();
+    let modal_mount = SurfaceMount::new("modal")
+        .id("shell-modal-mount")
+        .build();
+    let toasts_mount = SurfaceMount::new("toasts")
+        .id("shell-toasts-mount")
+        .build();
+
+    // -- Assemble the AppShell --
+    let mut descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    descendants.extend(sidebar_desc);
+    descendants.extend(header_desc);
+    descendants.extend(footer_desc);
+
+    let shell_nodes = AppShell::new()
+        .id("app-shell-root")
+        .sidebar(sidebar_root)
+        .header(header_root)
+        .footer(footer_root)
+        .main(content_mount)
+        .popups(modal_mount)
+        .toasts(toasts_mount)
+        .with_descendants(descendants)
         .build_with_children();
 
-    let mut nav_nodes_map = HashMap::new();
-    for (id, component) in side_nav_nodes {
-        nav_nodes_map.insert(id, component);
+    let mut shell_map = HashMap::new();
+    for (id, component) in shell_nodes {
+        shell_map.insert(id, component);
     }
 
-    // Send sidebar render as a separate surface
+    // Initial shell data (D-B6 + D-B13):
+    //   /auth/currentUser      — future data-bound user menus
+    //   /system/connectionStatus — seeds footer indicator on first mount
+    //   /nav/active/*          — seeds landing nav state (contacts = true)
+    let shell_data = serde_json::json!({
+        "auth": {
+            "currentUser": {
+                "name": user_name,
+                "roles": session.roles,
+            }
+        },
+        "system": {
+            "connectionStatus": "connected"
+        },
+        "nav": {
+            "active": {
+                "home": false,
+                "contacts": true,
+                "companies": false,
+                "users": false,
+                "audit": false
+            }
+        }
+    });
+
+    // -- Compose response messages --
+    // Order: shell render first (must exist before content patches/renders
+    // can reference its nodes), then the content sub-surface render.
+    let mut messages = Vec::new();
     messages.push(ProtocolMessage::Render(RenderMessage {
         id: None,
-        surface: "sidebar".into(),
-        root: "side-nav".into(),
-        nodes: nav_nodes_map,
-        data: serde_json::json!({}),
+        surface: "main".into(),
+        root: "app-shell-root".into(),
+        nodes: shell_map,
+        data: shell_data,
     }));
+    messages.append(&mut content_messages);
 
     Ok(messages)
 }
