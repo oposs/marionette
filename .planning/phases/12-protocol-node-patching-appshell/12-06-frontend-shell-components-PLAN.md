@@ -14,6 +14,8 @@ files_modified:
   - frontend/src/routes/+layout.svelte
   - frontend/src/lib/components/core/ConnectionBanner.svelte
   - frontend/src/lib/components/core/ConnectionBanner.browser-test.ts
+  - frontend/src/lib/transport/websocket.svelte.ts
+  - frontend/src/lib/transport/websocket.svelte.test.ts
 autonomous: true
 requirements: [SHELL-01, SHELL-02, SHELL-03, SHELL-04]
 nyquist_compliant: true
@@ -25,8 +27,9 @@ must_haves:
     - "SurfaceMount.svelte renders <Surface name={props.name}/>"
     - "registry/defaults.ts registers 'app-shell' and 'surface-mount' component types"
     - "routes/+layout.svelte contains ONLY <Surface name='main'/> (plus app.css import and children render)"
-    - "ConnectionBanner.svelte and ConnectionBanner.browser-test.ts are deleted"
+    - "ConnectionBanner.svelte and ConnectionBanner.browser-test.ts are deleted, BUT their functionality (reactive connection-state display) is first migrated to transport layer + AppShell footer before deletion"
     - "lib/index.ts no longer exports ConnectionBanner"
+    - "websocket.svelte.ts pushes connection state ('connected' | 'reconnecting' | 'offline') into /system/connectionStatus on the main surface via applyPatch on every open/close/reconnect transition (D-B6 — the migrated ConnectionBanner role)"
   artifacts:
     - path: "frontend/src/lib/components/shell/AppShell.svelte"
       provides: "AppShell Svelte implementation"
@@ -40,6 +43,9 @@ must_haves:
     - path: "frontend/src/routes/+layout.svelte"
       provides: "collapsed single-surface root"
       contains: "Surface name=\"main\""
+    - path: "frontend/src/lib/transport/websocket.svelte.ts"
+      provides: "connection-state → /system/connectionStatus wiring (D-B6)"
+      contains: "/system/connectionStatus"
   key_links:
     - from: "AppShell.svelte"
       to: "NodeRenderer via slot IDs from props"
@@ -474,7 +480,149 @@ test('AppShell header includes the Sidebar.Trigger (mobile hamburger)', async ()
 </task>
 
 <task type="auto">
-  <name>Task 3: Collapse routes/+layout.svelte and retire ConnectionBanner</name>
+  <name>Task 3: Wire websocket transport to push connection state into /system/connectionStatus (B-02 / D-B6)</name>
+  <read_first>
+    - frontend/src/lib/transport/websocket.svelte.ts (current state + open/close/reconnect hooks)
+    - frontend/src/lib/transport/websocket.svelte.test.ts (existing test patterns)
+    - frontend/src/lib/store/data.svelte.ts (applyPatch signature)
+    - frontend/src/lib/components/core/ConnectionBanner.svelte (the retired component — understand what it was doing reactively before deleting it in Task 4)
+    - .planning/phases/12-protocol-node-patching-appshell/12-CONTEXT.md D-B6
+  </read_first>
+  <action>
+This task migrates the `ConnectionBanner`'s runtime behavior (reactive connection-state display) into the transport layer, feeding the AppShell footer's data-bound connection-status Heading. This MUST land before Task 4 deletes `ConnectionBanner.svelte` — otherwise connection-status visibility is silently dropped. Per checker issue B-02 and CONTEXT.md D-B6 (verbatim: "the retired `ConnectionBanner`'s role moves here … less obtrusive than a top banner, always visible").
+
+1. Open `frontend/src/lib/transport/websocket.svelte.ts`. Current relevant state (verified):
+   - `let connected = $state(false);`
+   - `socket.onopen` sets `connected = true` and sends `hello`
+   - `socket.onclose` sets `connected = false` and calls `scheduleReconnect()`
+   - `export function isConnected(): boolean { return connected; }`
+
+2. Add at the top of the file (after the existing top-level `let` declarations):
+
+```typescript
+import { applyPatch } from '$lib/store/data.svelte';
+
+/**
+ * Push the current connection state into /system/connectionStatus on the
+ * `main` surface so AppShell's footer connection-status indicator (bound
+ * to that data path) reactively reflects it. This is the migrated role of
+ * the retired ConnectionBanner component (D-B6).
+ *
+ * Uses applyPatch with a single Set op, mirroring the wire protocol's
+ * data patch format. Safe to call before Render of main — `applyPatch`
+ * creates the data key if absent.
+ *
+ * @param state - "connected" | "reconnecting" | "offline"
+ */
+function publishConnectionStatus(state: 'connected' | 'reconnecting' | 'offline'): void {
+  try {
+    applyPatch('main', [
+      { op: 'set', path: '/system/connectionStatus', value: state },
+    ]);
+  } catch (err) {
+    // Store not initialized yet (happens in unit tests). Not fatal —
+    // the first real Render will seed the path from the server.
+    // eslint-disable-next-line no-console
+    console.debug('publishConnectionStatus: store not ready', err);
+  }
+}
+```
+
+Note: The `op: 'set'` shape corresponds to the tagged-union `PatchOperation::Set` variant introduced in Plan 04 Task 1. If Plan 04 has not yet landed, the `applyPatch` call site signature may differ — inspect `data.svelte.ts` first and use whatever shape Plan 04 defines. After Plan 04, the shape above is correct.
+
+3. Hook into the three lifecycle transitions. Locate `doConnect` and edit:
+
+```typescript
+function doConnect(url: string): void {
+  socket = new WebSocket(url);
+
+  socket.onopen = () => {
+    connected = true;
+    reconnectDelay = 1000;
+    publishConnectionStatus('connected');
+    // Send hello
+    send({ type: 'hello', version: '1.0.0' });
+  };
+
+  socket.onmessage = (event: MessageEvent) => {
+    const msg = JSON.parse(event.data as string);
+    onMessageCallback?.(msg);
+  };
+
+  socket.onclose = () => {
+    connected = false;
+    socket = null;
+    // If we have a URL we will reconnect — surface "reconnecting".
+    // If currentUrl is null (explicit disconnect) — surface "offline".
+    publishConnectionStatus(currentUrl ? 'reconnecting' : 'offline');
+    if (currentUrl) scheduleReconnect();
+  };
+
+  socket.onerror = () => {
+    // onerror is always followed by onclose, so reconnect happens via onclose
+  };
+}
+```
+
+Also update `disconnect()` to publish `'offline'`:
+
+```typescript
+export function disconnect(): void {
+  currentUrl = null;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  connected = false;
+  publishConnectionStatus('offline');
+}
+```
+
+4. Extend `frontend/src/lib/transport/websocket.svelte.test.ts` with a test asserting that `publishConnectionStatus` is called on open/close transitions. If the existing test file uses a MockWebSocket pattern, extend it. If not, add a minimal test that:
+   - Mocks `applyPatch` (via `vi.mock('$lib/store/data.svelte', ...)`)
+   - Calls `connect(url, cb)` with a stub URL
+   - Simulates `socket.onopen()` → asserts `applyPatch` was called with `('main', [{op:'set', path:'/system/connectionStatus', value:'connected'}])`
+   - Simulates `socket.onclose()` → asserts `applyPatch` was called with `('main', [{op:'set', path:'/system/connectionStatus', value:'reconnecting'}])` (currentUrl still set)
+   - Calls `disconnect()` → asserts `applyPatch` was called with `('main', [{op:'set', path:'/system/connectionStatus', value:'offline'}])`
+
+If the existing test file's structure makes this hard, add a new test file `frontend/src/lib/transport/websocket.connection-status.test.ts` instead.
+
+5. Run:
+```bash
+cd frontend && npm run check
+cd frontend && npx vitest --run websocket
+```
+Both must be green.
+
+6. DOCUMENT (not executed here but sanity-check): verify that `isConnected()` is still exported so any remaining legacy callers continue to work. Grep for `isConnected` in the frontend:
+```bash
+grep -rn 'isConnected' frontend/src/
+```
+Expected: the definition in `websocket.svelte.ts` + zero import sites (because Task 4 deletes the only remaining caller, `ConnectionBanner.svelte`). If there are unexpected import sites, leave `isConnected()` exported — the new `publishConnectionStatus` is additive, it does not remove the old API.
+  </action>
+  <verify>
+    <automated>cd frontend &amp;&amp; grep -q 'publishConnectionStatus' src/lib/transport/websocket.svelte.ts &amp;&amp; grep -q '/system/connectionStatus' src/lib/transport/websocket.svelte.ts &amp;&amp; grep -c "publishConnectionStatus(" src/lib/transport/websocket.svelte.ts | awk '$1&gt;=4{exit 0} $1&lt;4{exit 1}' &amp;&amp; npm run check &amp;&amp; npx vitest --run websocket 2&gt;&amp;1 | tail -10</automated>
+  </verify>
+  <acceptance_criteria>
+    - `grep -q 'function publishConnectionStatus' frontend/src/lib/transport/websocket.svelte.ts` succeeds
+    - `grep -q "'/system/connectionStatus'" frontend/src/lib/transport/websocket.svelte.ts` succeeds
+    - `grep -c "publishConnectionStatus(" frontend/src/lib/transport/websocket.svelte.ts` returns ≥ 4 (definition + 3 call sites: onopen, onclose, disconnect)
+    - `grep -q "publishConnectionStatus('connected')" frontend/src/lib/transport/websocket.svelte.ts` succeeds
+    - `grep -q "publishConnectionStatus('reconnecting')" frontend/src/lib/transport/websocket.svelte.ts` succeeds
+    - `grep -q "publishConnectionStatus('offline')" frontend/src/lib/transport/websocket.svelte.ts` succeeds
+    - `import { applyPatch } from '$lib/store/data.svelte'` is added to `websocket.svelte.ts`
+    - `cd frontend && npm run check` exits 0
+    - `cd frontend && npx vitest --run websocket` exits 0 (existing + new connection-status tests passing)
+  </acceptance_criteria>
+  <done>websocket.svelte.ts publishes connection state ('connected' | 'reconnecting' | 'offline') into /system/connectionStatus on every open/close/disconnect transition via applyPatch('main', ...). Unit test asserts the three transitions. This completes the D-B6 footer connection-status indicator wiring. Task 4 is now safe to delete ConnectionBanner.svelte — the reactive display role is fully migrated.</done>
+</task>
+
+<task type="auto">
+  <name>Task 4: Collapse routes/+layout.svelte and retire ConnectionBanner (depends on Task 3 — connection wiring must land first)</name>
   <read_first>
     - frontend/src/routes/+layout.svelte
     - frontend/src/lib/index.ts
@@ -482,6 +630,18 @@ test('AppShell header includes the Sidebar.Trigger (mobile hamburger)', async ()
     - frontend/src/lib/components/core/ConnectionBanner.browser-test.ts (if it exists)
   </read_first>
   <action>
+**PRE-EDIT SAFETY CHECK (W-03): prove no usage sites exist before deleting.** Before touching any files, run these greps and assert all return zero matches. If any return nonzero, the Surface usage must be rewritten first (or the surface name must be kept in `layoutClasses`):
+
+```bash
+grep -rn '<Surface name="sidebar"' frontend/src/ --include='*.svelte'
+grep -rn '<Surface name="modal"' frontend/src/ --include='*.svelte'
+grep -rn '<Surface name="toast"' frontend/src/ --include='*.svelte'
+```
+
+Expected: each command returns ONLY the line in `frontend/src/routes/+layout.svelte` that this task is about to delete. No other files should reference these named surfaces, because those names now live inside the AppShell tree as `surface-mount` nodes (referenced via `props.name`, not via the `<Surface name="..."/>` component syntax). If any grep returns matches in files OTHER than `+layout.svelte`, abort this task and fix those call sites first.
+
+Document the grep results in the Task 3 SUMMARY.
+
 1. REPLACE the entire contents of `frontend/src/routes/+layout.svelte` with:
 
 ```svelte
@@ -533,6 +693,9 @@ Note: the `bg-sidebar` rename from Plan 01 Task 2 still applies — but since we
     <automated>cd frontend &amp;&amp; ! test -f src/lib/components/core/ConnectionBanner.svelte &amp;&amp; ! grep -rn 'ConnectionBanner' src/ &amp;&amp; grep -q 'Surface name="main"' src/routes/+layout.svelte &amp;&amp; ! grep -q 'ConnectionBanner' src/lib/index.ts &amp;&amp; npm run check</automated>
   </verify>
   <acceptance_criteria>
+    - PRE-EDIT CHECK (W-03): `grep -rn '<Surface name="sidebar"' frontend/src/ --include='*.svelte'` returns only the `+layout.svelte` match (or zero after the rewrite). ANY other file hitting this pattern blocks the task.
+    - PRE-EDIT CHECK (W-03): `grep -rn '<Surface name="modal"' frontend/src/ --include='*.svelte'` returns only the `+layout.svelte` match (or zero after the rewrite).
+    - PRE-EDIT CHECK (W-03): `grep -rn '<Surface name="toast"' frontend/src/ --include='*.svelte'` returns only the `+layout.svelte` match (or zero after the rewrite).
     - `frontend/src/lib/components/core/ConnectionBanner.svelte` does NOT exist
     - `frontend/src/lib/components/core/ConnectionBanner.browser-test.ts` does NOT exist
     - `grep -rn 'ConnectionBanner' frontend/src/` returns zero lines
@@ -543,6 +706,7 @@ Note: the `bg-sidebar` rename from Plan 01 Task 2 still applies — but since we
     - `cd frontend && npm run check` exits 0
     - `cd frontend && npm run build` exits 0
     - `cd frontend && npx vitest --run` exits 0 (no test references a deleted component)
+    - DEPENDENCY CHECK (B-02 gate): Task 4 has been completed before this Task 3's deletion runs — `websocket.svelte.ts` already pushes connection state into `/system/connectionStatus`. If Task 4 is incomplete, Task 3 must not delete `ConnectionBanner.svelte`. The executor enforces this by running Task 4 first (task order matters inside this plan).
   </acceptance_criteria>
   <done>Top-level layout collapsed to single Surface mount. ConnectionBanner deleted cleanly with zero residual references. Build and tests green.</done>
 </task>
@@ -571,11 +735,15 @@ Note: the `bg-sidebar` rename from Plan 01 Task 2 still applies — but since we
 - `cd frontend && npm run build` exits 0
 - AppShell browser test: 3 passing
 - SurfaceMount browser test: 2 passing
+- `cd frontend && npx vitest --run websocket` exits 0 (connection-status tests passing)
 - `grep -rn 'ConnectionBanner' frontend/src/` returns zero lines
 - `grep -q 'Surface name="main"' frontend/src/routes/+layout.svelte` succeeds
 - `grep -c 'Surface name=' frontend/src/routes/+layout.svelte` returns 1 (exactly one Surface mount at top level)
 - `grep -q "'app-shell': AppShell" frontend/src/lib/registry/defaults.ts`
 - `grep -q "'surface-mount': SurfaceMount" frontend/src/lib/registry/defaults.ts`
+- `grep -q 'publishConnectionStatus' frontend/src/lib/transport/websocket.svelte.ts` (D-B6 wiring in place)
+- `grep -q "'/system/connectionStatus'" frontend/src/lib/transport/websocket.svelte.ts`
+- W-03 grep proofs: `<Surface name="sidebar"`, `<Surface name="modal"`, `<Surface name="toast"` return zero matches in frontend/src after Task 4
 </verification>
 
 <success_criteria>
@@ -583,10 +751,13 @@ Note: the `bg-sidebar` rename from Plan 01 Task 2 still applies — but since we
 - SurfaceMount.svelte renders `<Surface name={props.name}/>`
 - Both components registered in `registry/defaults.ts` under `'app-shell'` and `'surface-mount'`
 - `routes/+layout.svelte` collapsed to a single `<Surface name="main"/>`
+- `websocket.svelte.ts` publishes `'connected'` / `'reconnecting'` / `'offline'` into `/system/connectionStatus` on every connection-state transition via `applyPatch('main', ...)` — this is the migrated D-B6 ConnectionBanner role, feeding AppShell's footer status indicator
+- Unit test asserts all three connection-state transitions trigger the expected applyPatch call
+- ConnectionBanner deletion (Task 4) happens AFTER the transport wiring (Task 3) — task order enforced by plan sequence
 - `ConnectionBanner.svelte` and its browser test deleted
 - `lib/index.ts` no longer exports ConnectionBanner
 - `Surface.svelte` layoutClasses map simplified to only `main:`
-- All 5 browser tests (2 SurfaceMount + 3 AppShell) pass
+- All 5 browser tests (2 SurfaceMount + 3 AppShell) pass plus the new websocket connection-status unit test
 - `npm run check` and `npm run build` green
 </success_criteria>
 
