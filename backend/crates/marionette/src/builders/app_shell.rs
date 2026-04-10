@@ -119,29 +119,45 @@ impl AppShellBuilder {
             .unwrap_or_else(|| format!("app-shell-{}", Uuid::new_v4()));
 
         let mut props = Map::new();
+        let mut slot_children: Vec<String> = Vec::new();
         if let Some((id, _)) = self.sidebar_node {
-            props.insert("sidebarNodeId".into(), Value::String(id));
+            props.insert("sidebarNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
         if let Some((id, _)) = self.header_node {
-            props.insert("headerNodeId".into(), Value::String(id));
+            props.insert("headerNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
         if let Some((id, _)) = self.footer_node {
-            props.insert("footerNodeId".into(), Value::String(id));
+            props.insert("footerNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
         if let Some((id, _)) = self.main_node {
-            props.insert("mainNodeId".into(), Value::String(id));
+            props.insert("mainNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
         if let Some((id, _)) = self.popups_node {
-            props.insert("popupsNodeId".into(), Value::String(id));
+            props.insert("popupsNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
         if let Some((id, _)) = self.toasts_node {
-            props.insert("toastsNodeId".into(), Value::String(id));
+            props.insert("toastsNodeId".into(), Value::String(id.clone()));
+            slot_children.push(id);
         }
 
         let component = Component {
             r#type: "app-shell".into(),
             props: Some(Value::Object(props)),
-            children: None, // no positional children — slots are in props
+            // Populate `children` with the slot IDs so the frontend's
+            // walk-and-prune GC (gcOrphans) treats slot roots as reachable
+            // from the shell root. The `<app-shell>` Svelte component still
+            // mounts by the *NodeId props — `children` only drives graph
+            // reachability, not layout.
+            children: if slot_children.is_empty() {
+                None
+            } else {
+                Some(slot_children)
+            },
             bind: None,
             action: None,
             visible: None,
@@ -194,10 +210,21 @@ impl AppShellBuilder {
             .id
             .unwrap_or_else(|| format!("app-shell-{}", Uuid::new_v4()));
 
+        // Collect slot IDs in canonical order for the reachability graph.
+        // The `<app-shell>` Svelte component still mounts by the *NodeId props
+        // — `children` only drives the frontend walk-and-prune GC so that slot
+        // roots remain reachable from the shell root and are not pruned.
+        let slot_children: Vec<String> =
+            slot_roots.iter().map(|(id, _)| id.clone()).collect();
+
         let shell = Component {
             r#type: "app-shell".into(),
             props: Some(Value::Object(props)),
-            children: None,
+            children: if slot_children.is_empty() {
+                None
+            } else {
+                Some(slot_children)
+            },
             bind: None,
             action: None,
             visible: None,
@@ -241,7 +268,19 @@ mod tests {
 
         assert_eq!(id, "app-shell-root");
         assert_eq!(component.r#type, "app-shell");
-        assert!(component.children.is_none());
+        // `children` must include every populated slot ID in canonical order
+        // so the frontend walk-and-prune GC treats slot roots as reachable.
+        assert_eq!(
+            component.children,
+            Some(vec![
+                "shell-sidebar".to_string(),
+                "shell-header".to_string(),
+                "shell-footer".to_string(),
+                "shell-content-mount".to_string(),
+                "shell-modal-mount".to_string(),
+                "shell-toasts-mount".to_string(),
+            ])
+        );
         let props = component.props.unwrap();
         assert_eq!(props["sidebarNodeId"], "shell-sidebar");
         assert_eq!(props["headerNodeId"], "shell-header");
@@ -283,6 +322,16 @@ mod tests {
         assert_eq!(flat.len(), 5);
         assert_eq!(flat[0].0, "shell-1");
         assert_eq!(flat[0].1.r#type, "app-shell");
+        // Shell children must list the three populated slot IDs in canonical
+        // order so the frontend walk-and-prune GC can reach them.
+        assert_eq!(
+            flat[0].1.children,
+            Some(vec![
+                "side-1".to_string(),
+                "head-1".to_string(),
+                "content-mount-1".to_string(),
+            ])
+        );
         // Shell props should reference the three populated slots by id.
         let shell_props = flat[0].1.props.as_ref().unwrap();
         assert_eq!(shell_props["sidebarNodeId"], "side-1");
