@@ -30,7 +30,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
 - [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
-- [ ] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top
+- [x] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
 - [ ] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility
 - [ ] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections
 - [ ] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue
@@ -93,7 +93,7 @@ Plans:
 - [x] 12-05-backend-builders-PLAN.md — SurfaceMount derived builder + hand-written AppShell builder with 6 slot methods
 - [x] 12-06-frontend-shell-components-PLAN.md — AppShell.svelte + SurfaceMount.svelte + registry + +layout.svelte collapse + ConnectionBanner retirement
 - [x] 12-07-crm-integration-PLAN.md — handle_navigate builds AppShell + migrate handlers to surface "content" + interactive verification checkpoint
-- [ ] 12-08-demo-and-e2e-PLAN.md — Country-select demo on contact form + node-patch-focus E2E + shell-nav E2E + protocol-conformance schema validation
+- [x] 12-08-demo-and-e2e-PLAN.md — Country-select demo on contact form + node-patch-focus E2E + shell-nav E2E + protocol-conformance schema validation
 **UI hint**: yes
 
 ### Phase 13: DataTable Enhancements
@@ -148,7 +148,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. Protocol Node Patching + AppShell | v1.1 | 7/8 | In Progress|  |
+| 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete   | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 0/0 | Not started | - |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
