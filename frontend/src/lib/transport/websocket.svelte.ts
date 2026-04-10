@@ -14,8 +14,7 @@ let currentUrl: string | null = null;
 /**
  * Push the current connection state into /system/connectionStatus on the
  * `main` surface so AppShell's footer connection-status indicator (bound
- * to that data path) reactively reflects it. This is the migrated role of
- * the retired ConnectionBanner component (Phase 12 D-B6).
+ * to that data path) reactively reflects it. Phase 12 D-B6.
  *
  * Uses applyPatch with a single tagged Set op, mirroring the wire protocol's
  * data patch format. Safe to call before Render of main — `setAtPointer`

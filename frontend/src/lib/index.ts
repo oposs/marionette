@@ -3,7 +3,6 @@
 // Core rendering
 export { default as Surface } from './components/core/Surface.svelte';
 export { default as NodeRenderer } from './components/core/NodeRenderer.svelte';
-export { default as ConnectionBanner } from './components/core/ConnectionBanner.svelte';
 
 // Registry
 export { register, getComponent, registerAll } from './registry/registry';

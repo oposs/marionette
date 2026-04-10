@@ -10,12 +10,13 @@
 
 	let tree = $derived(getSurfaceTree(name));
 
-	// Surface-specific layout classes
+	// Surface-specific layout classes.
+	// Phase 12: only `main` remains — it is the single top-level Surface
+	// mounted by routes/+layout.svelte. `sidebar` / `modal` / `toast` are now
+	// mounted recursively via SurfaceMount inside AppShell, and get no
+	// top-level layout class (the shell handles their framing).
 	const layoutClasses: Record<string, string> = {
 		main: 'bg-background p-6 overflow-y-auto min-w-[320px] flex-1',
-		sidebar: 'bg-sidebar border-r border-sidebar-border p-4 overflow-y-auto w-64 shrink-0',
-		modal: '',
-		toast: '',
 	};
 
 	let surfaceClass = $derived(layoutClasses[name] ?? '');

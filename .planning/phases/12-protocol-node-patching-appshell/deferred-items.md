@@ -42,3 +42,24 @@ These predate Phase 12 (present before the shadcn Sidebar install). Likely missi
 **In-scope crates are clean:** `cargo clippy -p marionette-protocol -p marionette -- -D warnings` exits 0 after Plan 12-02.
 
 **Recommended resolution:** Dedicated lint-cleanup plan in Phase 12 or early Phase 13 — mechanical fixes only, no behavior changes. Alternative: add targeted `#[allow(...)]` at crate root with a TODO for each category.
+
+## From 12-06-frontend-shell-components
+
+### Pre-existing popup browser-test failures (ConfirmDialog + ToastSurface)
+
+**Discovered during:** Task 4 verification — `npx vitest --config vitest-browser.config.ts --run`.
+
+**Scope:** 5 failing tests in `frontend/src/lib/components/popup/`:
+- `ConfirmDialog.browser-test.ts` — 4/4 tests fail ("renders title and message", "renders confirm and cancel buttons", "dispatches action on confirm click", "dispatches close-modal on cancel click"). All throw Playwright locator errors — likely the dialog markup changed post-shadcn update and the selectors drifted.
+- `ToastSurface.browser-test.ts` — 1/3 tests fail ("removes toast on dismiss click") with "strict mode violation: ... resolved to 2 elements" on `getByLabelText('Dismiss')`. Double-render or leaked state between tests; the `.first()` selector would fix it.
+
+**Verification these are pre-existing:** `git stash && npx vitest --config vitest-browser.config.ts --run src/lib/components/popup/` on the pre-Plan-12-06 tree reproduces exactly the same 5 failures. Plan 12-06 does not touch `src/lib/components/popup/*`.
+
+**In-scope tests are all green after Plan 12-06:**
+- `SurfaceMount.browser-test.ts` — 2/2 passing
+- `AppShell.browser-test.ts` — 3/3 passing
+- `websocket.connection-status.test.ts` — 5/5 passing
+- `websocket.svelte.test.ts` — 10/10 passing (unit tests)
+- All 58 unit tests under `vitest --run` passing
+
+**Recommended resolution:** Folded into Phase 13 (form screens) or a targeted popup-fix plan — selector updates only, no behavior changes.

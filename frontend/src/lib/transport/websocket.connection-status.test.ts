@@ -1,8 +1,7 @@
 /**
- * Tests for the D-B6 migrated ConnectionBanner role: websocket.svelte.ts
- * must push connection state ('connected' | 'reconnecting' | 'offline') into
- * /system/connectionStatus on every open/close/disconnect transition via
- * applyPatch('main', ...).
+ * Tests for D-B6: websocket.svelte.ts must push connection state
+ * ('connected' | 'reconnecting' | 'offline') into /system/connectionStatus
+ * on every open/close/disconnect transition via applyPatch('main', ...).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
