@@ -143,3 +143,154 @@ ValidationError:
       type: string
       description: Human-readable error message
   additionalProperties: false
+
+DataTable:
+  description: >-
+    Phase 13 `data-table` component props shape. This section documents the
+    structured props that DataTable accepts; the runtime validator treats
+    `component.props` as `additionalProperties: true` (see component.yaml),
+    so these fields are permissive at the protocol layer — this schema is
+    the canonical reference for tooling and generated types.
+  type: object
+  properties:
+    columns:
+      type: array
+      items:
+        $ref: "#/DataTableColumn"
+      description: Column definitions (required on every DataTable).
+    filters:
+      type: array
+      items:
+        $ref: "#/DataTableFilter"
+      description: >-
+        Optional filter-bar declarations (Phase 13 D-B2). Each entry
+        produces a shadcn primitive at render time.
+    total_rows:
+      type: integer
+      minimum: 0
+      description: >-
+        Optional total row count known server-side (Phase 13 D-D3). When
+        set, the frontend sentinel idles once `rows.length >= total_rows`.
+    row_id_key:
+      type: string
+      description: >-
+        Optional field name on each row object that DataTable uses as the
+        stable row identifier. Defaults to `"id"` on the frontend.
+    source:
+      type: string
+      description: >-
+        Optional identifier passed to the `fetch-rows` action dispatch
+        (Phase 13 D-H1). The backend's generic `fetch-rows` handler maps
+        this string to a per-screen fetcher.
+    page_size:
+      type: integer
+      minimum: 1
+      description: Default page size for initial render and pagination chunks.
+  required: [columns]
+  additionalProperties: false
+
+DataTableColumn:
+  description: >-
+    Column definition for a DataTable. Phase 13 adds the `kind` and
+    `hidden_default` fields (D-F1, D-E2).
+  type: object
+  required: [key, label]
+  properties:
+    key:
+      type: string
+      description: Row-object field name this column reads.
+    label:
+      type: string
+      description: Visible column header text.
+    sortable:
+      type: boolean
+      description: If true, header click fires a `sort` action.
+    kind:
+      type: string
+      enum: [text, badge, actions, date, number]
+      description: >-
+        Cell render kind (Phase 13 D-F1). Defaults to `text`. The `actions`
+        kind expects `row[col.key]` to be an array of `{label, action}`
+        objects and renders a DropdownMenu.
+    hidden_default:
+      type: boolean
+      description: >-
+        If true, the column starts hidden on mount. User can toggle it via
+        the DataTable's "Columns" dropdown. Per-mount state only, not
+        persisted across reloads (D-E1).
+  additionalProperties: false
+
+DataTableFilter:
+  description: >-
+    Phase 13 filter-bar entry (D-B2). Tagged union keyed by `kind`.
+  oneOf:
+    - $ref: "#/DataTableFilterText"
+    - $ref: "#/DataTableFilterSelect"
+    - $ref: "#/DataTableFilterDateRange"
+  discriminator:
+    propertyName: kind
+    mapping:
+      text: "#/DataTableFilterText"
+      select: "#/DataTableFilterSelect"
+      date-range: "#/DataTableFilterDateRange"
+
+DataTableFilterText:
+  type: object
+  required: [id, kind]
+  properties:
+    id:
+      type: string
+    kind:
+      type: string
+      const: text
+    label:
+      type: string
+    placeholder:
+      type: string
+    span:
+      type: integer
+      minimum: 1
+  additionalProperties: false
+
+DataTableFilterSelect:
+  type: object
+  required: [id, kind, options]
+  properties:
+    id:
+      type: string
+    kind:
+      type: string
+      const: select
+    label:
+      type: string
+    options:
+      type: array
+      items:
+        type: object
+        required: [value, label]
+        properties:
+          value:
+            type: string
+          label:
+            type: string
+        additionalProperties: false
+    span:
+      type: integer
+      minimum: 1
+  additionalProperties: false
+
+DataTableFilterDateRange:
+  type: object
+  required: [id, kind]
+  properties:
+    id:
+      type: string
+    kind:
+      type: string
+      const: date-range
+    label:
+      type: string
+    span:
+      type: integer
+      minimum: 1
+  additionalProperties: false

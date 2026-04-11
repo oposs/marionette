@@ -373,15 +373,34 @@ nodes:
     type: data-table
     props:
       columns:
-        - { key: "name", label: "Name", sortable: true }
-        - { key: "email", label: "Email" }
-        - { key: "phone", label: "Phone" }
-      keyField: "id"
+        - { key: "name",    label: "Name",    sortable: true, kind: "text" }
+        - { key: "email",   label: "Email",   kind: "text" }
+        - { key: "phone",   label: "Phone",   kind: "text" }
+        - { key: "created", label: "Created", kind: "date", sortable: true }
+        - { key: "actions", label: "",        kind: "actions" }
+        - { key: "internal_id", label: "ID",  hidden_default: true }
+      filters:
+        - { id: "search",         kind: "text",       label: "Search", placeholder: "Filter contacts..." }
+        - { id: "company_filter", kind: "select",     label: "Company", options: [{ value: "", label: "All" }, { value: "1", label: "Acme" }] }
+        - { id: "date",           kind: "date-range", label: "Created date" }
+      total_rows: 237
+      row_id_key: "id"
+      source: "contact_list"
+      page_size: 50
     bind: "/contacts"
     action:
       type: navigate
       idPath: "/id"
 ```
+
+**Phase 13 `data-table` props:**
+
+- `columns[].kind` (optional, default `"text"`): cell render kind. One of `"text" | "badge" | "actions" | "date" | "number"`. The `"actions"` kind expects `row[col.key]` to be an array of `{label, action}` objects and renders a DropdownMenu. Other kinds render via per-kind formatters (`Intl.DateTimeFormat`, `Intl.NumberFormat`, shadcn `Badge`).
+- `columns[].hidden_default` (optional): if `true`, the column starts hidden. Users can toggle it visible via the DataTable's "Columns" dropdown. Per-mount state only — NOT persisted across reloads.
+- `filters[]` (optional): structured filter bar declarations. Each entry is one of `{id, kind: "text", label, placeholder?}`, `{id, kind: "select", label, options}`, or `{id, kind: "date-range", label}`. Filter values are local to the DataTable component (not bound via `/bind`); on change (debounced 300ms for text, immediate for selects), DataTable dispatches `sendAction("filter", { filter_id: value, ... })` with empty values stripped.
+- `total_rows` (optional): total server-side row count. If set, the infinite-scroll sentinel idles once `rows.length >= total_rows`. If unset, the sentinel idles once a `fetch-rows` response returns fewer rows than the requested `limit`.
+- `row_id_key` (optional, default `"id"`): the field on each row object that DataTable uses as the stable row identifier for TanStack's `getRowId`.
+- `source` (optional): identifier passed to the `fetch-rows` action dispatch (`sendAction("fetch-rows", { source, offset, limit })`). The backend's generic `fetch-rows` handler maps this string to a per-screen fetcher (per D-H1).
 
 This flat structure is easy to patch (update one node by ID), streaming-friendly (send nodes as they become ready), and straightforward for tooling to process.
 
