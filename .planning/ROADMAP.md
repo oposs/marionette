@@ -31,7 +31,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
 - [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
 - [x] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
-- [ ] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility
+- [x] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility (completed 2026-04-11)
 - [ ] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections
 - [ ] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue
 
@@ -113,7 +113,7 @@ Plans:
 - [x] 13-04-datatable-actions-component-PLAN.md — DataTableActions.svelte DropdownMenu component + XSS-safe browser test
 - [x] 13-05-datatable-rewrite-PLAN.md — Rewrite DataTable.svelte to recipe shape (filter bar, virtualizer, sentinel, column visibility, per-kind cells, stale discard) + rewritten browser tests + retire TableScreen + CI guard
 - [x] 13-06-crm-list-handler-migration-PLAN.md — Migrate 4 CRM list handlers (audit/contact/company/user) to new DataTable shape with inline filters, total_rows, source, ColumnKind::Actions + add source field to backend DataTable struct + update spec/PROTOCOL.md example
-- [ ] 13-07-e2e-and-textinput-fix-PLAN.md — TextInput input_type bug fix + datatable-filter E2E + datatable-infinite-scroll E2E + protocol-conformance extension + human-verify checkpoint for column visibility non-persistence
+- [x] 13-07-e2e-and-textinput-fix-PLAN.md — TextInput input_type bug fix + datatable-filter E2E + datatable-infinite-scroll E2E + protocol-conformance extension + human-verify checkpoint for column visibility non-persistence
 **UI hint**: yes
 
 ### Phase 14: FormScreen Enhancements
@@ -157,7 +157,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
-| 13. DataTable Enhancements | v1.1 | 6/7 | In Progress|  |
+| 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
 
