@@ -72,26 +72,31 @@ async fn render_company_list(ctx: &HandlerContext) -> ActionResult {
             key: "name".into(),
             label: "Name".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "website".into(),
             label: "Website".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "contactCount".into(),
             label: "Contacts".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "created".into(),
             label: "Created".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "actions".into(),
             label: "Actions".into(),
             sortable: None,
+            ..Default::default()
         },
     ])
     .id("company-table")
@@ -256,21 +261,25 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
                     key: "name".into(),
                     label: "Name".into(),
                     sortable: Some(true),
+                    ..Default::default()
                 },
                 TableColumn {
                     key: "email".into(),
                     label: "Email".into(),
                     sortable: Some(true),
+                    ..Default::default()
                 },
                 TableColumn {
                     key: "phone".into(),
                     label: "Phone".into(),
                     sortable: None,
+                    ..Default::default()
                 },
                 TableColumn {
                     key: "actions".into(),
                     label: "Actions".into(),
                     sortable: None,
+                    ..Default::default()
                 },
             ])
             .id("company-contacts-table")

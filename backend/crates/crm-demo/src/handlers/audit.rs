@@ -126,31 +126,37 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
             key: "timestamp".into(),
             label: "When".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "user".into(),
             label: "Who".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "table".into(),
             label: "Table".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "recordId".into(),
             label: "Record".into(),
             sortable: None,
+            ..Default::default()
         },
         TableColumn {
             key: "action".into(),
             label: "Action".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "changes".into(),
             label: "Changes".into(),
             sortable: None,
+            ..Default::default()
         },
     ])
     .id("audit-table")
