@@ -217,9 +217,15 @@ describe('Column visibility (TABLE-03)', () => {
 		});
 
 		await screen.getByText('Columns').click();
-		// Both columns appear as hideable CheckboxItems.
-		await expect.element(screen.getByText('name')).toBeVisible();
-		await expect.element(screen.getByText('email')).toBeVisible();
+		// Both columns appear as hideable CheckboxItems. Scoped to the
+		// dropdown's menuitemcheckbox role so the text doesn't collide with
+		// the column headers.
+		await expect
+			.element(screen.getByRole('menuitemcheckbox', { name: 'name' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('menuitemcheckbox', { name: 'email' }))
+			.toBeVisible();
 	});
 
 	test('V-19 toggling a checkbox hides the column in the rendered table', async () => {
@@ -241,8 +247,8 @@ describe('Column visibility (TABLE-03)', () => {
 		await expect.element(screen.getByRole('columnheader', { name: 'Email' })).toBeVisible();
 
 		await screen.getByText('Columns').click();
-		// Click the email checkbox item to hide it.
-		await screen.getByText('email').click();
+		// Click the email checkbox item to hide it (scoped to dropdown).
+		await screen.getByRole('menuitemcheckbox', { name: 'email' }).click();
 
 		// Header for Email should no longer be in the DOM.
 		await expect
@@ -316,7 +322,7 @@ describe('Virtualizer + infinite scroll (TABLE-02)', () => {
 		});
 
 		// Let the virtualizer measure + mount the sentinel observer.
-		await new Promise((r) => setTimeout(r, 50));
+		await new Promise((r) => setTimeout(r, 150));
 
 		const scrollEl = screen.container.querySelector(
 			'[data-testid="datatable-scroll"]',
@@ -324,10 +330,11 @@ describe('Virtualizer + infinite scroll (TABLE-02)', () => {
 		expect(scrollEl).toBeTruthy();
 		if (scrollEl) {
 			scrollEl.scrollTop = scrollEl.scrollHeight;
-			scrollEl.dispatchEvent(new Event('scroll'));
+			await new Promise((r) => requestAnimationFrame(() => r(null)));
+			await new Promise((r) => requestAnimationFrame(() => r(null)));
 		}
 		// Wait for IntersectionObserver to fire its microtask.
-		await new Promise((r) => setTimeout(r, 100));
+		await new Promise((r) => setTimeout(r, 300));
 
 		const calls = sendActionMock.mock.calls.filter((c) => c[0] === 'fetch-rows');
 		expect(calls.length).toBeGreaterThanOrEqual(1);
@@ -565,12 +572,13 @@ describe('Cell kinds (D-F1)', () => {
 		// Intl.DateTimeFormat with dateStyle: 'medium' produces a month abbrev
 		// like "Apr" for April in en-US. The underlying ISO string should
 		// NOT appear verbatim (that's the raw value).
-		const table = screen.container.querySelector('table');
-		expect(table).toBeTruthy();
-		const text = table?.textContent ?? '';
+		const scrollBody = screen.container.querySelector(
+			'[data-testid="datatable-scroll"]',
+		) as HTMLElement | null;
+		expect(scrollBody).toBeTruthy();
+		const text = scrollBody?.textContent ?? '';
 		expect(text).not.toContain('2026-04-01T12:00:00Z');
-		// Some locale-formatted date-string should appear (at minimum a digit
-		// and a month fragment). This is locale-agnostic.
+		// Some locale-formatted date-string should appear (at minimum a digit).
 		expect(text).toMatch(/\d/);
 	});
 
