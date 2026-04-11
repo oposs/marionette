@@ -4,7 +4,7 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorT
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Form, Heading, TableColumn, Text, TextInput,
+    Button, ColumnKind, Container, DataTable, Form, Heading, TableColumn, Text, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
@@ -58,6 +58,12 @@ async fn render_company_list(ctx: &HandlerContext) -> ActionResult {
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
 
+    // D-H2: total_rows reflects the full (unfiltered) collection.
+    let company_count: u64 = company::Entity::find()
+        .count(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
     let heading = Heading::new("Company Management")
         .id("company-heading")
         .build();
@@ -68,37 +74,20 @@ async fn render_company_list(ctx: &HandlerContext) -> ActionResult {
         .build();
 
     let table = DataTable::new(vec![
-        TableColumn {
-            key: "name".into(),
-            label: "Name".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "website".into(),
-            label: "Website".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "contactCount".into(),
-            label: "Contacts".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "created".into(),
-            label: "Created".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "actions".into(),
-            label: "Actions".into(),
-            sortable: None,
-            ..Default::default()
-        },
+        TableColumn::new("name", "Name").sortable(),
+        TableColumn::new("website", "Website").sortable(),
+        TableColumn::new("contactCount", "Contacts")
+            .sortable()
+            .kind(ColumnKind::Number),
+        TableColumn::new("created", "Created")
+            .sortable()
+            .kind(ColumnKind::Date),
+        TableColumn::new("actions", "").kind(ColumnKind::Actions),
     ])
+    .total_rows(company_count)
+    .source("company_list")
+    .row_id_key("id")
+    .page_size(50u32)
     .id("company-table")
     .bind("/companies")
     .build();
