@@ -107,8 +107,8 @@ Plans:
   4. Sorting and filtering reset the scroll position and fetched data ranges
 **Plans**: 7 plans
 Plans:
-- [ ] 13-01-scaffolding-PLAN.md — Install @tanstack deps + shadcn CLI data-table/dropdown-menu + svelte-virtual smoke test + sendAction returns id + onIntersect action + seed bump to 120 contacts
-- [ ] 13-02-backend-builder-PLAN.md — Extend Rust DataTable struct with Filter/ColumnKind enums, hand-written .filter() helper, hidden_default/total_rows/row_id_key fields, inline tests
+- [x] 13-01-scaffolding-PLAN.md — Install @tanstack deps + shadcn CLI data-table/dropdown-menu + svelte-virtual smoke test + sendAction returns id + onIntersect action + seed bump to 120 contacts
+- [x] 13-02-backend-builder-PLAN.md — Extend Rust DataTable struct with Filter/ColumnKind enums, hand-written .filter() helper, hidden_default/total_rows/row_id_key fields, inline tests
 - [ ] 13-03-fetch-rows-handler-PLAN.md — Generic backend fetch_rows handler with source dispatch table, limit cap, per-source auth, action-id echo, integration tests
 - [ ] 13-04-datatable-actions-component-PLAN.md — DataTableActions.svelte DropdownMenu component + XSS-safe browser test
 - [ ] 13-05-datatable-rewrite-PLAN.md — Rewrite DataTable.svelte to recipe shape (filter bar, virtualizer, sentinel, column visibility, per-kind cells, stale discard) + rewritten browser tests + retire TableScreen + CI guard
@@ -157,7 +157,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
-| 13. DataTable Enhancements | v1.1 | 0/7 | Not started | - |
+| 13. DataTable Enhancements | v1.1 | 2/7 | In Progress|  |
 | 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
 
