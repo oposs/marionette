@@ -11,6 +11,7 @@ files_modified:
   - backend/crates/crm-demo/src/handlers/user.rs
   - backend/crates/marionette/src/builders/standard.rs
   - spec/PROTOCOL.md
+  - spec/schemas/data.yaml
 autonomous: true
 requirements: [TABLE-01, TABLE-02, TABLE-03]
 must_haves:
@@ -38,6 +39,8 @@ must_haves:
       provides: "Migrated user_list handler"
     - path: "spec/PROTOCOL.md"
       provides: "Updated data-table example"
+    - path: "spec/schemas/data.yaml"
+      provides: "New DataTable schema section documenting filters / total_rows / row_id_key / source / columns[].kind / columns[].hidden_default (D-B2, D-G1)"
   key_links:
     - from: "Migrated handlers"
       to: "DataTable::new(...).filter(...).total_rows(...).source(...).row_id_key(...).build()"
@@ -410,6 +413,80 @@ Needs updating to show the new props (`filters`, `total_rows`, `row_id_key`, `so
     grep -rn "filter_container\|filter-form\|filter_form_descendants" backend/crates/crm-demo/tests/ 2>/dev/null
     ```
     Update or delete stale assertions. The migration intentionally breaks tests that asserted the old structure — that's expected, and those assertions should be replaced with assertions about the new DataTable `filters` prop shape.
+
+    **Step 7 — Add `FilterParams` validation + round-trip unit tests (V-07 per 13-VALIDATION.md row 7).**
+
+    Add a `#[cfg(test)] mod tests { ... }` block to `backend/crates/crm-demo/src/handlers/contact.rs` (or extend the existing one if present). Include BOTH a malformed-date rejection test and a full-payload round-trip test:
+
+    ```rust
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use serde_json::json;
+
+        #[test]
+        fn contact_filter_params_rejects_bad_date() {
+            // V5 Input Validation: malformed date strings inside the date-range
+            // filter must either (a) fail to deserialize with a serde error or
+            // (b) deserialize to Some(DateRange { from: Some("garbage"), ... })
+            // which the SeaORM `.gte(...)` will then push into SQLite as a
+            // parameter that compares always-false. Either way the handler
+            // must not panic and must not produce SQL injection.
+            //
+            // This test asserts the strict-deserialize path: an obviously
+            // structurally-invalid payload (date is a number, not an object)
+            // returns Err.
+            let bad_shape = json!({
+                "search": "Alice",
+                "date": 42  // should be { from, to } object
+            });
+            let r = serde_json::from_value::<ContactFilterParams>(bad_shape);
+            assert!(r.is_err(), "expected deserialize error for malformed date-range shape");
+
+            // Structurally-valid but semantically-bad date strings are accepted
+            // at deserialize time (serde doesn't parse the date); they're
+            // filtered to parameterized SQL comparisons which never inject.
+            // This is the documented behavior per T-13-06-02.
+            let bad_date_string = json!({
+                "search": "Alice",
+                "date": { "from": "not-a-date", "to": "2026-13-01" }
+            });
+            let parsed: ContactFilterParams = serde_json::from_value(bad_date_string)
+                .expect("strings-as-dates should deserialize; SeaORM handles bad values at query time");
+            assert!(parsed.date.is_some());
+        }
+
+        #[test]
+        fn contact_filter_params_deserializes_full_payload() {
+            // Round-trip proof that the new struct shape accepts every field
+            // the frontend can legitimately send. Covers search, company filter,
+            // tag filter, and the collapsed `date` date-range.
+            let json = json!({
+                "search": "Alice",
+                "company_filter": "acme-inc",
+                "tag_filter_text": "vip,priority",
+                "date": { "from": "2026-01-01", "to": "2026-04-01" }
+            });
+            let parsed: ContactFilterParams = serde_json::from_value(json)
+                .expect("full payload should deserialize");
+            assert_eq!(parsed.search.as_deref(), Some("Alice"));
+            assert!(parsed.date.is_some());
+            let dr = parsed.date.unwrap();
+            assert_eq!(dr.from.as_deref(), Some("2026-01-01"));
+            assert_eq!(dr.to.as_deref(), Some("2026-04-01"));
+        }
+    }
+    ```
+
+    **IMPORTANT:** The exact struct name (`ContactFilterParams`) and field names must match the real struct you defined earlier in this task. If you named it `ContactFilterPayload` or similar, adapt the test. The test name `contact_filter_params_rejects_bad_date` is REQUIRED (it's the V-07 target per 13-VALIDATION.md row 7) — do not rename it.
+
+    Run the tests:
+
+    ```bash
+    cd backend && cargo test -p crm-demo contact_filter_params_rejects_bad_date contact_filter_params_deserializes_full_payload
+    ```
+
+    Both MUST pass.
   </action>
   <verify>
     <automated>cd backend && cargo build -p crm-demo && cargo test -p crm-demo 2>&1 | tail -40</automated>
@@ -430,18 +507,22 @@ Needs updating to show the new props (`filters`, `total_rows`, `row_id_key`, `so
     - `grep -c "ColumnKind::Actions" backend/crates/crm-demo/src/handlers/user.rs` == 1
     - `grep -c "filter_form_descendants\|filter_container_descendants" backend/crates/crm-demo/src/handlers/ -r` == 0
     - `grep -c "Filter::text\|Filter::select\|Filter::date_range" backend/crates/crm-demo/src/handlers/ -r` >= 12 (roughly 3 filters avg × 4 handlers)
+    - Test `contact_filter_params_rejects_bad_date` exists in `backend/crates/crm-demo/src/handlers/contact.rs` and passes (`cd backend && cargo test -p crm-demo contact_filter_params_rejects_bad_date` exits 0) — satisfies 13-VALIDATION.md row 7 (V5 Input Validation)
+    - Test `contact_filter_params_deserializes_full_payload` exists and passes (`cd backend && cargo test -p crm-demo contact_filter_params_deserializes_full_payload` exits 0) — round-trip proof of the new `ContactFilterParams` struct shape
     - `cd backend && cargo clippy -p crm-demo -- -D warnings` exits 0
   </acceptance_criteria>
   <done>All four CRM list handlers migrated; compile green; tests green; actions latent bug fixed via ColumnKind::Actions.</done>
 </task>
 
 <task type="auto">
-  <name>Task 3: Update spec/PROTOCOL.md data-table example to show new props</name>
-  <files>spec/PROTOCOL.md</files>
+  <name>Task 3: Update spec/PROTOCOL.md data-table example AND add DataTable section to spec/schemas/data.yaml</name>
+  <files>spec/PROTOCOL.md, spec/schemas/data.yaml</files>
   <read_first>
     - spec/PROTOCOL.md lines 360-390 (current data-table example and surrounding context)
+    - spec/schemas/data.yaml (entire file — 145 lines; understand the existing top-level structure to know where to add the DataTable section)
+    - spec/schemas/component.yaml (to confirm `props.additionalProperties: true` already permits the new fields at runtime — this edit is for documentation + future IDE tooling, NOT a runtime fix)
     - Plan 02's example JSON (from the `data_table_phase13_example_serializes_correctly` test) — reference shape
-    - .planning/phases/13-datatable-enhancements/13-CONTEXT.md §canonical_refs
+    - .planning/phases/13-datatable-enhancements/13-CONTEXT.md §canonical_refs (D-B2 and D-G1 both say schema additions live in `spec/schemas/data.yaml`)
   </read_first>
   <action>
     Edit `spec/PROTOCOL.md` around line 373. Replace the current minimal `contact-list` data-table example:
@@ -502,9 +583,172 @@ Needs updating to show the new props (`filters`, `total_rows`, `row_id_key`, `so
     ```
 
     Keep the existing "This flat structure is easy to patch..." paragraph below.
+
+    **Part B — Add a DataTable schema section to `spec/schemas/data.yaml`.**
+
+    CONTEXT.md D-B2 says "New schema dimension lives in `spec/schemas/data.yaml`" and D-G1 says "Schema additions in `spec/schemas/data.yaml` mirror the Rust types." `spec/schemas/component.yaml` line 13 already has `props.additionalProperties: true`, so the runtime protocol validator accepts the new props without any schema edit — but the user's locked decision requires them to be DOCUMENTED in data.yaml for future IDE tooling and for the spec-as-source-of-truth invariant.
+
+    Read `spec/schemas/data.yaml` first. The current file documents patch operations, `KeyedCollection`, and `ValidationError` as top-level definitions. Add a new top-level `DataTable` section at the bottom of the file (before EOF), documenting the Phase 13 prop shape:
+
+    ```yaml
+    DataTable:
+      description: >-
+        Phase 13 `data-table` component props shape. This section documents the
+        structured props that DataTable accepts; the runtime validator treats
+        `component.props` as `additionalProperties: true` (see component.yaml),
+        so these fields are permissive at the protocol layer — this schema is
+        the canonical reference for tooling and generated types.
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/DataTableColumn"
+          description: Column definitions (required on every DataTable).
+        filters:
+          type: array
+          items:
+            $ref: "#/DataTableFilter"
+          description: >-
+            Optional filter-bar declarations (Phase 13 D-B2). Each entry
+            produces a shadcn primitive at render time.
+        total_rows:
+          type: integer
+          minimum: 0
+          description: >-
+            Optional total row count known server-side (Phase 13 D-D3). When
+            set, the frontend sentinel idles once `rows.length >= total_rows`.
+        row_id_key:
+          type: string
+          description: >-
+            Optional field name on each row object that DataTable uses as the
+            stable row identifier. Defaults to `"id"` on the frontend.
+        source:
+          type: string
+          description: >-
+            Optional identifier passed to the `fetch-rows` action dispatch
+            (Phase 13 D-H1). The backend's generic `fetch-rows` handler maps
+            this string to a per-screen fetcher.
+        page_size:
+          type: integer
+          minimum: 1
+          description: Default page size for initial render and pagination chunks.
+      required: [columns]
+      additionalProperties: false
+
+    DataTableColumn:
+      description: >-
+        Column definition for a DataTable. Phase 13 adds the `kind` and
+        `hidden_default` fields (D-F1, D-E2).
+      type: object
+      required: [key, label]
+      properties:
+        key:
+          type: string
+          description: Row-object field name this column reads.
+        label:
+          type: string
+          description: Visible column header text.
+        sortable:
+          type: boolean
+          description: If true, header click fires a `sort` action.
+        kind:
+          type: string
+          enum: [text, badge, actions, date, number]
+          description: >-
+            Cell render kind (Phase 13 D-F1). Defaults to `text`. The `actions`
+            kind expects `row[col.key]` to be an array of `{label, action}`
+            objects and renders a DropdownMenu.
+        hidden_default:
+          type: boolean
+          description: >-
+            If true, the column starts hidden on mount. User can toggle it via
+            the DataTable's "Columns" dropdown. Per-mount state only, not
+            persisted across reloads (D-E1).
+      additionalProperties: false
+
+    DataTableFilter:
+      description: >-
+        Phase 13 filter-bar entry (D-B2). Tagged union keyed by `kind`.
+      oneOf:
+        - $ref: "#/DataTableFilterText"
+        - $ref: "#/DataTableFilterSelect"
+        - $ref: "#/DataTableFilterDateRange"
+      discriminator:
+        propertyName: kind
+        mapping:
+          text: "#/DataTableFilterText"
+          select: "#/DataTableFilterSelect"
+          date-range: "#/DataTableFilterDateRange"
+
+    DataTableFilterText:
+      type: object
+      required: [id, kind]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          const: text
+        label:
+          type: string
+        placeholder:
+          type: string
+        span:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+
+    DataTableFilterSelect:
+      type: object
+      required: [id, kind, options]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          const: select
+        label:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            required: [value, label]
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+            additionalProperties: false
+        span:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+
+    DataTableFilterDateRange:
+      type: object
+      required: [id, kind]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          const: date-range
+        label:
+          type: string
+        span:
+          type: integer
+          minimum: 1
+      additionalProperties: false
+    ```
+
+    Append these sections to the END of `spec/schemas/data.yaml`. Do NOT reorder or modify the existing `PatchOperation*`, `KeyedCollection`, or `ValidationError` sections.
+
+    If the existing file already uses a different structure (e.g., all definitions wrapped in a top-level `definitions:` key), adapt the indentation to match — but keep every field name and description exactly as written above.
   </action>
   <verify>
-    <automated>grep -c "kind: \"actions\"" spec/PROTOCOL.md && grep -c "total_rows:" spec/PROTOCOL.md && grep -c "source: \"contact_list\"" spec/PROTOCOL.md</automated>
+    <automated>grep -q "kind: \"actions\"" spec/PROTOCOL.md && grep -q "total_rows:" spec/PROTOCOL.md && grep -q "source: \"contact_list\"" spec/PROTOCOL.md && grep -q "DataTable:" spec/schemas/data.yaml && grep -q "total_rows" spec/schemas/data.yaml && grep -q "hidden_default" spec/schemas/data.yaml && grep -q "row_id_key" spec/schemas/data.yaml && grep -q "DataTableFilter" spec/schemas/data.yaml</automated>
   </verify>
   <acceptance_criteria>
     - `grep -c "kind: \"actions\"" spec/PROTOCOL.md` >= 1
@@ -514,8 +758,16 @@ Needs updating to show the new props (`filters`, `total_rows`, `row_id_key`, `so
     - `grep -c "filters:" spec/PROTOCOL.md` >= 1
     - `grep -c "Phase 13" spec/PROTOCOL.md` >= 1
     - Existing surrounding paragraphs ("Component types are an open set", "Strict envelope, open props") are NOT removed
+    - `grep -q "DataTable:" spec/schemas/data.yaml` (new top-level DataTable section exists — satisfies D-B2 and D-G1)
+    - `grep -q "total_rows" spec/schemas/data.yaml`
+    - `grep -q "hidden_default" spec/schemas/data.yaml`
+    - `grep -q "row_id_key" spec/schemas/data.yaml`
+    - `grep -q "DataTableColumn" spec/schemas/data.yaml` (column schema documented)
+    - `grep -q "DataTableFilter" spec/schemas/data.yaml` (filter schema documented)
+    - `grep -q "date-range" spec/schemas/data.yaml` (filter kind enum documented)
+    - Existing `PatchOperation*`, `KeyedCollection`, and `ValidationError` top-level sections are UNCHANGED (edit is purely additive)
   </acceptance_criteria>
-  <done>PROTOCOL.md data-table example reflects the new Phase 13 shape; explanatory prose added.</done>
+  <done>PROTOCOL.md data-table example reflects the new Phase 13 shape with explanatory prose; `spec/schemas/data.yaml` has a new top-level DataTable / DataTableColumn / DataTableFilter schema section per D-B2 and D-G1.</done>
 </task>
 
 </tasks>

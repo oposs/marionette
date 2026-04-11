@@ -1,8 +1,8 @@
 ---
 phase: 13
 slug: datatable-enhancements
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-11
 ---
@@ -49,37 +49,37 @@ created: 2026-04-11
 
 | # | Requirement | Plan | Wave | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---|-------------|------|------|-----------------|-----------|-------------------|-------------|--------|
-| 1 | TABLE-01 | tbd | 2 | Filter bar renders text input and select dropdowns from `props.filters` | browser | `npx vitest --config vitest-browser.config.ts --run src/lib/components/table/DataTable.browser-test.ts -t "renders filter bar"` | ⬜ W0 rewrite | ⬜ pending |
-| 2 | TABLE-01 | tbd | 2 | Text filter debounced 300ms then dispatches `filter` action | browser + fake timers | `... -t "debounces filter"` | ⬜ W0 new | ⬜ pending |
-| 3 | TABLE-01 | tbd | 2 | Enter in text filter flushes immediately | browser | `... -t "Enter flushes filter"` | ⬜ W0 new | ⬜ pending |
-| 4 | TABLE-01 | tbd | 2 | Select filter fires immediately on change | browser | `... -t "Select filter no debounce"` | ⬜ W0 new | ⬜ pending |
-| 5 | TABLE-01 | tbd | 2 | Empty/undefined filter values stripped from payload | browser | `... -t "filter payload omits empty"` | ⬜ W0 new | ⬜ pending |
-| 6 | TABLE-01 | tbd | 1 | Backend `Filter::text / Filter::select / Filter::date_range` builders serialize correctly | Rust unit | `cd backend && cargo test -p marionette filter_builder` | ⬜ W0 new inline test in `standard.rs` | ⬜ pending |
-| 7 | TABLE-01 | tbd | 3 | Filter input is validated via `Payload<FilterParams>` derive; malformed dates rejected with `ActionError::BadPayload` (V5 Input Validation) | Rust unit | `cargo test -p crm-demo filter_params_rejects_bad_date` | ⬜ W0 new | ⬜ pending |
-| 8 | TABLE-01 | tbd | 3 | Live filter roundtrip against running backend | E2E playwright | `cd frontend && npx playwright test tests/e2e/datatable-filter.spec.ts` | ⬜ W0 new spec | ⬜ pending |
-| 9 | TABLE-02 | tbd | 2 | IntersectionObserver sentinel fires `fetch-rows` when scrolled near tail | browser (real Chromium IO) | `... -t "sentinel triggers fetch-rows"` | ⬜ W0 new | ⬜ pending |
-| 10 | TABLE-02 | tbd | 2 | Virtualizer renders only visible rows + overscan | browser | `... -t "virtualizer windows rows"` | ⬜ W0 new | ⬜ pending |
-| 11 | TABLE-02 | tbd | 2 | Sort/filter reset resets scrollTop to 0 and re-arms sentinel | browser | `... -t "reset clears scroll"` | ⬜ W0 new | ⬜ pending |
-| 12 | TABLE-02 | tbd | 2 | `total_rows` prop gates fetch when reached | browser | `... -t "stops fetching at total_rows"` | ⬜ W0 new | ⬜ pending |
-| 13 | TABLE-02 | tbd | 2 | Fewer-than-limit response gates fetch | browser | `... -t "stops fetching on short chunk"` | ⬜ W0 new | ⬜ pending |
-| 14 | TABLE-02 | tbd | 2 | Stale `fetch-rows` response discarded when action id doesn't match (D-H3 correlation) | browser | `... -t "drops stale fetch-rows patches"` | ⬜ W0 new | ⬜ pending |
-| 15 | TABLE-02 | tbd | 3 | Server-side page limit hard-capped at 100 (DoS mitigation V5) | Rust unit | `cargo test -p crm-demo fetch_rows_caps_limit` | ⬜ W0 new | ⬜ pending |
-| 16 | TABLE-02 | tbd | 3 | `fetch-rows` handler respects existing `AuthRequirement` matching the source list handler (V4 Access Control) | Rust integration | `cargo test -p crm-demo fetch_rows_requires_auth` | ⬜ W0 new | ⬜ pending |
-| 17 | TABLE-02 | tbd | 3 | Live progressive scroll roundtrip against seeded dataset > `page_size` | E2E playwright | `cd frontend && npx playwright test tests/e2e/datatable-infinite-scroll.spec.ts` | ⬜ W0 new spec (depends on seed bump) | ⬜ pending |
-| 18 | TABLE-03 | tbd | 2 | Columns DropdownMenu renders a CheckboxItem for each column where `getCanHide()` is true | browser | `... -t "columns dropdown lists hideable columns"` | ⬜ W0 new | ⬜ pending |
-| 19 | TABLE-03 | tbd | 2 | Toggling a checkbox hides the column in the rendered table | browser | `... -t "toggle hides column"` | ⬜ W0 new | ⬜ pending |
-| 20 | TABLE-03 | tbd | 2 | `hidden_default: true` columns start hidden | browser | `... -t "hidden_default starts hidden"` | ⬜ W0 new | ⬜ pending |
-| 21 | TABLE-03 | tbd | 3 | Visibility state does NOT persist across reload | manual UAT | Chrome MCP walkthrough during `/gsd-verify-work` | ⬜ manual | ⬜ pending |
-| 22 | Success-4 | tbd | 2 | Sorting resets scroll position and re-fetches from offset 0 | browser | `... -t "sort resets scroll"` | ⬜ W0 new | ⬜ pending |
-| 23 | D-F1 | tbd | 2 | `kind: 'actions'` renders a DropdownMenu instead of `[object Object]` (resolves latent bug) | browser | `... -t "actions kind renders DropdownMenu"` | ⬜ W0 new | ⬜ pending |
-| 24 | D-F1 | tbd | 2 | `kind: 'date'` uses `Intl.DateTimeFormat` | browser | `... -t "date kind formats"` | ⬜ W0 new | ⬜ pending |
-| 25 | D-F1 | tbd | 2 | `kind: 'number'` right-aligns via tabular-nums | browser | `... -t "number kind right-aligns"` | ⬜ W0 new | ⬜ pending |
-| 26 | D-F1 | tbd | 2 | `kind: 'badge'` renders shadcn `Badge` | browser | `... -t "badge kind renders Badge"` | ⬜ W0 new | ⬜ pending |
-| 27 | D-F1 | tbd | 2 | `DataTableActions.svelte` escapes `item.label` via Svelte text interpolation (XSS mitigation) | browser | `... -t "DataTableActions escapes label"` | ⬜ W0 new | ⬜ pending |
-| 28 | D-A2 | tbd | 1 | `TableScreen.svelte` file deleted | fs assertion | `test ! -e frontend/src/lib/components/screen/TableScreen.svelte` | ⬜ CI guard | ⬜ pending |
-| 29 | TABLE-01/02/03 | tbd | 3 | Protocol conformance: filter + fetch-rows traffic validates against schemas | E2E playwright | `npx playwright test tests/e2e/protocol-conformance.spec.ts -t "filter action conforms"` | ⬜ W0 extend existing | ⬜ pending |
-| 30 | CRM migration | tbd | 3 | Existing shell-nav E2E still passes after CRM handler migration | E2E playwright | `npx playwright test tests/e2e/shell-nav.spec.ts` | ✓ existing | ⬜ pending |
-| 31 | Focus preservation | tbd | 2 | Filter input retains focus across server Render response (mirrors Phase 12's D-A6 proof) | browser | `... -t "filter focus preserved across reset"` | ⬜ W0 new | ⬜ pending |
+| 1 | TABLE-01 | 13-05 | 2 | Filter bar renders text input and select dropdowns from `props.filters` | browser | `npx vitest --config vitest-browser.config.ts --run src/lib/components/table/DataTable.browser-test.ts -t "renders filter bar"` | ⬜ W0 rewrite | ⬜ pending |
+| 2 | TABLE-01 | 13-05 | 2 | Text filter debounced 300ms then dispatches `filter` action | browser + fake timers | `... -t "debounces filter"` | ⬜ W0 new | ⬜ pending |
+| 3 | TABLE-01 | 13-05 | 2 | Enter in text filter flushes immediately | browser | `... -t "Enter flushes filter"` | ⬜ W0 new | ⬜ pending |
+| 4 | TABLE-01 | 13-05 | 2 | Select filter fires immediately on change | browser | `... -t "Select filter no debounce"` | ⬜ W0 new | ⬜ pending |
+| 5 | TABLE-01 | 13-05 | 2 | Empty/undefined filter values stripped from payload | browser | `... -t "filter payload omits empty"` | ⬜ W0 new | ⬜ pending |
+| 6 | TABLE-01 | 13-02 | 1 | Backend `Filter::text / Filter::select / Filter::date_range` builders serialize correctly | Rust unit | `cd backend && cargo test -p marionette filter_builder` | ⬜ W0 new inline test in `standard.rs` | ⬜ pending |
+| 7 | TABLE-01 | 13-06 | 3 | Filter input is validated via `Payload<FilterParams>` derive; malformed dates rejected with `ActionError::BadPayload` (V5 Input Validation) | Rust unit | `cargo test -p crm-demo contact_filter_params_rejects_bad_date` | ⬜ W0 new | ⬜ pending |
+| 8 | TABLE-01 | 13-07 | 3 | Live filter roundtrip against running backend | E2E playwright | `cd frontend && npx playwright test tests/e2e/datatable-filter.spec.ts` | ⬜ W0 new spec | ⬜ pending |
+| 9 | TABLE-02 | 13-05 | 2 | IntersectionObserver sentinel fires `fetch-rows` when scrolled near tail | browser (real Chromium IO) | `... -t "sentinel triggers fetch-rows"` | ⬜ W0 new | ⬜ pending |
+| 10 | TABLE-02 | 13-05 | 2 | Virtualizer renders only visible rows + overscan | browser | `... -t "virtualizer windows rows"` | ⬜ W0 new | ⬜ pending |
+| 11 | TABLE-02 | 13-05 | 2 | Sort/filter reset resets scrollTop to 0 and re-arms sentinel | browser | `... -t "reset clears scroll"` | ⬜ W0 new | ⬜ pending |
+| 12 | TABLE-02 | 13-05 | 2 | `total_rows` prop gates fetch when reached | browser | `... -t "stops fetching at total_rows"` | ⬜ W0 new | ⬜ pending |
+| 13 | TABLE-02 | 13-05 | 2 | Fewer-than-limit response gates fetch | browser | `... -t "stops fetching on short chunk"` | ⬜ W0 new | ⬜ pending |
+| 14 | TABLE-02 | 13-05 | 2 | Stale `fetch-rows` response discarded when action id doesn't match (D-H3 correlation) | browser | `... -t "drops stale fetch-rows patches"` | ⬜ W0 new | ⬜ pending |
+| 15 | TABLE-02 | 13-03 | 3 | Server-side page limit hard-capped at 100 (DoS mitigation V5) | Rust unit | `cargo test -p crm-demo fetch_rows_limit_cap_is_applied_in_source` | ⬜ W0 new | ⬜ pending |
+| 16 | TABLE-02 | 13-03 | 3 | `fetch-rows` handler respects existing `AuthRequirement` matching the source list handler (V4 Access Control) | Rust unit | `cargo test -p crm-demo check_source_auth` | ⬜ W0 new | ⬜ pending |
+| 17 | TABLE-02 | 13-07 | 3 | Live progressive scroll roundtrip against seeded dataset > `page_size` | E2E playwright | `cd frontend && npx playwright test tests/e2e/datatable-infinite-scroll.spec.ts` | ⬜ W0 new spec (depends on seed bump) | ⬜ pending |
+| 18 | TABLE-03 | 13-05 | 2 | Columns DropdownMenu renders a CheckboxItem for each column where `getCanHide()` is true | browser | `... -t "columns dropdown lists hideable columns"` | ⬜ W0 new | ⬜ pending |
+| 19 | TABLE-03 | 13-05 | 2 | Toggling a checkbox hides the column in the rendered table | browser | `... -t "toggle hides column"` | ⬜ W0 new | ⬜ pending |
+| 20 | TABLE-03 | 13-05 | 2 | `hidden_default: true` columns start hidden | browser | `... -t "hidden_default starts hidden"` | ⬜ W0 new | ⬜ pending |
+| 21 | TABLE-03 | 13-07 | 3 | Visibility state does NOT persist across reload | manual UAT | Chrome MCP walkthrough during `/gsd-verify-work` | ⬜ manual | ⬜ pending |
+| 22 | Success-4 | 13-05 | 2 | Sorting resets scroll position and re-fetches from offset 0 | browser | `... -t "sort resets scroll"` | ⬜ W0 new | ⬜ pending |
+| 23 | D-F1 | 13-05 | 2 | `kind: 'actions'` renders a DropdownMenu instead of `[object Object]` (resolves latent bug) | browser | `... -t "actions kind renders DropdownMenu"` | ⬜ W0 new | ⬜ pending |
+| 24 | D-F1 | 13-05 | 2 | `kind: 'date'` uses `Intl.DateTimeFormat` | browser | `... -t "date kind formats"` | ⬜ W0 new | ⬜ pending |
+| 25 | D-F1 | 13-05 | 2 | `kind: 'number'` right-aligns via tabular-nums | browser | `... -t "number kind right-aligns"` | ⬜ W0 new | ⬜ pending |
+| 26 | D-F1 | 13-05 | 2 | `kind: 'badge'` renders shadcn `Badge` | browser | `... -t "badge kind renders Badge"` | ⬜ W0 new | ⬜ pending |
+| 27 | D-F1 | 13-04 | 2 | `DataTableActions.svelte` escapes `item.label` via Svelte text interpolation (XSS mitigation) | browser | `... -t "DataTableActions escapes label"` | ⬜ W0 new | ⬜ pending |
+| 28 | D-A2 | 13-05 | 1 | `TableScreen.svelte` file deleted | fs assertion | `test ! -e frontend/src/lib/components/screen/TableScreen.svelte` | ⬜ CI guard | ⬜ pending |
+| 29 | TABLE-01/02/03 | 13-07 | 3 | Protocol conformance: filter + fetch-rows traffic validates against schemas | E2E playwright | `npx playwright test tests/e2e/protocol-conformance.spec.ts -t "filter action conforms"` | ⬜ W0 extend existing | ⬜ pending |
+| 30 | CRM migration | 13-06 | 3 | Existing shell-nav E2E still passes after CRM handler migration | E2E playwright | `npx playwright test tests/e2e/shell-nav.spec.ts` | ✓ existing | ⬜ pending |
+| 31 | Focus preservation | 13-05 | 2 | Filter input retains focus across server Render response (mirrors Phase 12's D-A6 proof) | browser | `... -t "filter focus preserved across reset"` | ⬜ W0 new | ⬜ pending |
 
 **Counted:** 30 automated tests + 1 manual UAT (visibility non-persistence) = 31 verifications.
 
@@ -152,4 +152,4 @@ Security threats that map to test rows in the Verification Map above (from 13-RE
 - [ ] Feedback latency < 30 s for quick runs, < 4 min for full suite
 - [ ] `nyquist_compliant: true` set in frontmatter after planner populates task IDs
 
-**Approval:** pending (awaits planner populating real task IDs in the Verification Map)
+**Approval:** approved 2026-04-11 via plan revision 1 (all 31 rows mapped to real plan IDs; `nyquist_compliant` flipped to `true`)

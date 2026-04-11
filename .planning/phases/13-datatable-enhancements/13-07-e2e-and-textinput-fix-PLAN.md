@@ -3,7 +3,7 @@ phase: 13
 plan: 07
 type: execute
 wave: 4
-depends_on: [13-05, 13-06]
+depends_on: [13-06]
 files_modified:
   - frontend/src/lib/components/form/TextInput.svelte
   - frontend/src/lib/components/form/TextInput.browser-test.ts

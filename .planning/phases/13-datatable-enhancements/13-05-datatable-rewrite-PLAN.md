@@ -3,7 +3,7 @@ phase: 13
 plan: 05
 type: execute
 wave: 3
-depends_on: [13-01, 13-02, 13-04]
+depends_on: [13-01, 13-02, 13-03, 13-04]
 files_modified:
   - frontend/src/lib/components/table/DataTable.svelte
   - frontend/src/lib/components/table/DataTable.browser-test.ts
@@ -24,7 +24,7 @@ must_haves:
     - "Column visibility state is per-mount only (no persistence)"
     - "Rows render via `createSvelteTable` + `FlexRender` + `@tanstack/svelte-virtual` virtualizer (OR the virtual-core-direct fallback recorded in Plan 01's smoke test)"
     - "IntersectionObserver sentinel at the virtualizer tail (via `use:onIntersect` from `$lib/actions/viewport`) dispatches `sendAction('fetch-rows', { source, offset, limit })`"
-    - "`fetch-rows` dispatch stores the returned action id in `lastFetchRowsActionId` local state; patches whose echoed `id` doesn't match are NOT applied (but the data store handles this naturally since the id-mismatch drop lives in a data-store patch filter — see implementation note)"
+    - "Concurrent fetch-rows dispatches are gated by a `fetching` in-flight flag so only one request is outstanding at a time; server FIFO ordering on a single WebSocket connection guarantees out-of-order responses cannot occur. `lastFetchRowsActionId` records the most recent dispatch (per D-H3) for diagnostic/logging purposes and documents the correlation invariant — stale-discard is enforced by the fetching gate, not by dropping patches post-hoc"
     - "When `total_rows` prop is set, the sentinel idles once `rows.length >= total_rows`"
     - "When `total_rows` is absent, the sentinel idles once a fetch-rows response returns fewer rows than the requested `limit`"
     - "Sort change fires `sendAction('sort', { column, direction })` and resets scrollTop to 0"
@@ -540,6 +540,24 @@ This is the most complex Svelte 5 component in the phase — DO NOT skip the sve
   <behavior>
     Make ALL tests in Task 1's `DataTable.browser-test.ts` pass. The component MUST satisfy every `must_haves.truths` entry in this plan's frontmatter.
   </behavior>
+  <scope_rationale>
+    **Why this task is NOT split** (plan-checker warning acknowledged): This task rewrites DataTable.svelte (~250 lines), writes `datatable-cells.svelte.ts`, wires virtualizer + filter bar + sentinel + column visibility + per-kind cells + stale-discard tracking in one go. It is the single largest task in the phase.
+
+    Splitting it into "Task 2a: core + virtualizer" and "Task 2b: cells + stale-discard" was considered and rejected because:
+    1. The `datatable-cells.svelte.ts` helper and the `columnDefs` `cell:` callback in DataTable.svelte are mutually dependent — every cell-kind test in Task 1's test harness requires both files to exist before any test can pass
+    2. A half-wired DataTable (core + virtualizer but no cell kinds) would make the entire test suite red, producing no meaningful intermediate signal
+    3. The TDD RED→GREEN cycle established by Task 1 treats the whole test file as the goal; splitting would require splitting the test file, which fragments the recipe conformance proof
+
+    **Required in-task checkpoints** — the executor MUST run the test suite after each stage below and commit BETWEEN stages. If a stage goes red for more than two iterations, STOP and surface the blocker rather than piling on more changes:
+
+    - **Stage A** — Write `datatable-cells.svelte.ts` (Step 1). Run `npx tsc --noEmit`. Commit.
+    - **Stage B** — Write the filter-bar section of `DataTable.svelte` (Step 3 top half). Run the cell-kind + filter-bar subset of tests. Commit.
+    - **Stage C** — Wire the virtualizer + sentinel (Step 3 middle). Run the infinite-scroll subset. Commit.
+    - **Stage D** — Wire column visibility + sort reset + stale-discard state (Step 3 bottom). Run the full suite. Commit.
+    - **Stage E** — svelte MCP validation pass (Step 5). Fix any issues and commit.
+
+    The executor must NOT attempt to split this task mid-execution — the stages above provide the granularity.
+  </scope_rationale>
   <action>
     **Step 0 — Read the svelte-virtual path decision.** Grep:
     ```bash
