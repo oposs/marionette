@@ -680,4 +680,71 @@ mod tests {
         assert!(props.get("page_size").is_none());
         assert!(props["columns"].is_array());
     }
+
+    #[test]
+    fn data_table_phase13_example_serializes_correctly() {
+        let (_id, component) = DataTable::new(vec![
+            TableColumn::new("name", "Name").sortable(),
+            TableColumn::new("email", "Email"),
+            TableColumn::new("created", "Created")
+                .kind(ColumnKind::Date)
+                .sortable(),
+            TableColumn::new("actions", "").kind(ColumnKind::Actions),
+            TableColumn::new("internal_id", "ID").hidden_default(true),
+        ])
+        .filter(
+            Filter::text("search")
+                .label("Search")
+                .placeholder("Filter contacts..."),
+        )
+        .filter(
+            Filter::select(
+                "company",
+                vec![
+                    SelectOption {
+                        value: String::new(),
+                        label: "All companies".into(),
+                    },
+                    SelectOption {
+                        value: "1".into(),
+                        label: "Acme".into(),
+                    },
+                ],
+            )
+            .label("Company"),
+        )
+        .filter(Filter::date_range("created").label("Created date"))
+        .total_rows(237u64)
+        .row_id_key("id")
+        .page_size(50u32)
+        .build();
+
+        let props = component.props.unwrap();
+        // Columns
+        let cols = props["columns"].as_array().unwrap();
+        assert_eq!(cols.len(), 5);
+        assert_eq!(cols[0]["key"], "name");
+        assert_eq!(cols[0]["sortable"], true);
+        // Columns that did NOT set `kind` should omit the field entirely.
+        assert!(cols[0].get("kind").is_none());
+        assert!(cols[1].get("kind").is_none());
+        assert_eq!(cols[2]["kind"], "date");
+        assert_eq!(cols[2]["sortable"], true);
+        assert_eq!(cols[3]["kind"], "actions");
+        assert_eq!(cols[4]["hidden_default"], true);
+        // Filters
+        let filters = props["filters"].as_array().unwrap();
+        assert_eq!(filters.len(), 3);
+        assert_eq!(filters[0]["kind"], "text");
+        assert_eq!(filters[0]["placeholder"], "Filter contacts...");
+        assert_eq!(filters[1]["kind"], "select");
+        assert_eq!(filters[1]["options"].as_array().unwrap().len(), 2);
+        assert_eq!(filters[2]["kind"], "date-range");
+        // Other props
+        assert_eq!(props["total_rows"], 237);
+        assert_eq!(props["row_id_key"], "id");
+        assert_eq!(props["page_size"], 50);
+        // Type
+        assert_eq!(component.r#type, "data-table");
+    }
 }
