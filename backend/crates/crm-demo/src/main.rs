@@ -459,6 +459,15 @@ async fn main() {
             box_handler(handle_navigate),
             AuthRequirement::Authenticated,
         )
+        // Generic server-side row fetcher for DataTable infinite scroll
+        // (Phase 13 D-H1). Registered at Authenticated level; the handler
+        // performs an additional per-source role check so admin-only
+        // sources (audit_list, user_list) still require `admin`.
+        .action(
+            "fetch-rows",
+            box_handler(handlers::fetch_rows::handle_fetch_rows),
+            AuthRequirement::Authenticated,
+        )
         .action(
             "contact_list",
             box_handler(handlers::contact::handle_contact_list),

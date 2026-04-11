@@ -1,6 +1,6 @@
 //! Generic server-side row fetcher for the `fetch-rows` action (Phase 13 D-H1).
 //!
-//! Closes a dead-code gap: the frontend's DataTable sentinel dispatches
+//! Closes a dead-code gap: the frontend's `DataTable` sentinel dispatches
 //! `sendAction('fetch-rows', { source, offset, limit })` but no backend
 //! handler was registered for it until Phase 13. This module provides a
 //! single generic handler that dispatches internally to per-source fetchers
@@ -8,11 +8,11 @@
 //! global limit cap.
 //!
 //! Security properties:
-//! - V4 Access Control: `check_source_auth` enforces per-source role
-//!   requirements (audit_list and user_list require `admin`).
+//! - V4 Access Control: [`check_source_auth`] enforces per-source role
+//!   requirements (`audit_list` and `user_list` require `admin`).
 //! - V5 Input Validation: payload deserialized via `#[derive(Deserialize)]`;
 //!   unknown sources rejected with `ActionError::BadPayload`.
-//! - V5 DoS: `limit` is capped server-side at `MAX_LIMIT = 100`.
+//! - V5 `DoS`: `limit` is capped server-side at `MAX_LIMIT = 100`.
 //! - D-H3 correlation: the outgoing `PatchMessage.id` echoes
 //!   `ctx.action.id.clone()` so the frontend can discard stale responses.
 
@@ -26,7 +26,7 @@ use marionette_protocol::{PatchMessage, PatchOperation, ProtocolMessage};
 use crate::entities::{audit_log, company, contact, user};
 
 /// Maximum rows returnable in a single `fetch-rows` request. Enforced
-/// server-side as a DoS mitigation (V5 Input Validation hardening).
+/// server-side as a `DoS` mitigation (V5 Input Validation hardening).
 const MAX_LIMIT: u32 = 100;
 
 /// Default page size used when the payload omits `limit`.
@@ -80,12 +80,12 @@ fn required_role_for(source: &str) -> Result<Option<&'static str>, ActionError> 
 /// constructing a `HandlerContext`.
 fn check_source_auth(source: &str, session_roles: &[String]) -> Result<(), ActionError> {
     let required = required_role_for(source)?;
-    if let Some(role) = required {
-        if !session_roles.iter().any(|r| r == role) {
-            return Err(ActionError::Unauthorized(format!(
-                "fetch-rows source '{source}' requires role '{role}'"
-            )));
-        }
+    if let Some(role) = required
+        && !session_roles.iter().any(|r| r == role)
+    {
+        return Err(ActionError::Unauthorized(format!(
+            "fetch-rows source '{source}' requires role '{role}'"
+        )));
     }
     Ok(())
 }
