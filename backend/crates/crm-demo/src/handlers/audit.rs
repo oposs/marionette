@@ -1,24 +1,41 @@
 use std::collections::HashMap;
 
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Heading, Select, SelectOption, TableColumn, TextInput,
+    ColumnKind, Container, DataTable, Filter, Heading, SelectOption, TableColumn,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload};
-use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
+use marionette_protocol::{ProtocolMessage, RenderMessage};
 
 use crate::entities::{audit_log, user};
 
+/// Date-range filter payload shape produced by the Phase 13 DataTable
+/// `date-range` filter kind. Sent as `{from, to}` inside the filter values
+/// object (see D-C3).
+#[derive(Deserialize, Default)]
+pub struct DateRange {
+    #[serde(default)]
+    pub from: Option<String>,
+    #[serde(default)]
+    pub to: Option<String>,
+}
+
 /// Filter payload for the audit log query screen.
+///
+/// Matches the new Phase 13 filter shape: a flat map keyed by filter id
+/// where date-range filters use a nested `{from, to}` object.
 #[derive(Deserialize, Default)]
 pub struct AuditFilterPayload {
-    user_id: Option<i32>,
+    /// `select` filter value; comes in as a string from the frontend
+    /// `Select.Root` component and is parsed to i32 inside the handler.
+    user_id: Option<String>,
+    /// `text` filter value for the audit_log_table column.
     table: Option<String>,
-    date_from: Option<String>,
-    date_to: Option<String>,
+    /// `date-range` filter value for audit_log_timestamp.
+    date: Option<DateRange>,
 }
 
 /// Handle the `audit_list` action: render a filterable audit log DataTable.
@@ -30,10 +47,17 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
         .map(|p| p.0)
         .unwrap_or_default();
 
+    // Parse the (string) user_id once, so we can reuse it in both the page
+    // query and the count query.
+    let user_id_int: Option<i32> = filter
+        .user_id
+        .as_deref()
+        .and_then(|s| s.parse::<i32>().ok());
+
     // Build query with conditional filters
     let mut query = audit_log::Entity::find();
 
-    if let Some(uid) = filter.user_id {
+    if let Some(uid) = user_id_int {
         query = query.filter(audit_log::Column::AuditLogUser.eq(uid));
     }
     if let Some(ref tbl) = filter.table {
@@ -41,14 +65,16 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
             query = query.filter(audit_log::Column::AuditLogTable.eq(tbl.as_str()));
         }
     }
-    if let Some(ref date_from) = filter.date_from {
-        if !date_from.is_empty() {
-            query = query.filter(audit_log::Column::AuditLogTimestamp.gte(date_from.as_str()));
+    if let Some(ref dr) = filter.date {
+        if let Some(ref from) = dr.from {
+            if !from.is_empty() {
+                query = query.filter(audit_log::Column::AuditLogTimestamp.gte(from.as_str()));
+            }
         }
-    }
-    if let Some(ref date_to) = filter.date_to {
-        if !date_to.is_empty() {
-            query = query.filter(audit_log::Column::AuditLogTimestamp.lte(date_to.as_str()));
+        if let Some(ref to) = dr.to {
+            if !to.is_empty() {
+                query = query.filter(audit_log::Column::AuditLogTimestamp.lte(to.as_str()));
+            }
         }
     }
 
@@ -60,6 +86,36 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
 
     // Limit to 100 results
     let entries: Vec<_> = entries.into_iter().take(100).collect();
+
+    // Compute total_rows with the SAME WHERE clauses as the page query (D-H2).
+    // SeaORM consumes the query in `.all(...)`, so we rebuild the filter chain.
+    let mut count_query = audit_log::Entity::find();
+    if let Some(uid) = user_id_int {
+        count_query = count_query.filter(audit_log::Column::AuditLogUser.eq(uid));
+    }
+    if let Some(ref tbl) = filter.table {
+        if !tbl.is_empty() {
+            count_query = count_query.filter(audit_log::Column::AuditLogTable.eq(tbl.as_str()));
+        }
+    }
+    if let Some(ref dr) = filter.date {
+        if let Some(ref from) = dr.from {
+            if !from.is_empty() {
+                count_query =
+                    count_query.filter(audit_log::Column::AuditLogTimestamp.gte(from.as_str()));
+            }
+        }
+        if let Some(ref to) = dr.to {
+            if !to.is_empty() {
+                count_query =
+                    count_query.filter(audit_log::Column::AuditLogTimestamp.lte(to.as_str()));
+            }
+        }
+    }
+    let total_rows: u64 = count_query
+        .count(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
 
     // Fetch users for the filter dropdown
     let users = user::Entity::find()
@@ -82,83 +138,27 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
     // Build UI
     let heading = Heading::new("Audit Log").id("audit-heading").build();
 
-    let user_select = Select::new("User", user_options)
-        .id("audit-filter-user")
-        .bind("/auditFilter/user_id")
-        .build();
-
-    let table_input = TextInput::new("Table")
-        .id("audit-filter-table")
-        .placeholder("e.g. user")
-        .bind("/auditFilter/table")
-        .build();
-
-    let date_from_input = TextInput::new("From Date")
-        .id("audit-filter-from")
-        .placeholder("YYYY-MM-DD")
-        .bind("/auditFilter/date_from")
-        .build();
-
-    let date_to_input = TextInput::new("To Date")
-        .id("audit-filter-to")
-        .placeholder("YYYY-MM-DD")
-        .bind("/auditFilter/date_to")
-        .build();
-
-    let filter_button = Button::new("Filter")
-        .id("audit-filter-btn")
-        .action(ComponentAction::submit("audit_list"))
-        .build();
-
-    let (filter_container_child, filter_container_descendants) = Container::new()
-        .id("audit-filter-form")
-        .children(vec![
-            user_select,
-            table_input,
-            date_from_input,
-            date_to_input,
-            filter_button,
-        ])
-        .build_tree();
-
     let table = DataTable::new(vec![
-        TableColumn {
-            key: "timestamp".into(),
-            label: "When".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "user".into(),
-            label: "Who".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "table".into(),
-            label: "Table".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "recordId".into(),
-            label: "Record".into(),
-            sortable: None,
-            ..Default::default()
-        },
-        TableColumn {
-            key: "action".into(),
-            label: "Action".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "changes".into(),
-            label: "Changes".into(),
-            sortable: None,
-            ..Default::default()
-        },
+        TableColumn::new("timestamp", "When")
+            .sortable()
+            .kind(ColumnKind::Date),
+        TableColumn::new("user", "Who").sortable(),
+        TableColumn::new("table", "Table").sortable(),
+        TableColumn::new("recordId", "Record"),
+        TableColumn::new("action", "Action").sortable(),
+        TableColumn::new("changes", "Changes").hidden_default(true),
     ])
+    .filter(Filter::select("user_id", user_options).label("User"))
+    .filter(
+        Filter::text("table")
+            .label("Table")
+            .placeholder("e.g. user"),
+    )
+    .filter(Filter::date_range("date").label("Date range"))
+    .total_rows(total_rows)
+    .source("audit_list")
+    .row_id_key("id")
+    .page_size(50u32)
     .id("audit-table")
     .bind("/auditEntries")
     .build();
@@ -185,7 +185,7 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
         .collect();
 
     // Combine all nodes
-    let all_children = vec![heading, filter_container_child, table];
+    let all_children = vec![heading, table];
 
     let container_nodes = Container::new()
         .id("audit-root")
@@ -196,17 +196,10 @@ pub async fn handle_audit_list(ctx: HandlerContext) -> ActionResult {
     for (id, component) in container_nodes {
         nodes.insert(id, component);
     }
-    for (id, component) in filter_container_descendants {
-        nodes.insert(id, component);
-    }
 
+    // Filter state is owned locally by the frontend DataTable component per
+    // D-C4; the backend no longer pre-populates initial filter values.
     let data = serde_json::json!({
-        "auditFilter": {
-            "user_id": filter.user_id.map(|id| id.to_string()).unwrap_or_default(),
-            "table": filter.table.unwrap_or_default(),
-            "date_from": filter.date_from.unwrap_or_default(),
-            "date_to": filter.date_to.unwrap_or_default(),
-        },
         "auditEntries": rows,
     });
 
