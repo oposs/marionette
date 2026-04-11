@@ -106,6 +106,24 @@ In addition, Phase 13 implements three structural decisions that fall out of ado
 - Exact migration order for the four CRM handlers (audit, company, contact, user) — can be done as one plan or split per handler
 - Whether to keep the existing `DataTable.browser-test.ts` and update assertions, or rewrite from scratch given the recipe-based rewrite
 
+### Post-research refinements (added 2026-04-11 after 13-RESEARCH.md)
+
+These decisions supplement the original CONTEXT and are derived from discoveries during research. Locked — the planner treats them as non-negotiable.
+
+- **D-H1: Generic server-side `fetch-rows` handler keyed on component `source` id.** **Research discovered that the frontend's existing `sendAction('fetch-rows', ...)` dispatch is dead code today — no backend handler is registered for it, so infinite scroll has never actually fired end-to-end.** Phase 13 adds a new generic `fetch_rows` handler that takes `payload: { source: string, offset: u32, limit: u32 }` and internally dispatches to the right query function based on `source` (e.g., `'contact_list'`, `'company_list'`, `'audit_list'`, `'user_list'`). Frontend dispatches `sendAction('fetch-rows', { source, offset, limit })`. DataTable.props gains an implicit or explicit `source` identifier the backend embeds at render time. One handler covers all four CRM list screens; future list screens add a new branch.
+
+- **D-H2: Enable `total_rows` for ALL four CRM list handlers at launch.** Add a `COUNT(*)` query (with the same `WHERE` clause as the page query) to each of `handle_audit_list`, `handle_contact_list`, `handle_company_list`, `handle_user_list`. SQLite COUNT is cheap at CRM scale (hundreds of rows). Ensures consistent contract across screens and exercises the `total_rows` code path. v2's row-count status bar (TABLE-05) becomes a one-liner later. The fewer-than-limit fallback path still exists in DataTable as a safety net AND is exercised in unit tests (so both code paths stay live).
+
+- **D-H3: Stale-response discard via DataTable-local action-id tracking.** Research confirmed the server guarantees FIFO ordering on a single WebSocket connection (see `backend/crates/marionette/src/ws.rs` `read_loop` — actions dispatched serially, responses written through a single mpsc channel to a single writer task). This means the text-filter race ("Alic" vs "Alice") is physically impossible — filter responses arrive in order. The ONLY real race is `fetch-rows` interleaved with `filter`/`sort`. The fix is:
+  1. Extend `frontend/src/lib/transport/dispatcher.ts` `sendAction` to RETURN the generated `action.id` (string) to the caller.
+  2. The new backend `fetch_rows` handler echoes `ctx.action.id.clone()` into the `PatchMessage.id` field (already the established correlation convention — `confirmOptimistic` in `init.ts` already consumes this shape).
+  3. DataTable tracks `lastFetchRowsActionId: string | null` in local `$state`. When a filter or sort change fires, it clears the tracked id. When a `fetch-rows` dispatch fires, it stores the returned id. The patch handler compares incoming patch `id` to the tracked id and drops the patch if they don't match.
+  No protocol changes, no new schemas, no new dispatcher infrastructure. Component-scoped fix.
+
+- **D-H4: Fold the TextInput `input_type` bug fix + seed-data bump into Phase 13.** Two small side-concerns surface:
+  1. **TextInput `input_type` bug** — flagged in Phase 12 research: `TextInput.svelte` reads `props.type` but the backend serializes `props.input_type`, so password fields render as text. One-task fix (align the Svelte component to `props.input_type` with a fallback). Added as a small plan (e.g., Plan 13-0X). Rationale: Phase 13 already touches form-adjacent components; FormScreen Phase 14 shouldn't inherit a stale bug.
+  2. **Seed data volume** — Phase 13's infinite-scroll E2E test needs more than `page_size` rows in at least one CRM entity (contacts is the obvious choice) to actually exercise the sentinel. `backend/crates/crm-demo/src/seed.rs` must be bumped to produce e.g. `>2 × page_size` contacts. Added as a small task (could live inside the infinite-scroll E2E plan or as a sibling seed plan).
+
 </decisions>
 
 <canonical_refs>
