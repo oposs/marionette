@@ -87,10 +87,16 @@ pub async fn seed_companies(db: &DatabaseConnection) -> Result<(), DbErr> {
 ///
 /// Returns `DbErr` if the database query or insert fails.
 pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
+    // Phase 13: the infinite-scroll E2E test requires > page_size contacts
+    // (120 total — 3 named + 117 generated). Seeding is idempotent AND
+    // top-up-aware: if the table already has the named contacts but fewer
+    // than 120 total (e.g. a stale DB from a pre-Phase-13 run), we top up
+    // the generated contacts without re-inserting the named ones.
     let count = contact::Entity::find().count(db).await?;
-    if count > 0 {
+    if count >= 120 {
         return Ok(());
     }
+    let needs_named_seed = count == 0;
 
     // Look up company IDs by name
     let acme = company::Entity::find()
@@ -111,30 +117,44 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
         ("Carol Williams", "carol@example.com", None, Some("Freelancer"), None),
     ];
 
-    for (name, email, phone, title, company_id) in named_contacts {
-        let model = contact::ActiveModel {
-            contact_id: NotSet,
-            contact_name: Set(name.into()),
-            contact_email: Set(email.into()),
-            contact_phone: Set(phone.map(String::from)),
-            contact_title: Set(title.map(String::from)),
-            contact_company: Set(company_id),
-            contact_created_at: NotSet,
-            contact_updated_at: NotSet,
-        };
-        model.insert(db).await?;
+    if needs_named_seed {
+        for (name, email, phone, title, company_id) in named_contacts {
+            let model = contact::ActiveModel {
+                contact_id: NotSet,
+                contact_name: Set(name.into()),
+                contact_email: Set(email.into()),
+                contact_phone: Set(phone.map(String::from)),
+                contact_title: Set(title.map(String::from)),
+                contact_company: Set(company_id),
+                contact_created_at: NotSet,
+                contact_updated_at: NotSet,
+            };
+            model.insert(db).await?;
+        }
     }
 
     // Bulk-seed additional contacts so Phase 13's infinite-scroll E2E has
     // > 2 × page_size (50) rows. Deterministic naming for test assertions.
+    // Only insert generated contacts that aren't already present — this
+    // makes the seed idempotent for partial DBs (e.g., a stale DB from a
+    // pre-Phase-13 run that only has the 3 named contacts).
     let titles = ["Engineer", "Manager", "Analyst", "Designer", "Director"];
     let company_ids: Vec<Option<i32>> = vec![
         acme.as_ref().map(|c| c.company_id),
         globex.as_ref().map(|c| c.company_id),
         None,
     ];
+    let mut inserted: u32 = 0;
     for i in 0..117 {
         let name = format!("Seed Contact {i:03}");
+        // Skip if this generated contact already exists (idempotent top-up).
+        let existing = contact::Entity::find()
+            .filter(contact::Column::ContactName.eq(name.clone()))
+            .one(db)
+            .await?;
+        if existing.is_some() {
+            continue;
+        }
         let email = format!("seed{i:03}@example.com");
         let title = titles[i as usize % titles.len()];
         let company_id = company_ids[i as usize % company_ids.len()];
@@ -150,9 +170,14 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
             contact_updated_at: NotSet,
         };
         model.insert(db).await?;
+        inserted += 1;
     }
 
-    tracing::info!("Seeded 120 demo contacts (3 named + 117 generated)");
+    tracing::info!(
+        "Seeded {} generated demo contacts (top-up to 120, {} existed already)",
+        inserted,
+        117 - inserted,
+    );
     Ok(())
 }
 

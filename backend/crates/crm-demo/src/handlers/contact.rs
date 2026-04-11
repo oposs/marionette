@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter,
-    QueryOrder,
+    QueryOrder, QuerySelect,
 };
 use serde::Deserialize;
 
@@ -214,37 +214,31 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
 
-    let mut contacts = contact::Entity::find()
+    // D-H1 / D-H2: the initial render is a single page (page_size rows).
+    // The remaining rows stream in via the fetch_rows handler as the user
+    // scrolls the DataTable. Prior to Phase 13 this query fetched ALL
+    // rows via `.all()`, which masked the infinite-scroll plumbing and
+    // made it impossible for the sentinel to fire (rows.length already
+    // equalled total_rows on first render — see 13-07 E2E test discovery).
+    const INITIAL_PAGE_SIZE: u64 = 50;
+    let contacts = contact::Entity::find()
         .find_also_related(company::Entity)
         .filter(condition)
         .order_by_asc(contact::Column::ContactName)
+        .offset(0u64)
+        .limit(INITIAL_PAGE_SIZE)
         .all(&*db.0)
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
 
-    // Post-filter: also include contacts whose company name matches the search term
-    if let Some(ref q) = search_term {
-        let q_lower = q.to_lowercase();
-        // Re-query ALL contacts if we have a search, to pick up company-name matches
-        // that the SQL LIKE on contact columns would have missed.
-        let all_matched_ids: HashSet<i32> =
-            contacts.iter().map(|(c, _)| c.contact_id).collect();
-        let all_contacts = contact::Entity::find()
-            .find_also_related(company::Entity)
-            .order_by_asc(contact::Column::ContactName)
-            .all(&*db.0)
-            .await
-            .map_err(|e| ActionError::Internal(e.to_string()))?;
-        for (c, co) in all_contacts {
-            if !all_matched_ids.contains(&c.contact_id) {
-                if let Some(ref comp) = co {
-                    if comp.company_name.to_lowercase().contains(&q_lower) {
-                        contacts.push((c, co));
-                    }
-                }
-            }
-        }
-    }
+    // NOTE: the pre-Phase-13 post-filter that re-queried ALL contacts to
+    // pick up company-name matches via in-memory filtering is removed
+    // because it is incompatible with pagination. The SQL LIKE on
+    // ContactName + ContactEmail remains as the authoritative search; a
+    // future plan can add a JOIN-based SQL company-name filter if
+    // needed. The fetch_rows path is unaffected (it runs its own page
+    // query).
+    let _ = &search_term;
 
     // Load tags for all displayed contacts in one batch query
     let contact_ids: Vec<i32> = contacts.iter().map(|(c, _)| c.contact_id).collect();
