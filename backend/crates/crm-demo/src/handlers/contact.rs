@@ -327,41 +327,49 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
             key: "name".into(),
             label: "Name".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "email".into(),
             label: "Email".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "phone".into(),
             label: "Phone".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "company".into(),
             label: "Company".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "tags".into(),
             label: "Tags".into(),
             sortable: None,
+            ..Default::default()
         },
         TableColumn {
             key: "sync_status".into(),
             label: "Sync".into(),
             sortable: None,
+            ..Default::default()
         },
         TableColumn {
             key: "created".into(),
             label: "Created".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "actions".into(),
             label: "Actions".into(),
             sortable: None,
+            ..Default::default()
         },
     ])
     .id("contact-table")
@@ -766,26 +774,31 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                 key: "type_label".into(),
                 label: "Type".into(),
                 sortable: Some(true),
+                ..Default::default()
             },
             TableColumn {
                 key: "subject".into(),
                 label: "Subject".into(),
                 sortable: None,
+                ..Default::default()
             },
             TableColumn {
                 key: "date".into(),
                 label: "Date".into(),
                 sortable: Some(true),
+                ..Default::default()
             },
             TableColumn {
                 key: "logged_by".into(),
                 label: "Logged By".into(),
                 sortable: None,
+                ..Default::default()
             },
             TableColumn {
                 key: "notes".into(),
                 label: "Notes".into(),
                 sortable: None,
+                ..Default::default()
             },
         ])
         .id("interaction-timeline")
@@ -886,16 +899,19 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     key: "campaign".into(),
                     label: "Campaign".into(),
                     sortable: Some(true),
+                    ..Default::default()
                 },
                 TableColumn {
                     key: "date".into(),
                     label: "Date".into(),
                     sortable: Some(true),
+                    ..Default::default()
                 },
                 TableColumn {
                     key: "status".into(),
                     label: "Status".into(),
                     sortable: None,
+                    ..Default::default()
                 },
             ])
             .id("history-table")

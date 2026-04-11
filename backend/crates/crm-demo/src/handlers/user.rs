@@ -38,26 +38,31 @@ async fn render_user_list(ctx: &HandlerContext) -> ActionResult {
             key: "name".into(),
             label: "Name".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "email".into(),
             label: "Email".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "role".into(),
             label: "Role".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "lastLogin".into(),
             label: "Last Login".into(),
             sortable: Some(true),
+            ..Default::default()
         },
         TableColumn {
             key: "actions".into(),
             label: "Actions".into(),
             sortable: None,
+            ..Default::default()
         },
     ])
     .id("user-table")
