@@ -325,6 +325,13 @@ pub struct DataTable {
     /// absent.
     #[builder(optional)]
     pub row_id_key: Option<String>,
+    /// Source identifier used by the frontend's fetch-rows sentinel
+    /// (Phase 13 D-H1). Must match one of the whitelisted source strings
+    /// in `crm-demo/src/handlers/fetch_rows.rs::required_role_for`.
+    /// Typically matches the list handler's action name
+    /// (e.g., `"contact_list"`, `"audit_list"`).
+    #[builder(optional)]
+    pub source: Option<String>,
 }
 
 // Hand-written append-style setter for `filters`. The derived macro
@@ -717,6 +724,7 @@ mod tests {
         .total_rows(237u64)
         .row_id_key("id")
         .page_size(50u32)
+        .source("contact_list")
         .build();
 
         let props = component.props.unwrap();
@@ -744,7 +752,24 @@ mod tests {
         assert_eq!(props["total_rows"], 237);
         assert_eq!(props["row_id_key"], "id");
         assert_eq!(props["page_size"], 50);
+        assert_eq!(props["source"], "contact_list");
         // Type
         assert_eq!(component.r#type, "data-table");
+    }
+
+    #[test]
+    fn data_table_source_field_serializes() {
+        let (_id, component) = DataTable::new(vec![TableColumn::new("n", "Name")])
+            .source("audit_list")
+            .build();
+        let props = component.props.unwrap();
+        assert_eq!(props["source"], "audit_list");
+    }
+
+    #[test]
+    fn data_table_source_omitted_when_unset() {
+        let (_id, component) = DataTable::new(vec![TableColumn::new("n", "Name")]).build();
+        let props = component.props.unwrap();
+        assert!(props.get("source").is_none() || props["source"].is_null());
     }
 }
