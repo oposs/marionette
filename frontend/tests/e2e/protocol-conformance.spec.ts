@@ -11,6 +11,12 @@ import { createValidator } from '../helpers/schema-validator';
 // by the country-change flow added in Plan 08 Task 1, which emits a
 // PatchMessage containing Set + RemoveChild + DeleteNode + SetNode +
 // InsertChild ops on the `content` surface.
+//
+// Phase 13 Plan 07 Task 3 — extends the spec to validate the two new Phase 13
+// WebSocket traffic patterns against the same ActionMessage / PatchMessage
+// schemas in spec/schemas/:
+//   1. `filter` action payload (D-C3 flat values map)
+//   2. `fetch-rows` action + its response patch (D-H1 / D-H3)
 // -----------------------------------------------------------------------------
 
 async function login(page: Page): Promise<void> {
@@ -181,4 +187,136 @@ test('patch message with node tree ops conforms to schema', async ({ page }) => 
 	expect(toastsPatch, 'expected a toasts-surface PatchMessage').toBeDefined();
 	const validToasts = validator.validatePatch(toastsPatch!.data);
 	expect(validToasts, `toasts schema errors: ${validator.getErrors()}`).toBe(true);
+});
+
+test('filter action payload conforms to ActionMessage schema (Phase 13)', async ({ page }) => {
+	// Drive the Phase 13 DataTable filter bar: type into the Search
+	// input on the contacts list; DataTable debounces 300ms then dispatches
+	// `sendAction('filter', { search: 'Acme' })`. Validate the sent frame
+	// against the ActionMessage schema in spec/schemas/message.yaml.
+	const frames = captureWebSocketFrames(page);
+	await page.goto('/');
+	await login(page);
+
+	const searchInput = page.getByLabel('Search');
+	await expect(searchInput).toBeVisible({ timeout: 10000 });
+	await searchInput.fill('Acme');
+
+	await expect
+		.poll(
+			() =>
+				frames.filter(
+					(f) =>
+						f.direction === 'sent' &&
+						f.data.type === 'action' &&
+						(f.data as { name?: string }).name === 'filter',
+				).length,
+			{ timeout: 5000 },
+		)
+		.toBeGreaterThan(0);
+
+	const filterFrame = frames.find(
+		(f) =>
+			f.direction === 'sent' &&
+			f.data.type === 'action' &&
+			(f.data as { name?: string }).name === 'filter',
+	)!;
+	const validator = createValidator();
+	const valid = validator.validateAction(filterFrame.data);
+	expect(valid, `filter ActionMessage schema errors: ${validator.getErrors()}`).toBe(true);
+
+	// Sanity-check the D-C3 flat values map shape.
+	const msg = filterFrame.data as {
+		name: string;
+		payload: Record<string, unknown>;
+	};
+	expect(msg.name).toBe('filter');
+	expect(msg.payload).toBeDefined();
+	expect(msg.payload.search).toBe('Acme');
+});
+
+test('fetch-rows action + response patch conform to schemas (Phase 13)', async ({ page }) => {
+	// Drive the Phase 13 infinite-scroll sentinel: navigate to contacts,
+	// scroll the virtualised DataTable to its tail, and validate both
+	// the sent `fetch-rows` ActionMessage and the received PatchMessage
+	// response (which echoes the action id per D-H3) against their
+	// respective schemas.
+	const frames = captureWebSocketFrames(page);
+	await page.goto('/');
+	await login(page);
+
+	const scroller = page.locator('[data-testid="datatable-scroll"]');
+	await expect(scroller).toBeVisible({ timeout: 10000 });
+	// Wait for initial rows to settle so the sentinel is mounted.
+	await expect(page.getByText(/Alice Johnson|Seed Contact 000/).first()).toBeVisible({
+		timeout: 10000,
+	});
+
+	await scroller.evaluate((el) => {
+		(el as HTMLElement).scrollTop = (el as HTMLElement).scrollHeight;
+	});
+
+	// Wait for the fetch-rows dispatch.
+	await expect
+		.poll(
+			() =>
+				frames.filter(
+					(f) =>
+						f.direction === 'sent' &&
+						f.data.type === 'action' &&
+						(f.data as { name?: string }).name === 'fetch-rows',
+				).length,
+			{ timeout: 5000 },
+		)
+		.toBeGreaterThan(0);
+
+	const fetchFrame = frames.find(
+		(f) =>
+			f.direction === 'sent' &&
+			f.data.type === 'action' &&
+			(f.data as { name?: string }).name === 'fetch-rows',
+	)!;
+	const validator = createValidator();
+	const fetchValid = validator.validateAction(fetchFrame.data);
+	expect(
+		fetchValid,
+		`fetch-rows ActionMessage schema errors: ${validator.getErrors()}`,
+	).toBe(true);
+
+	// D-H1: payload must include source, offset, limit.
+	const fetchMsg = fetchFrame.data as {
+		id: string;
+		name: string;
+		payload: { source?: string; offset?: number; limit?: number };
+	};
+	expect(fetchMsg.name).toBe('fetch-rows');
+	expect(fetchMsg.payload.source).toBe('contact_list');
+	expect(fetchMsg.payload.offset).toBeGreaterThan(0);
+	expect(fetchMsg.payload.limit).toBeGreaterThan(0);
+
+	// D-H3: the response PatchMessage echoes the action id.
+	await expect
+		.poll(
+			() =>
+				frames.filter(
+					(f) =>
+						f.direction === 'received' &&
+						f.data.type === 'patch' &&
+						(f.data as { id?: string }).id === fetchMsg.id,
+				).length,
+			{ timeout: 5000 },
+		)
+		.toBeGreaterThan(0);
+
+	const patchFrame = frames.find(
+		(f) =>
+			f.direction === 'received' &&
+			f.data.type === 'patch' &&
+			(f.data as { id?: string }).id === fetchMsg.id,
+	)!;
+	const patchValid = validator.validatePatch(patchFrame.data);
+	expect(
+		patchValid,
+		`fetch-rows PatchMessage schema errors: ${validator.getErrors()}`,
+	).toBe(true);
 });
