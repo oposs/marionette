@@ -102,14 +102,16 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
         .one(db)
         .await?;
 
+    // Named contacts kept stable so seed_tags/seed_notes/seed_interactions
+    // lookups by contact_name continue to work.
     #[allow(clippy::type_complexity)]
-    let contacts: Vec<(&str, &str, Option<&str>, Option<&str>, Option<i32>)> = vec![
-        ("Alice Johnson", "alice@acme.example.com", Some("+1-555-0101"), Some("CEO"), acme.map(|c| c.company_id)),
-        ("Bob Smith", "bob@globex.example.com", Some("+1-555-0102"), Some("CTO"), globex.map(|c| c.company_id)),
+    let named_contacts: Vec<(&str, &str, Option<&str>, Option<&str>, Option<i32>)> = vec![
+        ("Alice Johnson", "alice@acme.example.com", Some("+1-555-0101"), Some("CEO"), acme.as_ref().map(|c| c.company_id)),
+        ("Bob Smith", "bob@globex.example.com", Some("+1-555-0102"), Some("CTO"), globex.as_ref().map(|c| c.company_id)),
         ("Carol Williams", "carol@example.com", None, Some("Freelancer"), None),
     ];
 
-    for (name, email, phone, title, company_id) in contacts {
+    for (name, email, phone, title, company_id) in named_contacts {
         let model = contact::ActiveModel {
             contact_id: NotSet,
             contact_name: Set(name.into()),
@@ -123,7 +125,34 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
         model.insert(db).await?;
     }
 
-    tracing::info!("Seeded 3 demo contacts");
+    // Bulk-seed additional contacts so Phase 13's infinite-scroll E2E has
+    // > 2 × page_size (50) rows. Deterministic naming for test assertions.
+    let titles = ["Engineer", "Manager", "Analyst", "Designer", "Director"];
+    let company_ids: Vec<Option<i32>> = vec![
+        acme.as_ref().map(|c| c.company_id),
+        globex.as_ref().map(|c| c.company_id),
+        None,
+    ];
+    for i in 0..117 {
+        let name = format!("Seed Contact {i:03}");
+        let email = format!("seed{i:03}@example.com");
+        let title = titles[i as usize % titles.len()];
+        let company_id = company_ids[i as usize % company_ids.len()];
+        let phone = format!("+1-555-{:04}", 1000 + i);
+        let model = contact::ActiveModel {
+            contact_id: NotSet,
+            contact_name: Set(name),
+            contact_email: Set(email),
+            contact_phone: Set(Some(phone)),
+            contact_title: Set(Some(title.into())),
+            contact_company: Set(company_id),
+            contact_created_at: NotSet,
+            contact_updated_at: NotSet,
+        };
+        model.insert(db).await?;
+    }
+
+    tracing::info!("Seeded 120 demo contacts (3 named + 117 generated)");
     Ok(())
 }
 

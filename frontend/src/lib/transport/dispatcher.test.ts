@@ -111,4 +111,24 @@ describe('Message dispatcher', () => {
 
     expect(applyOptimistic).toHaveBeenCalledWith('test-uuid-1234', expect.anything(), patch);
   });
+
+  // Phase 13 D-H3: sendAction must RETURN the generated id so callers
+  // (DataTable) can correlate responses and discard stale ones.
+  it('sendAction returns the generated action id', () => {
+    const id = sendAction('filter', { search: 'alice' });
+    expect(id).toBe('test-uuid-1234');
+  });
+
+  it('sendAction returns a non-empty string even without payload', () => {
+    const id = sendAction('noop');
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
+  });
+
+  it('sendAction generates a fresh id per call', () => {
+    let counter = 0;
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => `id-${counter++}`) });
+    expect(sendAction('a')).toBe('id-0');
+    expect(sendAction('b')).toBe('id-1');
+  });
 });

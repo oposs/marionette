@@ -34,13 +34,18 @@ export function handleMessage(raw: unknown): void {
  * Send an action message to the backend.
  * Generates a correlation ID via crypto.randomUUID().
  * If optimistic patch is provided, applies it immediately before sending.
+ *
+ * @returns The generated correlation ID (UUID) so callers can track which
+ *          response corresponds to which request — used by DataTable for
+ *          stale-fetch-rows discard (Phase 13 D-H3) and reusable by any
+ *          other component that needs request/response correlation.
  */
 export function sendAction(
   name: string,
   payload?: Record<string, unknown>,
   source?: string,
   optimistic?: { patch: PatchOperation[] }
-): void {
+): string {
   const id = crypto.randomUUID();
 
   const msg: ActionMessage = {
@@ -64,6 +69,7 @@ export function sendAction(
   }
 
   send(msg);
+  return id;
 }
 
 /**
