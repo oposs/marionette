@@ -56,7 +56,7 @@
 		<Label class="font-semibold">{props.label}</Label>
 	{/if}
 	<Input
-		type={(props.type as string) ?? 'text'}
+		type={(props.input_type as string) ?? 'text'}
 		placeholder={props.placeholder as string}
 		required={props.required as boolean}
 		disabled={props.disabled as boolean}
