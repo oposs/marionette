@@ -1,10 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
-use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter,
+    QueryOrder,
+};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn, Text, TextInput,
+    Button, ColumnKind, Container, DataTable, Filter, Form, Heading, Select, SelectOption,
+    TableColumn, Text, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
@@ -26,14 +30,34 @@ fn now_sqlite() -> String {
     )
 }
 
-/// Payload for the contact list with optional search/filter parameters.
-#[derive(Deserialize, Default)]
-struct ContactListPayload {
-    search: Option<String>,
-    company_filter: Option<i32>,
-    tag_filter_text: Option<String>,
-    date_from: Option<String>,
-    date_to: Option<String>,
+/// Date-range filter payload shape produced by the Phase 13 DataTable
+/// `date-range` filter kind. Sent as `{from, to}` inside the filter values
+/// object (see D-C3).
+#[derive(Debug, Deserialize, Default, PartialEq)]
+pub struct DateRange {
+    #[serde(default)]
+    pub from: Option<String>,
+    #[serde(default)]
+    pub to: Option<String>,
+}
+
+/// Filter payload for the contact list screen.
+///
+/// Matches the new Phase 13 filter shape (D-B2 / D-C3): a flat map keyed by
+/// filter id where each value matches the filter kind. `search` and
+/// `tag_filter_text` are text filters; `company_filter` is a select whose
+/// value comes through as a string (parsed to i32 in the handler);
+/// `date` is a date-range filter with nested `{from, to}` strings.
+#[derive(Debug, Deserialize, Default)]
+pub struct ContactFilterParams {
+    #[serde(default)]
+    pub search: Option<String>,
+    #[serde(default)]
+    pub company_filter: Option<String>,
+    #[serde(default)]
+    pub tag_filter_text: Option<String>,
+    #[serde(default)]
+    pub date: Option<DateRange>,
 }
 
 /// Assign a color from a fixed palette based on tag name hash.
@@ -78,12 +102,19 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
     let db = Db::from_context(ctx)?;
 
     // Extract optional search/filter parameters
-    let params: ContactListPayload = ctx
+    let params: ContactFilterParams = ctx
         .action
         .payload
         .as_ref()
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
+
+    // Parse the (string) select filter value to i32. Invalid strings are
+    // silently dropped (they never reach the SQL layer).
+    let company_filter_int: Option<i32> = params
+        .company_filter
+        .as_deref()
+        .and_then(|s| s.parse::<i32>().ok());
 
     // Build dynamic filter condition
     let mut condition = Condition::all();
@@ -103,27 +134,29 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         );
     }
 
-    if let Some(company_id) = params.company_filter {
+    if let Some(company_id) = company_filter_int {
         condition = condition.add(contact::Column::ContactCompany.eq(company_id));
     }
 
-    if let Some(ref from_date) = params.date_from {
-        let trimmed = from_date.trim();
-        if !trimmed.is_empty() {
-            condition = condition.add(contact::Column::ContactCreatedAt.gte(trimmed.to_owned()));
+    if let Some(ref dr) = params.date {
+        if let Some(ref from_date) = dr.from {
+            let trimmed = from_date.trim();
+            if !trimmed.is_empty() {
+                condition =
+                    condition.add(contact::Column::ContactCreatedAt.gte(trimmed.to_owned()));
+            }
         }
-    }
-
-    if let Some(ref to_date) = params.date_to {
-        let trimmed = to_date.trim();
-        if !trimmed.is_empty() {
-            // Append time so that the whole day is included
-            let to_end = if trimmed.len() == 10 {
-                format!("{trimmed} 23:59:59")
-            } else {
-                trimmed.to_owned()
-            };
-            condition = condition.add(contact::Column::ContactCreatedAt.lte(to_end));
+        if let Some(ref to_date) = dr.to {
+            let trimmed = to_date.trim();
+            if !trimmed.is_empty() {
+                // Append time so that the whole day is included
+                let to_end = if trimmed.len() == 10 {
+                    format!("{trimmed} 23:59:59")
+                } else {
+                    trimmed.to_owned()
+                };
+                condition = condition.add(contact::Column::ContactCreatedAt.lte(to_end));
+            }
         }
     }
 
@@ -171,6 +204,15 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
             }
         }
     }
+
+    // Compute total_rows with the SAME WHERE clauses as the page query
+    // (D-H2). Clone the composed Condition before the page query consumes it.
+    let count_condition = condition.clone();
+    let contact_count: u64 = contact::Entity::find()
+        .filter(count_condition)
+        .count(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
 
     let mut contacts = contact::Entity::find()
         .find_also_related(company::Entity)
@@ -284,113 +326,39 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         .action(ComponentAction::click("listmonk_sync_all"))
         .build();
 
-    // Search bar
-    let search_input = TextInput::new("Search contacts...")
-        .id("contact-search")
-        .bind("/contactFilters/search")
-        .build();
-    let search_button = Button::new("Search")
-        .id("btn-search")
-        .action(ComponentAction::submit("contact_list"))
-        .build();
-
-    // Company filter dropdown
-    let company_filter = Select::new("Filter by Company", company_options)
-        .id("filter-company")
-        .bind("/contactFilters/company_filter")
-        .build();
-
-    // Tag filter text input
-    let tag_filter = TextInput::new("Filter by tags (comma-separated)")
-        .id("filter-tags")
-        .bind("/contactFilters/tag_filter_text")
-        .build();
-
-    // Date range inputs
-    let date_from = TextInput::new("From date (YYYY-MM-DD)")
-        .id("filter-date-from")
-        .bind("/contactFilters/date_from")
-        .build();
-    let date_to = TextInput::new("To date (YYYY-MM-DD)")
-        .id("filter-date-to")
-        .bind("/contactFilters/date_to")
-        .build();
-
-    // Clear button
-    let clear_button = Button::new("Clear")
-        .id("btn-clear-filters")
-        .action(ComponentAction::click("contact_list"))
-        .build();
-
     let table = DataTable::new(vec![
-        TableColumn {
-            key: "name".into(),
-            label: "Name".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "email".into(),
-            label: "Email".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "phone".into(),
-            label: "Phone".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "company".into(),
-            label: "Company".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "tags".into(),
-            label: "Tags".into(),
-            sortable: None,
-            ..Default::default()
-        },
-        TableColumn {
-            key: "sync_status".into(),
-            label: "Sync".into(),
-            sortable: None,
-            ..Default::default()
-        },
-        TableColumn {
-            key: "created".into(),
-            label: "Created".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "actions".into(),
-            label: "Actions".into(),
-            sortable: None,
-            ..Default::default()
-        },
+        TableColumn::new("name", "Name").sortable(),
+        TableColumn::new("email", "Email").sortable(),
+        TableColumn::new("phone", "Phone").sortable(),
+        TableColumn::new("company", "Company").sortable(),
+        TableColumn::new("tags", "Tags"),
+        TableColumn::new("sync_status", "Sync"),
+        TableColumn::new("created", "Created")
+            .sortable()
+            .kind(ColumnKind::Date),
+        TableColumn::new("actions", "").kind(ColumnKind::Actions),
     ])
+    .filter(
+        Filter::text("search")
+            .label("Search")
+            .placeholder("Filter contacts..."),
+    )
+    .filter(Filter::select("company_filter", company_options).label("Company"))
+    .filter(
+        Filter::text("tag_filter_text")
+            .label("Tag")
+            .placeholder("e.g. vip"),
+    )
+    .filter(Filter::date_range("date").label("Created date"))
+    .total_rows(contact_count)
+    .source("contact_list")
+    .row_id_key("id")
+    .page_size(50u32)
     .id("contact-table")
     .bind("/contacts")
     .build();
 
-    // Filter panel wrapped in a form for submission
-    let (filter_form_child, filter_form_descendants) = Form::new()
-        .id("filter-form")
-        .children(vec![
-            search_input,
-            search_button,
-            company_filter,
-            tag_filter,
-            date_from,
-            date_to,
-            clear_button,
-        ])
-        .build_tree();
-
-    let all_children = vec![heading, new_button, sync_all_button, filter_form_child, table];
+    let all_children = vec![heading, new_button, sync_all_button, table];
 
     let container_nodes = Container::new()
         .id("contact-list-root")
@@ -399,9 +367,6 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
 
     let mut nodes = HashMap::new();
     for (id, component) in container_nodes {
-        nodes.insert(id, component);
-    }
-    for (id, component) in filter_form_descendants {
         nodes.insert(id, component);
     }
 
@@ -436,15 +401,10 @@ async fn render_contact_list(ctx: &HandlerContext) -> ActionResult {
         })
         .collect();
 
+    // Filter state is owned locally by the frontend DataTable component per
+    // D-C4; the backend no longer pre-populates initial filter values.
     let data = serde_json::json!({
         "contacts": rows,
-        "contactFilters": {
-            "search": params.search.as_deref().unwrap_or(""),
-            "company_filter": params.company_filter.map(|id| id.to_string()).unwrap_or_default(),
-            "date_from": params.date_from.as_deref().unwrap_or(""),
-            "date_to": params.date_to.as_deref().unwrap_or(""),
-            "tag_filter_text": params.tag_filter_text.as_deref().unwrap_or("")
-        }
     });
 
     Ok(vec![
@@ -1585,4 +1545,65 @@ pub async fn handle_dismiss_toast(ctx: HandlerContext) -> ActionResult {
         surface: "toasts".into(),
         patch: ops,
     })])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// V-07 / 13-VALIDATION.md row 7 — V5 Input Validation.
+    ///
+    /// Structurally-invalid payloads (e.g., `date` is a number, not an
+    /// object) must be rejected by serde at deserialize time. This proves
+    /// the `#[derive(Deserialize)]` on `ContactFilterParams` takes the
+    /// typed path and will surface `ActionError::BadPayload` at the
+    /// handler boundary when payloads don't conform to the shape.
+    ///
+    /// Structurally-valid date strings like `"not-a-date"` are accepted at
+    /// deserialize time (serde doesn't parse the date) and flow through
+    /// as parameterized SeaORM comparisons which never inject — this is
+    /// the documented T-13-06-02 disposition.
+    #[test]
+    fn contact_filter_params_rejects_bad_date() {
+        let bad_shape = json!({
+            "search": "Alice",
+            "date": 42
+        });
+        let r = serde_json::from_value::<ContactFilterParams>(bad_shape);
+        assert!(
+            r.is_err(),
+            "expected deserialize error for malformed date-range shape"
+        );
+
+        let bad_date_string = json!({
+            "search": "Alice",
+            "date": { "from": "not-a-date", "to": "2026-13-01" }
+        });
+        let parsed: ContactFilterParams = serde_json::from_value(bad_date_string)
+            .expect("strings-as-dates should deserialize; SeaORM handles bad values at query time");
+        assert!(parsed.date.is_some());
+    }
+
+    /// Round-trip proof that the new `ContactFilterParams` shape accepts
+    /// every field the frontend legitimately sends: search, company
+    /// filter, tag filter, and the collapsed `date` date-range.
+    #[test]
+    fn contact_filter_params_deserializes_full_payload() {
+        let payload = json!({
+            "search": "Alice",
+            "company_filter": "acme-inc",
+            "tag_filter_text": "vip,priority",
+            "date": { "from": "2026-01-01", "to": "2026-04-01" }
+        });
+        let parsed: ContactFilterParams =
+            serde_json::from_value(payload).expect("full payload should deserialize");
+        assert_eq!(parsed.search.as_deref(), Some("Alice"));
+        assert_eq!(parsed.company_filter.as_deref(), Some("acme-inc"));
+        assert_eq!(parsed.tag_filter_text.as_deref(), Some("vip,priority"));
+        assert!(parsed.date.is_some());
+        let dr = parsed.date.unwrap();
+        assert_eq!(dr.from.as_deref(), Some("2026-01-01"));
+        assert_eq!(dr.to.as_deref(), Some("2026-04-01"));
+    }
 }
