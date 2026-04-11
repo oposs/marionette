@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
+use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait, PaginatorTrait};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn, TextInput,
+    Button, ColumnKind, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn,
+    TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
@@ -26,6 +27,12 @@ async fn render_user_list(ctx: &HandlerContext) -> ActionResult {
         .await
         .map_err(|e| ActionError::Internal(e.to_string()))?;
 
+    // D-H2: total_rows reflects the full (unfiltered) collection.
+    let user_count: u64 = user::Entity::find()
+        .count(&*db.0)
+        .await
+        .map_err(|e| ActionError::Internal(e.to_string()))?;
+
     let heading = Heading::new("User Management").id("user-heading").build();
 
     let new_button = Button::new("New User")
@@ -34,37 +41,18 @@ async fn render_user_list(ctx: &HandlerContext) -> ActionResult {
         .build();
 
     let table = DataTable::new(vec![
-        TableColumn {
-            key: "name".into(),
-            label: "Name".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "email".into(),
-            label: "Email".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "role".into(),
-            label: "Role".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "lastLogin".into(),
-            label: "Last Login".into(),
-            sortable: Some(true),
-            ..Default::default()
-        },
-        TableColumn {
-            key: "actions".into(),
-            label: "Actions".into(),
-            sortable: None,
-            ..Default::default()
-        },
+        TableColumn::new("name", "Name").sortable(),
+        TableColumn::new("email", "Email").sortable(),
+        TableColumn::new("role", "Role").sortable(),
+        TableColumn::new("lastLogin", "Last Login")
+            .sortable()
+            .kind(ColumnKind::Date),
+        TableColumn::new("actions", "").kind(ColumnKind::Actions),
     ])
+    .total_rows(user_count)
+    .source("user_list")
+    .row_id_key("id")
+    .page_size(50u32)
     .id("user-table")
     .bind("/users")
     .build();
