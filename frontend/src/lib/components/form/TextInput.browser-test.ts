@@ -1,4 +1,4 @@
-import { render } from 'vitest-browser-svelte';
+import { render, cleanup } from 'vitest-browser-svelte';
 import { expect, test, beforeEach } from 'vitest';
 import TextInput from './TextInput.svelte';
 import { setFullState, resetStore, setData } from '$lib/store/data.svelte';
@@ -179,42 +179,48 @@ test('hides Field.Description and shows Field.Error when error is active', async
 	expect(err!.textContent).toContain('Invalid email.');
 });
 
-test('data-invalid attribute is present on error, OMITTED on no-error', async () => {
-	// No error — attribute omitted (Pitfall #4).
-	const screen1 = await render(TextInput, {
+test('data-invalid attribute is OMITTED on no-error (Pitfall #4)', async () => {
+	// Seed surface first so getData() doesn't trigger getStore auto-create
+	// inside $derived (which would be a state_unsafe_mutation).
+	setFullState('test-no-err', {});
+	const screen = await render(TextInput, {
 		props: { props: { label: 'Email' }, bind: '/email', surface: 'test-no-err' },
 	});
-	const wrapper1 = screen1.baseElement.querySelector('[data-slot="field"]');
-	expect(wrapper1).toBeTruthy();
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]');
+	expect(wrapper).toBeTruthy();
 	// Attribute presence semantics: null means absent.
-	expect(wrapper1!.getAttribute('data-invalid')).toBeNull();
-
-	// Error — attribute present.
-	const surface = 'test-err-' + crypto.randomUUID();
-	setData(surface, '/_errors/email', 'Required.');
-	const screen2 = await render(TextInput, {
-		props: { props: { label: 'Email' }, bind: '/email', surface },
-	});
-	const wrapper2 = screen2.baseElement.querySelector('[data-slot="field"]');
-	expect(wrapper2).toBeTruthy();
-	// Attribute present — shadcn CSS keys on presence, not value.
-	expect(wrapper2!.getAttribute('data-invalid')).not.toBeNull();
+	expect(wrapper!.getAttribute('data-invalid')).toBeNull();
 });
 
-test('aria-invalid on input is present on error, OMITTED on no-error', async () => {
-	const screen1 = await render(TextInput, {
-		props: { props: { label: 'Email' }, bind: '/email', surface: 'test-no-aria' },
-	});
-	const input1 = screen1.baseElement.querySelector('input') as HTMLInputElement;
-	expect(input1.getAttribute('aria-invalid')).toBeNull();
-
-	const surface = 'test-aria-' + crypto.randomUUID();
+test('data-invalid attribute is present on error', async () => {
+	const surface = 'test-err-' + crypto.randomUUID();
 	setData(surface, '/_errors/email', 'Required.');
-	const screen2 = await render(TextInput, {
+	const screen = await render(TextInput, {
 		props: { props: { label: 'Email' }, bind: '/email', surface },
 	});
-	const input2 = screen2.baseElement.querySelector('input') as HTMLInputElement;
-	expect(input2.getAttribute('aria-invalid')).not.toBeNull();
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]');
+	expect(wrapper).toBeTruthy();
+	// Attribute present — shadcn CSS keys on presence, not value.
+	expect(wrapper!.getAttribute('data-invalid')).not.toBeNull();
+});
+
+test('aria-invalid on input is OMITTED on no-error', async () => {
+	setFullState('test-no-aria', {});
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface: 'test-no-aria' },
+	});
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(input.getAttribute('aria-invalid')).toBeNull();
+});
+
+test('aria-invalid on input is present on error', async () => {
+	const surface = 'test-aria-' + crypto.randomUUID();
+	setData(surface, '/_errors/email', 'Required.');
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface },
+	});
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(input.getAttribute('aria-invalid')).not.toBeNull();
 });
 
 test('full_width: true adds col-span-full class to Field.Field wrapper', async () => {
@@ -244,13 +250,17 @@ test('handler-supplied id is used verbatim', async () => {
 });
 
 test('falls back to a stable id when props.id omitted (two renders produce different ids)', async () => {
+	// Two separate component instances must produce independent ids. We must
+	// clean up the first render so its <input> is removed from the shared
+	// DOM root before capturing the second render's id.
 	const screen1 = await render(TextInput, {
 		props: { props: { label: 'A' }, surface: 'test-id-a' },
 	});
+	const id1 = (screen1.baseElement.querySelector('input') as HTMLInputElement).id;
+	cleanup();
 	const screen2 = await render(TextInput, {
 		props: { props: { label: 'B' }, surface: 'test-id-b' },
 	});
-	const id1 = (screen1.baseElement.querySelector('input') as HTMLInputElement).id;
 	const id2 = (screen2.baseElement.querySelector('input') as HTMLInputElement).id;
 	expect(id1).toBeTruthy();
 	expect(id2).toBeTruthy();
