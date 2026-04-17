@@ -124,7 +124,16 @@ Plans:
   1. Form fields display label, description, and error message in a consistent layout using shadcn Field components
   2. Related fields can be grouped in card sections with headings and visual separators
   3. Field styling works correctly for all input types (text, select, checkbox, textarea)
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 14-01-PLAN.md — Install shadcn primitives + scaffold RED browser-tests + fix NodeRenderer unmount race (D-E2)
+- [ ] 14-02-PLAN.md — Rewrite TextInput with internal Field.Field wrap + Form.svelte Field.Group tweak + backend description/full_width + D-E1 regression test
+- [ ] 14-03-PLAN.md — Rewrite SelectInput with internal Field.Field wrap + preserve Phase 12 country-select change-action + backend description/full_width/placeholder/disabled
+- [ ] 14-04-PLAN.md — Rewrite Checkbox with internal Field.Field horizontal wrap + backend description/full_width
+- [ ] 14-05-PLAN.md — Add Textarea SDUI component + registry + backend builder (D-E3)
+- [ ] 14-06-PLAN.md — Add RadioGroup + Switch SDUI components + registry + backend builders + RadioOption (D-E4)
+- [ ] 14-07-PLAN.md — Add FieldSet + FieldSeparator SDUI components (responsive grid + cols override) + backend builders (D-C1 / D-C2 / D-C3 / D-C4)
+- [ ] 14-08-PLAN.md — Delete FormScreen orphan + migrate contact.rs edit form + spec/PROTOCOL.md + E2E + visual rebaseline + Chrome-MCP UAT
 **UI hint**: yes
 
 ### Phase 15: CRM Migration & Validation
