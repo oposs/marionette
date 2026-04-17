@@ -749,29 +749,34 @@ Phase 14 adds no new authentication, authorization, session, or crypto surface. 
 
 **User confirmation needed before planning locks:** none of the above are critical enough to block planning. A4 is the most likely to need a post-install verification task. The rest are ergonomic details the planner resolves in Wave 0 or early task implementations.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Explicit `FieldSeparator` node vs. auto-insertion in `Form.svelte`.**
+   **RESOLVED:** Explicit adjacency-list node. Plan 07 Task 2 adds a first-class `field-separator` SDUI component; handlers compose `FieldSeparator::new().build()` between sibling `FieldSet`s. Matches D-C2 preference and keeps node-patching granular.
    - What we know: CONTEXT.md D-C2 expresses a preference for explicit nodes. Auto-insertion is the "magic" alternative.
    - What's unclear: whether the planner finds the explicit-node path's verbosity acceptable (every handler writes `FieldSeparator::new().build()` between sibling FieldSets).
    - Recommendation: **go explicit**. Matches Phase 14's "self-describing protocol" posture and keeps node-patching granular. Add a shorthand Rust helper `FieldSet::with_separator()` if verbosity becomes a problem.
 
 2. **Action row: plain `Container` vs. dedicated `FieldRow`/`field-row` SDUI component.**
+   **RESOLVED:** Plain `Container` (Option A). Plan 08 Task 3 composes the action row as `Container::new().classes("flex gap-2 justify-end").children(cancel_btn, submit_btn).build()`. Zero new SDUI surface — promote to `field-row` in Phase 15 if ≥3 CRM handlers need the same pattern.
    - What we know: D-D1 is explicitly Claude's discretion. Both pass the visual target.
    - What's unclear: whether the `Field.Field orientation="horizontal"` gives us enough styling wins over `<Container class="flex gap-2 justify-end">` to justify a new component type.
    - Recommendation: **plain `Container`** for Phase 14. It's zero-new-surface, handlers already use `Container` for everything. Promote to `field-row` in Phase 15 if a real pattern emerges across ≥3 CRM screens.
 
 3. **NodeRenderer unmount-race fix: `{@const}` inside `{#if node}` vs. fully restructured `$derived` chain.**
+   **RESOLVED:** `{@const}` inside the `{#if node}` branch. Plan 01 Task 3 restructures `NodeRenderer.svelte` so prop destructuring happens via `{@const}` locals under the existence guard, avoiding the compiled getter that read `node.bind` on a torn-down node. A regression browser-test lands in the same task.
    - What we know: The bug is a compiled getter reading `node.bind` on a torn-down node. Preferred fix is structural (D-E2 preference b).
    - What's unclear: whether `{@const}` captures a stable snapshot or is re-evaluated on every dependency tick (Svelte 5 semantics — need to verify via Svelte MCP or official docs). An alternative is a guarded `$derived.by(() => node ? { props, bind, action } : null)`.
    - Recommendation: prototype both in Wave 0; keep the one whose browser-test repro is green and doesn't rerender more than needed. Svelte MCP's `suggest-svelte-code` tool would be a good verification step.
 
 4. **Textarea `rows` prop — passthrough to `<textarea rows={n}>` or use min-height utility class?**
+   **RESOLVED:** Passthrough. Plan 05 Task 1 forwards `rows` directly to shadcn `Textarea` via `restProps`; the shadcn Textarea wrapper forwards arbitrary HTML attributes (verified during installation). No min-height utility fallback needed.
    - What we know: shadcn `Textarea` docs don't spell out whether `rows` is supported directly.
    - What's unclear: whether the shadcn Textarea wrapper forwards arbitrary HTML attributes.
    - Recommendation: verify during installation — `rows` is a native `<textarea>` attribute, shadcn primitives almost always forward `restProps` (as `Input` does). If not forwarded, use `min-h-[{rows * 1.5}rem]` equivalent.
 
 5. **`FieldSet` legend vs. description typography.**
+   **RESOLVED:** Support both. Plan 07 Task 1 Rust builder exposes `legend: Option<String>` (section title) and `description: Option<String>` (optional sub-text); both render in the same FieldSet when set, using shadcn's `Field.Legend` + `Field.Description` typography.
    - What we know: shadcn Field docs show both can appear in a FieldSet.
    - What's unclear: whether they should both be used in the same FieldSet or one-or-the-other.
    - Recommendation: allow both in the Rust builder; document in the backend builder docstring that `legend` is the section title and `description` is optional sub-text.
