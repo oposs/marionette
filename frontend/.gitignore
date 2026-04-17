@@ -3,3 +3,5 @@ build/
 .svelte-kit/
 dist/
 test-results/
+.vitest-attachments/
+**/__screenshots__/
