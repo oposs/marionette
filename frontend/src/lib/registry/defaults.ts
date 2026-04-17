@@ -22,6 +22,7 @@ import MCheckbox from '../components/form/Checkbox.svelte';
 import Textarea from '../components/form/Textarea.svelte';
 import RadioGroup from '../components/form/RadioGroup.svelte';
 import MSwitch from '../components/form/Switch.svelte';
+import FieldSet from '../components/form/FieldSet.svelte';
 import MButton from '../components/form/Button.svelte';
 import DataTable from '../components/table/DataTable.svelte';
 import ModalSurface from '../components/popup/ModalSurface.svelte';
@@ -48,6 +49,7 @@ export function registerDefaults(): void {
 		'textarea': Textarea,
 		'radio-group': RadioGroup,
 		'switch': MSwitch,
+		'field-set': FieldSet,
 		'button': MButton,
 		'data-table': DataTable,
 		'modal': ModalSurface,

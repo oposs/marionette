@@ -17,8 +17,6 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { expect, test } from 'vitest';
-// @ts-expect-error - FieldSet.svelte is scaffolded in Wave 3 (Plan 14-07).
-// Remove this directive once that plan lands the concrete component.
 import FieldSet from './FieldSet.svelte';
 import { createRawSnippet } from 'svelte';
 
@@ -49,7 +47,13 @@ test('cols prop produces inline grid-template-columns style', async () => {
 	});
 
 	const group = screen.baseElement.querySelector('[data-slot="field-group"]') as HTMLElement;
-	expect(group?.getAttribute('style') ?? '').toContain('repeat(3, minmax(0, 1fr))');
+	// Chromium normalises the CSS value `minmax(0, 1fr)` to
+	// `minmax(0px, 1fr)` when serialising `style` (unitless 0 in a
+	// <length-percentage> context becomes `0px`). Assert the stable
+	// parts of the value — the repeat(N,...) prefix and the `1fr`
+	// track — so the test survives browser-side normalisation.
+	const style = group?.getAttribute('style') ?? '';
+	expect(style).toMatch(/repeat\(3,\s*minmax\(0(?:px)?,\s*1fr\)\)/);
 });
 
 test('renders children via Snippet', async () => {
