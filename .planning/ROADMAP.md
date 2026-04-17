@@ -126,10 +126,10 @@ Plans:
   3. Field styling works correctly for all input types (text, select, checkbox, textarea)
 **Plans**: 8 plans
 Plans:
-- [ ] 14-01-PLAN.md — Install shadcn primitives + scaffold RED browser-tests + fix NodeRenderer unmount race (D-E2)
-- [ ] 14-02-PLAN.md — Rewrite TextInput with internal Field.Field wrap + Form.svelte Field.Group tweak + backend description/full_width + D-E1 regression test
-- [ ] 14-03-PLAN.md — Rewrite SelectInput with internal Field.Field wrap + preserve Phase 12 country-select change-action + backend description/full_width/placeholder/disabled
-- [ ] 14-04-PLAN.md — Rewrite Checkbox with internal Field.Field horizontal wrap + backend description/full_width
+- [x] 14-01-PLAN.md — Install shadcn primitives + scaffold RED browser-tests + fix NodeRenderer unmount race (D-E2)
+- [x] 14-02-PLAN.md — Rewrite TextInput with internal Field.Field wrap + Form.svelte Field.Group tweak + backend description/full_width + D-E1 regression test
+- [x] 14-03-PLAN.md — Rewrite SelectInput with internal Field.Field wrap + preserve Phase 12 country-select change-action + backend description/full_width/placeholder/disabled
+- [x] 14-04-PLAN.md — Rewrite Checkbox with internal Field.Field horizontal wrap + backend description/full_width
 - [ ] 14-05-PLAN.md — Add Textarea SDUI component + registry + backend builder (D-E3)
 - [ ] 14-06-PLAN.md — Add RadioGroup + Switch SDUI components + registry + backend builders + RadioOption (D-E4)
 - [ ] 14-07-PLAN.md — Add FieldSet + FieldSeparator SDUI components (responsive grid + cols override) + backend builders (D-C1 / D-C2 / D-C3 / D-C4)
@@ -167,7 +167,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
-| 14. FormScreen Enhancements | v1.1 | 0/0 | Not started | - |
+| 14. FormScreen Enhancements | v1.1 | 4/8 | In Progress|  |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
 
 ---
