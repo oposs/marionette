@@ -7,8 +7,8 @@ use sea_orm::{
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, ColumnKind, Container, DataTable, Filter, Form, Heading, Select, SelectOption,
-    TableColumn, Text, TextInput,
+    Button, ColumnKind, Container, DataTable, FieldSeparator, FieldSet, Filter, Form, Heading,
+    Select, SelectOption, Switch, TableColumn, Text, Textarea, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
@@ -78,6 +78,12 @@ struct ContactIdPayload {
 }
 
 /// Inner form data for a contact (create or update).
+///
+/// Phase 14 Plan 08: `notes`, `opt_in`, and `country` are accepted by the
+/// handler but not yet persisted — the contact entity doesn't have
+/// columns for them. Phase 15 will add the schema. The `#[serde(default)]`
+/// + `rename` annotations keep payload-shape tolerance without forcing
+/// the frontend to send every field on every submit.
 #[derive(Deserialize)]
 struct ContactFormData {
     id: Option<i32>,
@@ -86,6 +92,15 @@ struct ContactFormData {
     phone: Option<String>,
     title: Option<String>,
     company: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    country: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    notes: Option<String>,
+    #[serde(default, rename = "optIn")]
+    #[allow(dead_code)]
+    opt_in: Option<bool>,
 }
 
 /// Payload wrapper: the frontend sends all surface data, with form fields
@@ -434,6 +449,11 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .map_err(|e| ActionError::Internal(e.to_string()))?
             .ok_or_else(|| ActionError::Internal("Contact not found".into()))?;
         (
+            // Phase 14 Plan 08: `notes` and `optIn` are surfaced for the
+            // new Textarea + Switch primitives. The contact entity does
+            // not yet have these columns (Phase 15 will add them), so
+            // they seed to empty/false on both new and edit paths and
+            // the handler below reads-but-skips-persistence for them.
             serde_json::json!({
                 "contactForm": {
                     "id": found.contact_id,
@@ -442,7 +462,9 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     "phone": found.contact_phone.as_deref().unwrap_or(""),
                     "title": found.contact_title.as_deref().unwrap_or(""),
                     "company": found.contact_company.map(|id| id.to_string()).unwrap_or_default(),
-                    "country": ""
+                    "country": "",
+                    "notes": "",
+                    "optIn": false
                 }
             }),
             "Edit Contact",
@@ -457,7 +479,9 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     "phone": "",
                     "title": "",
                     "company": "",
-                    "country": ""
+                    "country": "",
+                    "notes": "",
+                    "optIn": false
                 }
             }),
             "New Contact",
@@ -486,25 +510,49 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         .id("contact-form-heading")
         .build();
 
+    let back_button = Button::new("← Back")
+        .id("contact-form-back")
+        .variant("outline")
+        .action(ComponentAction::click("contact_list"))
+        .build();
+
+    // -- FieldSet 1: Contact information (auto-responsive 2-col grid) --
+
     let name_input = TextInput::new("Name")
         .id("contact-form-name")
         .bind("/contactForm/name")
+        .required(true)
         .build();
 
     let email_input = TextInput::new("Email")
         .id("contact-form-email")
         .bind("/contactForm/email")
+        .input_type("email")
+        .description("We will never share your email.")
         .build();
 
     let phone_input = TextInput::new("Phone")
         .id("contact-form-phone")
         .bind("/contactForm/phone")
+        .input_type("tel")
         .build();
 
     let title_input = TextInput::new("Title")
         .id("contact-form-title")
         .bind("/contactForm/title")
         .build();
+
+    let (contact_info_set, contact_info_descendants) = FieldSet::new()
+        .id("contact-info-set")
+        .legend("Contact information")
+        .children(vec![name_input, email_input, phone_input, title_input])
+        .build_tree();
+
+    let separator_1 = FieldSeparator::new()
+        .id("contact-form-separator-1")
+        .build();
+
+    // -- FieldSet 2: Organisation (company + country-select node-patch demo) --
 
     let company_select = Select::new("Company", options)
         .id("contact-form-company")
@@ -517,6 +565,10 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
     // set-node + insert-child + delete-node + remove-child ops on the
     // `content` surface, and additionally insert-child + set-node ops on
     // the `toasts` sub-surface (D-B15 toast lifecycle demo).
+    //
+    // Phase 14 D-A2: the country-specific swap target is now the
+    // `organisation-set` FieldSet (not the outer `contact-form`), because
+    // the field is composed inside the Organisation fieldset.
     let country_select = Select::new(
         "Country",
         vec![
@@ -543,34 +595,81 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
     .action(ComponentAction::change("contact_country_change"))
     .build();
 
-    let save_button = Button::new("Save")
-        .id("contact-form-save")
-        .action(ComponentAction::submit("contact_save"))
+    let (organisation_set, organisation_descendants) = FieldSet::new()
+        .id("organisation-set")
+        .legend("Organisation")
+        .children(vec![company_select, country_select])
+        .build_tree();
+
+    let separator_2 = FieldSeparator::new()
+        .id("contact-form-separator-2")
         .build();
+
+    // -- FieldSet 3: Notes + Preferences (exercises Textarea + Switch) --
+
+    let notes_textarea = Textarea::new("Notes")
+        .id("contact-form-notes")
+        .bind("/contactForm/notes")
+        .placeholder("Add notes about this contact...")
+        .rows(4u32)
+        .full_width(true)
+        .build();
+
+    let opt_in_switch = Switch::new("Receive marketing emails")
+        .id("contact-form-opt-in")
+        .bind("/contactForm/optIn")
+        .description("Occasional updates about new features.")
+        .build();
+
+    let (preferences_set, preferences_descendants) = FieldSet::new()
+        .id("preferences-set")
+        .legend("Notes and preferences")
+        .children(vec![notes_textarea, opt_in_switch])
+        .build_tree();
+
+    // -- Action row (D-D1 Option A: plain Container, flex gap-2 justify-end) --
 
     let cancel_button = Button::new("Cancel")
         .id("contact-form-cancel")
+        .variant("outline")
         .action(ComponentAction::click("contact_list"))
         .build();
+
+    let save_button = Button::new("Save contact")
+        .id("contact-form-save")
+        .variant("default")
+        .action(ComponentAction::submit("contact_save"))
+        .build();
+
+    let (action_row, action_row_descendants) = Container::new()
+        .id("contact-form-actions")
+        .class("flex gap-2 justify-end")
+        .children(vec![cancel_button, save_button])
+        .build_tree();
+
+    // -- Compose the form --
 
     let (form_child, form_descendants) = Form::new()
         .id("contact-form")
         .children(vec![
-            name_input,
-            email_input,
-            phone_input,
-            title_input,
-            company_select,
-            country_select,
-            save_button,
-            cancel_button,
+            contact_info_set,
+            separator_1,
+            organisation_set,
+            separator_2,
+            preferences_set,
+            action_row,
         ])
         .build_tree();
 
     let mut all_nodes = Vec::new();
     let mut extra_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
     all_nodes.push(heading);
+    all_nodes.push(back_button);
     all_nodes.push(form_child);
+    extra_descendants.extend(contact_info_descendants);
+    extra_descendants.extend(organisation_descendants);
+    extra_descendants.extend(preferences_descendants);
+    extra_descendants.extend(action_row_descendants);
     extra_descendants.extend(form_descendants);
 
     let mut merged_data = form_data;
@@ -1364,23 +1463,28 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
     // (2) Tear down any previously-inserted country-specific fields.
     // `remove-child` and `delete-node` are no-ops if the target doesn't
     // exist, so unconditionally clearing all three candidate IDs is safe.
+    //
+    // Phase 14 Plan 08 (D-A2): the country-specific swap target is now
+    // the `organisation-set` FieldSet (not the outer `contact-form`),
+    // because the country select is composed inside the Organisation
+    // fieldset after the edit-form migration.
     for id in [
         "contact-ch-canton",
         "contact-us-state",
         "contact-de-bundesland",
     ] {
         ops.push(PatchOperation::RemoveChild {
-            parent: "contact-form".into(),
+            parent: "organisation-set".into(),
             child_id: id.into(),
         });
         ops.push(PatchOperation::DeleteNode { id: id.into() });
     }
 
-    // (3) Insert the new country-specific field. Index 6 places it after
-    // the country select (contact-form children order: name, email, phone,
-    // title, company, country, save, cancel — country is at index 5 and
-    // the new field slots in at index 6).
-    let insert_index: usize = 6;
+    // (3) Insert the new country-specific field. The `organisation-set`
+    // FieldSet children are `[company_select, country_select]` after the
+    // Plan 08 migration, so the new field slots in at index 2 (end of
+    // the list, immediately after the country select).
+    let insert_index: usize = 2;
 
     match country.as_str() {
         "CH" => {
@@ -1409,7 +1513,7 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
                 component: canton_component,
             });
             ops.push(PatchOperation::InsertChild {
-                parent: "contact-form".into(),
+                parent: "organisation-set".into(),
                 index: insert_index,
                 child_id: canton_id,
             });
@@ -1424,7 +1528,7 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
                 component: state_component,
             });
             ops.push(PatchOperation::InsertChild {
-                parent: "contact-form".into(),
+                parent: "organisation-set".into(),
                 index: insert_index,
                 child_id: state_id,
             });
@@ -1439,7 +1543,7 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
                 component: bundesland_component,
             });
             ops.push(PatchOperation::InsertChild {
-                parent: "contact-form".into(),
+                parent: "organisation-set".into(),
                 index: insert_index,
                 child_id: bundesland_id,
             });
