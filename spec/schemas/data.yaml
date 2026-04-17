@@ -144,6 +144,219 @@ ValidationError:
       description: Human-readable error message
   additionalProperties: false
 
+TextInput:
+  description: >-
+    Phase 14 `text-input` component props shape. Extends Phase 13's
+    `input_type` field with `description` (D-B3) and `full_width` (D-C4)
+    optional props. Documents the runtime shape — the protocol layer still
+    treats `component.props` as `additionalProperties: true`.
+  type: object
+  required: [label]
+  properties:
+    label:
+      type: string
+      description: Visible label rendered inside `Field.Label`.
+    placeholder:
+      type: string
+    required:
+      type: boolean
+    input_type:
+      type: string
+      description: >-
+        Backend-authoritative native input type (`text`, `password`,
+        `email`, `tel`, `number`, `url`, …). Defaults to `text` when
+        omitted. Takes precedence over any `type` prop (D-E1).
+    disabled:
+      type: boolean
+    description:
+      type: string
+      description: >-
+        Helper text rendered via `Field.Description`. Hidden while an
+        `/_errors/{bind}` entry is active.
+    full_width:
+      type: boolean
+      description: >-
+        When `true`, the field's `Field.Field` wrapper spans every column
+        of its parent `FieldSet` grid.
+  additionalProperties: false
+
+Select:
+  description: >-
+    Phase 14 `select` component props shape. Extends existing Select with
+    `placeholder`, `disabled`, `description`, and `full_width` optional
+    props (parity with the Svelte component's long-standing prop reads).
+  type: object
+  required: [label, options]
+  properties:
+    label:
+      type: string
+    options:
+      type: array
+      items:
+        $ref: "#/SelectOption"
+      description: Array of options rendered inside the dropdown.
+    required:
+      type: boolean
+    placeholder:
+      type: string
+    disabled:
+      type: boolean
+    description:
+      type: string
+    full_width:
+      type: boolean
+  additionalProperties: false
+
+SelectOption:
+  type: object
+  required: [value, label]
+  properties:
+    value:
+      type: string
+    label:
+      type: string
+  additionalProperties: false
+
+Checkbox:
+  description: >-
+    Phase 14 `checkbox` component props shape. Extends the existing
+    Checkbox with `description` (D-B3) and `full_width` (D-C4) optional
+    props. Renders with `orientation="horizontal"` on its internal
+    `Field.Field` wrapper (label on the same row as the checkbox).
+  type: object
+  required: [label]
+  properties:
+    label:
+      type: string
+    disabled:
+      type: boolean
+    description:
+      type: string
+    full_width:
+      type: boolean
+  additionalProperties: false
+
+Textarea:
+  description: >-
+    Phase 14 `textarea` component (new primitive, D-E3). Multi-line text
+    input wrapped in the shared `Field.Field` anatomy. Binds to a string
+    path.
+  type: object
+  required: [label]
+  properties:
+    label:
+      type: string
+    placeholder:
+      type: string
+    rows:
+      type: integer
+      minimum: 1
+      description: >-
+        Visible row count forwarded to the native `<textarea rows=…>`
+        attribute. Defaults to `4` on the frontend when omitted.
+    required:
+      type: boolean
+    disabled:
+      type: boolean
+    description:
+      type: string
+    full_width:
+      type: boolean
+  additionalProperties: false
+
+RadioGroup:
+  description: >-
+    Phase 14 `radio-group` component (new primitive, D-E4). Single-choice
+    selection exposing all options at once. Binds to a string path (the
+    selected option's `value`).
+  type: object
+  required: [label, options]
+  properties:
+    label:
+      type: string
+    options:
+      type: array
+      items:
+        $ref: "#/RadioOption"
+      description: >-
+        Per-option entries. Each option carries a `value`, a `label`,
+        and an optional `description` rendered as muted 12px text under
+        the option label.
+    required:
+      type: boolean
+    disabled:
+      type: boolean
+    description:
+      type: string
+    full_width:
+      type: boolean
+  additionalProperties: false
+
+RadioOption:
+  type: object
+  required: [value, label]
+  properties:
+    value:
+      type: string
+    label:
+      type: string
+    description:
+      type: string
+      description: >-
+        Optional per-option helper text rendered below the option label
+        in muted 12px text.
+  additionalProperties: false
+
+Switch:
+  description: >-
+    Phase 14 `switch` component (new primitive, D-E4). Boolean toggle
+    with a horizontal label layout (label left, control right). Binds to
+    a boolean path.
+  type: object
+  required: [label]
+  properties:
+    label:
+      type: string
+    disabled:
+      type: boolean
+    description:
+      type: string
+    full_width:
+      type: boolean
+  additionalProperties: false
+
+FieldSet:
+  description: >-
+    Phase 14 `field-set` structural component (new primitive, D-C1).
+    Wraps form-field children in a shadcn `Field.Set` with an optional
+    legend + description and an auto-responsive grid (1 col mobile / 2
+    cols from `md:`). `cols=N` overrides the grid to a fixed N columns
+    at all viewport widths (D-C4).
+  type: object
+  properties:
+    legend:
+      type: string
+    description:
+      type: string
+    cols:
+      type: integer
+      minimum: 1
+      maximum: 255
+      description: >-
+        Fixed column count override. When set, the grid is applied at
+        all viewport widths; when omitted, the grid is responsive (1
+        col mobile / 2 cols from `md:`).
+  additionalProperties: false
+
+FieldSeparator:
+  description: >-
+    Phase 14 `field-separator` structural component (new primitive,
+    D-C2). Renders a thin horizontal `<Field.Separator />` line between
+    sibling `FieldSet`s inside a `Form`. No props, no children.
+  type: object
+  properties: {}
+  additionalProperties: false
+
 DataTable:
   description: >-
     Phase 13 `data-table` component props shape. This section documents the

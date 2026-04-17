@@ -434,6 +434,171 @@ The `action` field on a component defines what happens when the user interacts w
 
 `ComponentAction` uses `additionalProperties: true` for extensibility.
 
+## Form Components (Phase 14)
+
+Marionette v1.1 ships a canonical set of form primitives sharing a single "Field" anatomy (shadcn-svelte `Field.*` recipe). Each leaf renders as:
+
+```
+Field.Field (wrapper, carries data-invalid when /_errors/{bind} is non-empty)
+├── Field.Label for={id}             (omitted when props.label is absent)
+├── <Control id={id} aria-invalid=.../>  (TextInput | Select | Checkbox | Textarea | RadioGroup | Switch)
+├── Field.Description                 (rendered only when no error is active)
+└── Field.Error                       (rendered when /_errors/{bind} is non-empty)
+```
+
+All form leaves share two optional props introduced in Phase 14:
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `description` | string | Helper text rendered below the control via `Field.Description`. Hidden while `/_errors/{bind}` is active (the error replaces the description per the shadcn recipe). |
+| `full_width` | boolean | When `true`, the field's `Field.Field` wrapper spans every column of its parent `FieldSet` grid (`col-span-full`). Used for long-text fields inside a 2-col FieldSet. |
+
+Validation state flows through `/_errors/{bind}` in the surface data store: when the string is non-empty, the control renders with `data-invalid` on the wrapper and `aria-invalid="true"` on the native control, and the `Field.Error` message is shown in the destructive color.
+
+### text-input
+
+Single-line text control. Native `<input>` wrapped in the shadcn `Input` primitive.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Visible label rendered inside `Field.Label`. |
+| `placeholder` | string | no | Placeholder text for the input. |
+| `required` | boolean | no | Sets the native `required` attribute. |
+| `input_type` | string | no | Backend-authoritative input type (`text`, `password`, `email`, `tel`, `number`, `url`, etc.). Defaults to `text` when omitted. Takes precedence over any `type` prop (Phase 13 D-H4a / Phase 14 D-E1). |
+| `disabled` | boolean | no | Disables the control. |
+| `description` | string | no | Helper text (see Form Components header). Replaces the retired `helperText` prop (D-B3). |
+| `full_width` | boolean | no | Full-row span inside a parent FieldSet (see Form Components header). |
+
+Binds to a string path. Children: none.
+
+### select
+
+Single-select dropdown. bits-ui-backed `Select` primitive under the Field anatomy.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Visible label rendered inside `Field.Label`. |
+| `options` | SelectOption[] | yes | Array of `{value: string, label: string}` entries rendered as `Select.Item` children. |
+| `required` | boolean | no | Marks the field required. |
+| `placeholder` | string | no | Text shown inside the trigger when no value is selected. |
+| `disabled` | boolean | no | Disables the control. |
+| `description` | string | no | Helper text (see Form Components header). |
+| `full_width` | boolean | no | Full-row span (see Form Components header). |
+
+Binds to a string path (the selected option's `value`). Children: none.
+
+### checkbox
+
+Single boolean control with a horizontal label layout (`orientation="horizontal"` on the `Field.Field` wrapper).
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Visible label rendered inside `Field.Label` on the same row as the checkbox. |
+| `disabled` | boolean | no | Disables the control. |
+| `description` | string | no | Helper text rendered below the row (see Form Components header). |
+| `full_width` | boolean | no | Full-row span inside a parent FieldSet (see Form Components header). |
+
+Binds to a boolean path. Children: none.
+
+### textarea (new in Phase 14)
+
+Multi-line text input. Native `<textarea>` wrapped in the shadcn `Textarea` primitive.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Visible label rendered inside `Field.Label`. |
+| `placeholder` | string | no | Placeholder text. |
+| `rows` | integer | no | Visible row count forwarded to the native `<textarea rows=…>` attribute. Defaults to `4` on the frontend when omitted. |
+| `required` | boolean | no | Sets the native `required` attribute. |
+| `disabled` | boolean | no | Disables the control. |
+| `description` | string | no | Helper text (see Form Components header). |
+| `full_width` | boolean | no | Full-row span — typically `true` for long-text fields inside a 2-col FieldSet (see Form Components header). |
+
+Binds to a string path. Children: none.
+
+### radio-group (new in Phase 14)
+
+Single-choice selection exposing all options at once (contrast with `select`, which hides options behind a trigger). Uses the bits-ui `RadioGroup` primitive.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Group title rendered as `Field.Label` (no `for` attribute — the group has no single focusable control). |
+| `options` | RadioOption[] | yes | Array of `{value: string, label: string, description?: string}` entries. Each option renders a 16px radio + adjacent label; the optional per-option `description` is rendered as muted 12px text below that option's label. |
+| `required` | boolean | no | Marks the group required. |
+| `disabled` | boolean | no | Disables all options. |
+| `description` | string | no | Group-level helper text (see Form Components header). |
+| `full_width` | boolean | no | Full-row span (see Form Components header). |
+
+Binds to a string path (the selected option's `value`). Children: none. Keyboard navigation, roving-tabindex, and arrow-key option traversal are handled by bits-ui.
+
+### switch (new in Phase 14)
+
+Boolean toggle control with a horizontal label layout. Semantically distinct from `checkbox`: use `switch` for immediate-effect on/off state (e.g., "Dark mode", "Send notifications"); use `checkbox` for agreement or list-item selection.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | string | yes | Label rendered on the left; switch control on the right. |
+| `disabled` | boolean | no | Disables the control. |
+| `description` | string | no | Helper text rendered below the row (see Form Components header). |
+| `full_width` | boolean | no | Full-row span (see Form Components header). |
+
+Binds to a boolean path. Children: none. ARIA role is `switch` (provided by bits-ui).
+
+### field-set (new in Phase 14)
+
+Structural grouping primitive. Wraps form-leaf children in a shadcn `Field.Set` with an optional legend + description and an auto-responsive grid.
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `legend` | string | no | Visible group title rendered as `Field.Legend` and announced by screen readers when focus enters any child. |
+| `description` | string | no | Optional group-level explanation rendered below the legend via `Field.Description`. |
+| `cols` | integer (1–255) | no | Column count. When omitted, the grid is responsive: 1 column below `md:` (768px), 2 columns above. When set to `N`, a fixed N-column grid is applied at all viewport widths via an inline `grid-template-columns: repeat(N, minmax(0, 1fr))` style (Tailwind v4 JIT cannot resolve `grid-cols-{N}` dynamic class names — Pitfall #1). |
+
+Children: adjacency-list node ids of form-field components. `FieldSet` **must not** contain a nested `<form>` (HTML disallows `<form>` inside `<fieldset>`), so handlers compose multiple `FieldSet`s as siblings inside a single `Form` — not the other way around.
+
+### field-separator (new in Phase 14)
+
+Thin visual divider. Renders a 1px horizontal line in the `--border` token color. Used between sibling `FieldSet`s inside a `Form` (D-C2, preferred explicit-node path).
+
+No props. No children. No bind.
+
+### form-screen composition pattern
+
+Phase 14 codifies a canonical form-screen shape. Handlers compose a screen as follows:
+
+```
+Container (screen wrapper, id="<entity>-edit-screen")
+├── Heading                              (screen title)
+├── Button (variant="outline", back)     (← Back navigation)
+└── Form (id="<entity>-form")
+    ├── FieldSet (legend: "Contact information")
+    │   ├── TextInput
+    │   ├── TextInput (input_type: "email", description: "…")
+    │   └── …
+    ├── FieldSeparator
+    ├── FieldSet (legend: "Organisation")
+    │   ├── Select
+    │   └── Select
+    ├── FieldSeparator
+    ├── FieldSet (legend: "Notes and preferences")
+    │   ├── Textarea (full_width: true)
+    │   └── Switch
+    └── Container (class: "flex gap-2 justify-end")   # action row
+        ├── Button (variant: "outline", label: "Cancel")
+        └── Button (variant: "default", label: "Save contact")
+```
+
+`Form` is the `<form>` boundary — every form control must be a descendant of exactly one `Form`. Action rows use a plain `Container` with Tailwind utility classes (`flex gap-2 justify-end`); Save is the rightmost primary button, Cancel sits to its left as a secondary.
+
+### Validation semantics
+
+Per-field and form-level errors both flow through the data store via JSON Pointer paths:
+
+- **Per-field errors**: `/_errors/{bind}` holds a `string`. When non-empty, the bound field renders with `data-invalid` on the wrapper, `aria-invalid="true"` on the control, and the message in a `Field.Error` below (replacing any `description`).
+- **Form-level errors**: `/_errors/{form_bind}` holds a `string[]`. When the array is non-empty, `Form.svelte` renders a banner above its children listing each message.
+
+Servers clear errors by patching the path to an empty string / empty array. There is no client-side validation — every error message is server-authoritative and flows through the standard patch mechanism.
+
 ## Data Binding
 
 Components bind to application data using JSON Pointer paths ([RFC 6901](https://datatracker.ietf.org/doc/html/rfc6901)).
