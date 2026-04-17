@@ -19,6 +19,7 @@ import Form from '../components/form/Form.svelte';
 import TextInput from '../components/form/TextInput.svelte';
 import SelectInput from '../components/form/SelectInput.svelte';
 import MCheckbox from '../components/form/Checkbox.svelte';
+import Textarea from '../components/form/Textarea.svelte';
 import MButton from '../components/form/Button.svelte';
 import DataTable from '../components/table/DataTable.svelte';
 import ModalSurface from '../components/popup/ModalSurface.svelte';
@@ -42,6 +43,7 @@ export function registerDefaults(): void {
 		'text-input': TextInput,
 		'select': SelectInput,
 		'checkbox': MCheckbox,
+		'textarea': Textarea,
 		'button': MButton,
 		'data-table': DataTable,
 		'modal': ModalSurface,
