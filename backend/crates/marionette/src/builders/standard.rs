@@ -32,6 +32,17 @@ pub struct TextInput {
     pub input_type: Option<String>,
     #[builder(optional)]
     pub disabled: Option<bool>,
+    /// Helper text rendered below the input via shadcn `Field.Description`
+    /// (Phase 14 D-B3). Replaces the retired `helperText` prop — pre-deployment
+    /// posture, no back-compat alias. Hidden while an `/_errors/{bind}` entry
+    /// is active (the error replaces the description per the shadcn recipe).
+    #[builder(optional)]
+    pub description: Option<String>,
+    /// When `true`, the field's `Field.Field` wrapper spans every column of
+    /// its parent `FieldSet` grid (Phase 14 D-C4). Used for long-text or
+    /// full-width fields inside a 2-col FieldSet.
+    #[builder(optional)]
+    pub full_width: Option<bool>,
 }
 
 /// Option entry for a Select component.
@@ -425,6 +436,39 @@ mod tests {
         let props = component.props.unwrap();
         assert_eq!(props["label"], "Name");
         assert_eq!(props["placeholder"], "Enter name");
+    }
+
+    // -- Phase 14 Plan 02 TextInput extensions (D-B3, D-C4) --
+
+    #[test]
+    fn text_input_serializes_description() {
+        let (_id, component) = TextInput::new("Name")
+            .description("We keep this private.")
+            .build();
+        assert_eq!(component.r#type, "text-input");
+        let props = component.props.unwrap();
+        assert_eq!(props["description"], "We keep this private.");
+    }
+
+    #[test]
+    fn text_input_serializes_full_width() {
+        let (_id, component) = TextInput::new("Bio").full_width(true).build();
+        let props = component.props.unwrap();
+        assert_eq!(props["full_width"], true);
+    }
+
+    #[test]
+    fn text_input_omits_description_when_not_set() {
+        let (_id, component) = TextInput::new("Name").build();
+        let props = component.props.unwrap();
+        assert!(
+            props.get("description").is_none(),
+            "description should be omitted"
+        );
+        assert!(
+            props.get("full_width").is_none(),
+            "full_width should be omitted"
+        );
     }
 
     #[test]

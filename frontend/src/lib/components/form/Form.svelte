@@ -1,4 +1,5 @@
 <script lang="ts">
+	import * as Field from '$lib/components/ui/field';
 	import { getData } from '$lib/store/data.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
@@ -30,13 +31,17 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4 shrink-0 overflow-y-auto">
+<form onsubmit={handleSubmit} class="shrink-0 overflow-y-auto">
 	{#if Array.isArray(formErrors) && formErrors.length > 0}
-		<div class="rounded-lg bg-destructive/10 p-4">
+		<div
+			class="bg-destructive/10 border border-destructive/50 text-destructive rounded-md p-4 mb-4"
+		>
 			{#each formErrors as error}
-				<p class="text-sm text-destructive">{error}</p>
+				<p class="text-sm">{error}</p>
 			{/each}
 		</div>
 	{/if}
-	{@render children?.()}
+	<Field.Group class="space-y-6">
+		{@render children?.()}
+	</Field.Group>
 </form>

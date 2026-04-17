@@ -1,7 +1,7 @@
-import { render } from 'vitest-browser-svelte';
+import { render, cleanup } from 'vitest-browser-svelte';
 import { expect, test, beforeEach } from 'vitest';
 import TextInput from './TextInput.svelte';
-import { setFullState, resetStore } from '$lib/store/data.svelte';
+import { setFullState, resetStore, setData } from '$lib/store/data.svelte';
 import { resetDirty } from '$lib/store/dirty.svelte';
 
 beforeEach(() => {
@@ -92,4 +92,189 @@ test('ignores legacy props.type (no backward-compat fallback per pre-deployment 
 	});
 	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
 	expect(input.getAttribute('type')).toBe('text');
+});
+
+// -----------------------------------------------------------------------------
+// Phase 14 Plan 02 (FORM-01 + D-B1) — shadcn Field.Field anatomy.
+//
+// Each new `it(...)` block locks one slice of the Shared Leaf Anatomy contract
+// from `.planning/phases/14-formscreen-enhancements/14-UI-SPEC.md`:
+// - The outer wrapper is a `data-slot="field"` (Field.Field) element.
+// - `Field.Label for={id}` matches the `<input id={id}>` exactly.
+// - Clicking the label focuses the input (a11y guarantee).
+// - `data-invalid` and `aria-invalid` are attribute-presence semantics —
+//   the attribute is OMITTED (not `"false"`) when there is no error.
+// - `Field.Description` renders when provided AND no error is active.
+// - When an error is active, `Field.Description` is hidden and `Field.Error`
+//   replaces it (shadcn recipe pattern).
+// - `props.full_width` adds `col-span-full` to the Field.Field wrapper
+//   (per-field override for FieldSet grid — D-C4).
+// - Handler-supplied `props.id` is used verbatim.
+// - Falls back to a stable mount-time UUID when `props.id` is omitted, so
+//   two renders without id produce different ids, but a rerender of the same
+//   component instance keeps the id stable.
+// -----------------------------------------------------------------------------
+
+test('wraps input in a Field.Field element (data-slot="field")', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Full name' }, surface: 'test' },
+	});
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]');
+	expect(wrapper).toBeTruthy();
+	// The input must be a descendant of the Field.Field wrapper.
+	const input = wrapper?.querySelector('input');
+	expect(input).toBeTruthy();
+});
+
+test('Field.Label for attribute matches input id', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Full name', id: 'my-name-field' }, surface: 'test' },
+	});
+	const label = screen.baseElement.querySelector('label');
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(label).toBeTruthy();
+	expect(input).toBeTruthy();
+	expect(label!.getAttribute('for')).toBe(input.id);
+	expect(input.id).toBe('my-name-field');
+});
+
+test('clicking the label focuses the input', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Full name', id: 'focus-me' }, surface: 'test' },
+	});
+	const label = screen.baseElement.querySelector('label') as HTMLLabelElement;
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(label).toBeTruthy();
+	expect(input).toBeTruthy();
+	label.click();
+	expect(document.activeElement).toBe(input);
+});
+
+test('renders Field.Description when provided and no error', async () => {
+	const screen = await render(TextInput, {
+		props: {
+			props: { label: 'Email', description: "We'll never share your email." },
+			surface: 'test',
+		},
+	});
+	const desc = screen.baseElement.querySelector('[data-slot="field-description"]');
+	expect(desc).toBeTruthy();
+	expect(desc!.textContent).toContain("We'll never share your email.");
+});
+
+test('hides Field.Description and shows Field.Error when error is active', async () => {
+	const surface = 'test-' + crypto.randomUUID();
+	setData(surface, '/_errors/email', 'Invalid email.');
+	const screen = await render(TextInput, {
+		props: {
+			props: { label: 'Email', description: 'Optional helper text.' },
+			bind: '/email',
+			surface,
+		},
+	});
+	const desc = screen.baseElement.querySelector('[data-slot="field-description"]');
+	const err = screen.baseElement.querySelector('[data-slot="field-error"]');
+	expect(desc).toBeNull();
+	expect(err).toBeTruthy();
+	expect(err!.textContent).toContain('Invalid email.');
+});
+
+test('data-invalid attribute is OMITTED on no-error (Pitfall #4)', async () => {
+	// Seed surface first so getData() doesn't trigger getStore auto-create
+	// inside $derived (which would be a state_unsafe_mutation).
+	setFullState('test-no-err', {});
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface: 'test-no-err' },
+	});
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]');
+	expect(wrapper).toBeTruthy();
+	// Attribute presence semantics: null means absent.
+	expect(wrapper!.getAttribute('data-invalid')).toBeNull();
+});
+
+test('data-invalid attribute is present on error', async () => {
+	const surface = 'test-err-' + crypto.randomUUID();
+	setData(surface, '/_errors/email', 'Required.');
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface },
+	});
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]');
+	expect(wrapper).toBeTruthy();
+	// Attribute present — shadcn CSS keys on presence, not value.
+	expect(wrapper!.getAttribute('data-invalid')).not.toBeNull();
+});
+
+test('aria-invalid on input is OMITTED on no-error', async () => {
+	setFullState('test-no-aria', {});
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface: 'test-no-aria' },
+	});
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(input.getAttribute('aria-invalid')).toBeNull();
+});
+
+test('aria-invalid on input is present on error', async () => {
+	const surface = 'test-aria-' + crypto.randomUUID();
+	setData(surface, '/_errors/email', 'Required.');
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Email' }, bind: '/email', surface },
+	});
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(input.getAttribute('aria-invalid')).not.toBeNull();
+});
+
+test('full_width: true adds col-span-full class to Field.Field wrapper', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Bio', full_width: true }, surface: 'test' },
+	});
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]') as HTMLElement;
+	expect(wrapper).toBeTruthy();
+	expect(wrapper.className).toContain('col-span-full');
+});
+
+test('full_width omitted: wrapper does NOT have col-span-full', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Name' }, surface: 'test' },
+	});
+	const wrapper = screen.baseElement.querySelector('[data-slot="field"]') as HTMLElement;
+	expect(wrapper).toBeTruthy();
+	expect(wrapper.className).not.toContain('col-span-full');
+});
+
+test('handler-supplied id is used verbatim', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Name', id: 'custom-handler-id' }, surface: 'test' },
+	});
+	const input = screen.baseElement.querySelector('input') as HTMLInputElement;
+	expect(input.id).toBe('custom-handler-id');
+});
+
+test('falls back to a stable id when props.id omitted (two renders produce different ids)', async () => {
+	// Two separate component instances must produce independent ids. We must
+	// clean up the first render so its <input> is removed from the shared
+	// DOM root before capturing the second render's id.
+	const screen1 = await render(TextInput, {
+		props: { props: { label: 'A' }, surface: 'test-id-a' },
+	});
+	const id1 = (screen1.baseElement.querySelector('input') as HTMLInputElement).id;
+	cleanup();
+	const screen2 = await render(TextInput, {
+		props: { props: { label: 'B' }, surface: 'test-id-b' },
+	});
+	const id2 = (screen2.baseElement.querySelector('input') as HTMLInputElement).id;
+	expect(id1).toBeTruthy();
+	expect(id2).toBeTruthy();
+	expect(id1).not.toBe(id2);
+});
+
+test('id fallback is stable across rerenders of the same instance', async () => {
+	const screen = await render(TextInput, {
+		props: { props: { label: 'Stable' }, surface: 'test-stable' },
+	});
+	const initialId = (screen.baseElement.querySelector('input') as HTMLInputElement).id;
+	expect(initialId).toBeTruthy();
+	// Rerender with the same props — id must stay the same.
+	await screen.rerender({ props: { label: 'Stable' }, surface: 'test-stable' });
+	const rerenderedId = (screen.baseElement.querySelector('input') as HTMLInputElement).id;
+	expect(rerenderedId).toBe(initialId);
 });

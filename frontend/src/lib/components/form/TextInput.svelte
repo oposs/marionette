@@ -1,30 +1,35 @@
 <script lang="ts">
+	import * as Field from '$lib/components/ui/field';
 	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import type { Snippet } from 'svelte';
 
 	let {
 		props = {},
 		bind,
 		action,
 		surface,
-		children,
 	}: {
 		props: Record<string, unknown>;
 		bind?: string;
 		action?: ComponentAction;
 		surface: string;
-		children?: Snippet;
 	} = $props();
+
+	// D-B4: stable id — handler-supplied wins; fall back to mount-time UUID.
+	// SPA-only (adapter-static + SPA fallback), so crypto.randomUUID() is safe.
+	// The fallback is captured ONCE at mount — $derived keeps id stable across
+	// rerenders even if other props change.
+	const fallbackId = crypto.randomUUID();
+	let fieldId = $derived((props.id as string) ?? fallbackId);
 
 	let value = $derived(bind ? ((getData(surface, bind) as string) ?? '') : '');
 	let fieldError = $derived(
 		bind ? ((getData(surface, '/_errors' + bind) as string) ?? '') : ''
 	);
+	let hasError = $derived(!!fieldError);
 
 	function handleInput(e: Event) {
 		if (bind) {
@@ -51,24 +56,29 @@
 	}
 </script>
 
-<div class="grid w-full gap-2">
+<Field.Field
+	data-invalid={hasError || undefined}
+	class={props.full_width ? 'col-span-full' : undefined}
+>
 	{#if props.label}
-		<Label class="font-semibold">{props.label}</Label>
+		<Field.Label for={fieldId}>{props.label}</Field.Label>
 	{/if}
 	<Input
+		id={fieldId}
 		type={(props.input_type as string) ?? 'text'}
 		placeholder={props.placeholder as string}
 		required={props.required as boolean}
 		disabled={props.disabled as boolean}
+		aria-invalid={hasError || undefined}
 		{value}
 		oninput={handleInput}
 		onfocus={handleFocus}
 		onblur={handleBlur}
-		class={fieldError ? 'border-destructive' : ''}
 	/>
-	{#if fieldError}
-		<p class="text-xs text-destructive">{fieldError}</p>
-	{:else if props.helperText}
-		<p class="text-xs text-muted-foreground">{props.helperText}</p>
+	{#if props.description && !hasError}
+		<Field.Description>{props.description}</Field.Description>
 	{/if}
-</div>
+	{#if fieldError}
+		<Field.Error>{fieldError}</Field.Error>
+	{/if}
+</Field.Field>
