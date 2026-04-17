@@ -275,10 +275,37 @@ test('change-action dispatch fires with merged payload on value change (Phase 12
 		},
 	});
 
-	// Open the dropdown and click an item. vitest-browser-svelte's locator
-	// retry-wait makes this robust to Select.Content portal mount timing.
-	const trigger = screen.getByRole('combobox', { name: 'Country' });
-	await trigger.click();
+	// bits-ui's Select.Trigger requires a `pointerdown` event (its onclick
+	// handler is gated on a pointer-down sequence, see
+	// `bits-ui/.../select.svelte.js SelectTriggerState.onpointerdown`). A
+	// plain Playwright `.click()` on the underlying button produces the
+	// click event but skips the pointerdown path, so the dropdown never
+	// opens in headless Chromium. We dispatch the full pointer sequence
+	// manually to exercise the real dispatch flow.
+	const trigger = screen.baseElement.querySelector(
+		'[data-slot="select-trigger"]'
+	) as HTMLButtonElement;
+	expect(trigger).toBeTruthy();
+	trigger.dispatchEvent(
+		new PointerEvent('pointerdown', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.dispatchEvent(
+		new PointerEvent('pointerup', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.click();
+
+	// Portal-rendered items mount asynchronously — use the locator retry-wait
+	// until the dropdown item appears, then click it.
 	const item = screen.getByText('Switzerland');
 	await item.click();
 

@@ -1,30 +1,38 @@
 <script lang="ts">
+	import * as Field from '$lib/components/ui/field';
 	import * as Select from '$lib/components/ui/select';
-	import { Label } from '$lib/components/ui/label';
 	import { getAllData, getData, setData } from '$lib/store/data.svelte';
 	import { markDirty, clearDirty } from '$lib/store/dirty.svelte';
 	import { sendAction } from '$lib/transport/dispatcher';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import type { Snippet } from 'svelte';
 
 	let {
 		props = {},
 		bind,
 		action,
 		surface,
-		children,
 	}: {
 		props: Record<string, unknown>;
 		bind?: string;
 		action?: ComponentAction;
 		surface: string;
-		children?: Snippet;
 	} = $props();
+
+	// D-B4: stable id — handler-supplied wins; fall back to mount-time UUID.
+	// SPA-only (adapter-static + SPA fallback), so crypto.randomUUID() is safe.
+	// The fallback is captured ONCE at mount — $derived keeps id stable across
+	// rerenders even if other props change.
+	const fallbackId = crypto.randomUUID();
+	let fieldId = $derived((props.id as string) ?? fallbackId);
 
 	let value = $derived(bind ? ((getData(surface, bind) as string) ?? '') : '');
 	let options = $derived(
 		(props.options as Array<{ value: string; label: string }>) ?? []
 	);
+	let fieldError = $derived(
+		bind ? ((getData(surface, '/_errors' + bind) as string) ?? '') : ''
+	);
+	let hasError = $derived(!!fieldError);
 
 	function handleValueChange(newValue: string) {
 		if (bind) {
@@ -34,7 +42,8 @@
 		// the full surface data payload (mirrors the Button pattern in
 		// `Button.svelte`). This is what Phase 12 Plan 08's country-select
 		// demo relies on to trigger node-patch flows (D-A6 focus
-		// preservation + D-B15 toast lifecycle).
+		// preservation + D-B15 toast lifecycle). Payload shape MUST stay
+		// byte-identical: `{ ...(action.payload ?? {}), ...surfaceData }`.
 		if (action?.type === 'change' && action.name) {
 			const surfaceData = getAllData(surface) ?? {};
 			const payload = {
@@ -58,14 +67,27 @@
 	}
 </script>
 
-<div class="grid w-full gap-2">
+<Field.Field
+	data-invalid={hasError || undefined}
+	class={props.full_width ? 'col-span-full' : undefined}
+>
 	{#if props.label}
-		<Label class="font-semibold">{props.label}</Label>
+		<Field.Label for={fieldId}>{props.label}</Field.Label>
 	{/if}
-	<Select.Root type="single" value={value} onValueChange={handleValueChange} onOpenChange={handleOpenChange} disabled={props.disabled as boolean}>
-		<Select.Trigger class="w-full">
-			{#if value && options.find(o => o.value === value)}
-				<span>{options.find(o => o.value === value)?.label}</span>
+	<Select.Root
+		type="single"
+		{value}
+		onValueChange={handleValueChange}
+		onOpenChange={handleOpenChange}
+		disabled={props.disabled as boolean}
+	>
+		<Select.Trigger
+			id={fieldId}
+			class="w-full"
+			aria-invalid={hasError || undefined}
+		>
+			{#if value && options.find((o) => o.value === value)}
+				<span>{options.find((o) => o.value === value)?.label}</span>
 			{:else}
 				<span class="text-muted-foreground">{props.placeholder ?? 'Select...'}</span>
 			{/if}
@@ -76,4 +98,10 @@
 			{/each}
 		</Select.Content>
 	</Select.Root>
-</div>
+	{#if props.description && !hasError}
+		<Field.Description>{props.description}</Field.Description>
+	{/if}
+	{#if fieldError}
+		<Field.Error>{fieldError}</Field.Error>
+	{/if}
+</Field.Field>
