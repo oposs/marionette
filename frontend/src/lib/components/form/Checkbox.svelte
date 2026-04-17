@@ -1,25 +1,33 @@
 <script lang="ts">
+	import * as Field from '$lib/components/ui/field';
 	import { Checkbox as ShadcnCheckbox } from '$lib/components/ui/checkbox';
-	import { Label } from '$lib/components/ui/label';
 	import { getData, setData } from '$lib/store/data.svelte';
 	import type { ComponentAction } from '$lib/transport/messages';
-	import type { Snippet } from 'svelte';
 
 	let {
 		props = {},
 		bind,
 		action,
 		surface,
-		children,
 	}: {
 		props: Record<string, unknown>;
 		bind?: string;
 		action?: ComponentAction;
 		surface: string;
-		children?: Snippet;
 	} = $props();
 
+	// D-B4: stable id — handler-supplied wins; fall back to mount-time UUID.
+	// SPA-only (adapter-static + SPA fallback), so crypto.randomUUID() is safe.
+	// The fallback is captured ONCE at mount — $derived keeps id stable across
+	// rerenders even if other props change.
+	const fallbackId = crypto.randomUUID();
+	let fieldId = $derived((props.id as string) ?? fallbackId);
+
 	let checked = $derived(bind ? ((getData(surface, bind) as boolean) ?? false) : false);
+	let fieldError = $derived(
+		bind ? ((getData(surface, '/_errors' + bind) as string) ?? '') : ''
+	);
+	let hasError = $derived(!!fieldError);
 
 	function handleCheckedChange(val: boolean | 'indeterminate') {
 		if (bind) {
@@ -28,13 +36,25 @@
 	}
 </script>
 
-<div class="flex items-center gap-2">
+<Field.Field
+	orientation="horizontal"
+	data-invalid={hasError || undefined}
+	class={props.full_width ? 'col-span-full' : undefined}
+>
 	<ShadcnCheckbox
+		id={fieldId}
 		{checked}
 		onCheckedChange={handleCheckedChange}
 		disabled={props.disabled as boolean}
+		aria-invalid={hasError || undefined}
 	/>
 	{#if props.label}
-		<Label class="font-semibold">{props.label}</Label>
+		<Field.Label for={fieldId}>{props.label}</Field.Label>
 	{/if}
-</div>
+	{#if props.description && !hasError}
+		<Field.Description>{props.description}</Field.Description>
+	{/if}
+	{#if fieldError}
+		<Field.Error>{fieldError}</Field.Error>
+	{/if}
+</Field.Field>
