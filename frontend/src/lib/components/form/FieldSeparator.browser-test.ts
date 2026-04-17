@@ -7,8 +7,6 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { expect, test } from 'vitest';
-// @ts-expect-error - FieldSeparator.svelte is scaffolded in Wave 3 (Plan 14-07).
-// Remove this directive once that plan lands the concrete component.
 import FieldSeparator from './FieldSeparator.svelte';
 
 test('renders a single Field.Separator element', async () => {

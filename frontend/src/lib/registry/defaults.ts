@@ -23,6 +23,7 @@ import Textarea from '../components/form/Textarea.svelte';
 import RadioGroup from '../components/form/RadioGroup.svelte';
 import MSwitch from '../components/form/Switch.svelte';
 import FieldSet from '../components/form/FieldSet.svelte';
+import FieldSeparator from '../components/form/FieldSeparator.svelte';
 import MButton from '../components/form/Button.svelte';
 import DataTable from '../components/table/DataTable.svelte';
 import ModalSurface from '../components/popup/ModalSurface.svelte';
@@ -50,6 +51,7 @@ export function registerDefaults(): void {
 		'radio-group': RadioGroup,
 		'switch': MSwitch,
 		'field-set': FieldSet,
+		'field-separator': FieldSeparator,
 		'button': MButton,
 		'data-table': DataTable,
 		'modal': ModalSurface,
