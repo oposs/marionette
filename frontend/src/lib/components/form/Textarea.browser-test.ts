@@ -17,6 +17,9 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { expect, test, beforeEach } from 'vitest';
+// @ts-expect-error - Textarea.svelte is scaffolded in Wave 2 (Plan 14-05).
+// When that plan lands, this directive will fire a "unused" error that
+// serves as the cue to remove it.
 import Textarea from './Textarea.svelte';
 import { setData, resetStore } from '$lib/store/data.svelte';
 

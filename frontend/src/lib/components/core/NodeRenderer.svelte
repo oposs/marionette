@@ -17,25 +17,31 @@
 </script>
 
 {#if node}
-	{#if !node.visible || getData(surface, node.visible)}
+	{@const nodeProps = node.props ?? {}}
+	{@const nodeBind = node.bind}
+	{@const nodeAction = node.action}
+	{@const nodeVisible = node.visible}
+	{@const nodeChildren = node.children}
+	{@const nodeType = node.type}
+	{#if !nodeVisible || getData(surface, nodeVisible)}
 		<ErrorBoundary>
 			{#if ResolvedComponent}
 				<ResolvedComponent
-					props={node.props ?? {}}
-					bind={node.bind}
-					action={node.action}
+					props={nodeProps}
+					bind={nodeBind}
+					action={nodeAction}
 					{surface}
 				>
 					{#snippet children()}
-						{#if node.children}
-							{#each node.children as childId (childId)}
+						{#if nodeChildren}
+							{#each nodeChildren as childId (childId)}
 								<NodeRenderer nodeId={childId} {nodes} {surface} />
 							{/each}
 						{/if}
 					{/snippet}
 				</ResolvedComponent>
 			{:else}
-				<FallbackComponent nodeType={node.type} props={node.props} {surface} />
+				<FallbackComponent nodeType={nodeType} props={nodeProps} {surface} />
 			{/if}
 		</ErrorBoundary>
 	{/if}

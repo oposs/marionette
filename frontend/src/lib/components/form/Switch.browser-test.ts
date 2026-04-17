@@ -11,6 +11,8 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { expect, test, beforeEach } from 'vitest';
+// @ts-expect-error - Switch.svelte is scaffolded in Wave 2 (Plan 14-06).
+// Remove this directive once that plan lands the concrete component.
 import Switch from './Switch.svelte';
 import { setData, getData, resetStore } from '$lib/store/data.svelte';
 

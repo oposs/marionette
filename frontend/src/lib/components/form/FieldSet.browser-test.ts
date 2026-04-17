@@ -17,6 +17,8 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { expect, test } from 'vitest';
+// @ts-expect-error - FieldSet.svelte is scaffolded in Wave 3 (Plan 14-07).
+// Remove this directive once that plan lands the concrete component.
 import FieldSet from './FieldSet.svelte';
 import { createRawSnippet } from 'svelte';
 
