@@ -52,6 +52,20 @@ pub struct SelectOption {
     pub label: String,
 }
 
+/// Option entry for a RadioGroup component (Phase 14 D-E4).
+///
+/// Mirrors `SelectOption` but adds an optional per-option `description`
+/// rendered as 12px muted text beneath the option label (14-UI-SPEC.md
+/// §Component Visual Contracts — RadioGroup). When `description` is
+/// `None`, serde omits the key entirely via `skip_serializing_if`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RadioOption {
+    pub value: String,
+    pub label: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
 #[derive(ComponentBuilder)]
 #[component(type = "select")]
 pub struct Select {
@@ -207,6 +221,57 @@ pub struct Textarea {
     /// When `true`, the field's `Field.Field` wrapper spans every column of
     /// its parent `FieldSet` grid (Phase 14 D-C4). Long-text fields typically
     /// take the full row inside a 2-col FieldSet.
+    #[builder(optional)]
+    pub full_width: Option<bool>,
+}
+
+/// Radio group primitive (Phase 14 D-E4).
+///
+/// Renders a shadcn `RadioGroup` wrapped in the shared `Field.Field` anatomy
+/// on the frontend. Use for single-choice selection among N options when the
+/// choices should be visible at-a-glance (contrast with `Select`, which hides
+/// options behind a trigger). Each `RadioOption` can optionally carry a
+/// per-option `description` rendered as muted 12px text beneath the label.
+#[derive(ComponentBuilder)]
+#[component(type = "radio-group")]
+pub struct RadioGroup {
+    pub label: String,
+    pub options: Vec<RadioOption>,
+    #[builder(optional)]
+    pub required: Option<bool>,
+    #[builder(optional)]
+    pub disabled: Option<bool>,
+    /// Helper text rendered below the group via shadcn `Field.Description`
+    /// (Phase 14 D-B3). Hidden while an `/_errors/{bind}` entry is active
+    /// (the error replaces the description per the shadcn recipe).
+    #[builder(optional)]
+    pub description: Option<String>,
+    /// When `true`, the field's `Field.Field` wrapper spans every column of
+    /// its parent `FieldSet` grid (Phase 14 D-C4).
+    #[builder(optional)]
+    pub full_width: Option<bool>,
+}
+
+/// Toggle switch primitive (Phase 14 D-E4).
+///
+/// Renders a shadcn `Switch` wrapped in a horizontally-oriented `Field.Field`
+/// (label on the left, control on the right). Semantically distinct from
+/// `Checkbox`: use `Switch` for on/off state that takes effect immediately
+/// (e.g., "Dark mode", "Notifications"); use `Checkbox` for agreement or
+/// list-item selection. Boolean-typed bind.
+#[derive(ComponentBuilder)]
+#[component(type = "switch")]
+pub struct Switch {
+    pub label: String,
+    #[builder(optional)]
+    pub disabled: Option<bool>,
+    /// Helper text rendered below the switch row via shadcn
+    /// `Field.Description` (Phase 14 D-B3). Hidden while an
+    /// `/_errors/{bind}` entry is active.
+    #[builder(optional)]
+    pub description: Option<String>,
+    /// When `true`, the field's `Field.Field` wrapper spans every column of
+    /// its parent `FieldSet` grid (Phase 14 D-C4).
     #[builder(optional)]
     pub full_width: Option<bool>,
 }
@@ -679,6 +744,80 @@ mod tests {
         assert_eq!(props["rows"], 10);
         // u32 serializes as a JSON number, not a string:
         assert!(props["rows"].is_u64());
+    }
+
+    // -- Phase 14 Plan 06 RadioGroup + Switch (new primitives, D-E4) --
+
+    #[test]
+    fn radio_group_serializes_options_and_optionals() {
+        let options = vec![
+            RadioOption {
+                value: "a".into(),
+                label: "Apple".into(),
+                description: Some("Red fruit".into()),
+            },
+            RadioOption {
+                value: "b".into(),
+                label: "Banana".into(),
+                description: None,
+            },
+        ];
+        let (_id, component) = RadioGroup::new("Pick one", options)
+            .description("Choose a fruit.")
+            .full_width(true)
+            .build();
+        let props = component.props.unwrap();
+        assert_eq!(component.r#type, "radio-group");
+        assert_eq!(props["label"], "Pick one");
+        assert_eq!(props["options"][0]["value"], "a");
+        assert_eq!(props["options"][0]["label"], "Apple");
+        assert_eq!(props["options"][0]["description"], "Red fruit");
+        // Banana has no description — serde omits the key via skip_serializing_if:
+        assert!(props["options"][1].get("description").is_none());
+        assert_eq!(props["description"], "Choose a fruit.");
+        assert_eq!(props["full_width"], true);
+    }
+
+    #[test]
+    fn radio_group_basic_serialization() {
+        let options = vec![RadioOption {
+            value: "x".into(),
+            label: "X".into(),
+            description: None,
+        }];
+        let (_id, component) = RadioGroup::new("Choice", options).build();
+        let props = component.props.unwrap();
+        assert_eq!(component.r#type, "radio-group");
+        assert!(props.get("description").is_none());
+        assert!(props.get("full_width").is_none());
+        assert!(props.get("required").is_none());
+        assert!(props.get("disabled").is_none());
+    }
+
+    #[test]
+    fn switch_basic_serialization() {
+        let (_id, component) = Switch::new("Notifications").build();
+        let props = component.props.unwrap();
+        assert_eq!(component.r#type, "switch");
+        assert_eq!(props["label"], "Notifications");
+        assert!(props.get("description").is_none());
+        assert!(props.get("full_width").is_none());
+        assert!(props.get("disabled").is_none());
+    }
+
+    #[test]
+    fn switch_full_serialization() {
+        let (_id, component) = Switch::new("Dark mode")
+            .disabled(false)
+            .description("Switch to dark theme.")
+            .full_width(true)
+            .build();
+        let props = component.props.unwrap();
+        assert_eq!(component.r#type, "switch");
+        assert_eq!(props["label"], "Dark mode");
+        assert_eq!(props["description"], "Switch to dark theme.");
+        assert_eq!(props["full_width"], true);
+        assert_eq!(props["disabled"], false);
     }
 
     #[test]
