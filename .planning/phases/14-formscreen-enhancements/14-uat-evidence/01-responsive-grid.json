@@ -1,0 +1,15 @@
+{
+  "desktop": {
+    "viewport": "1024x800",
+    "organisation_grid_cols": "336px 336px",
+    "column_count": 2,
+    "notes_grid_column": "1 / -1",
+    "passed": true
+  },
+  "mobile": {
+    "viewport": "375x800",
+    "organisation_grid_cols": "295px",
+    "column_count": 1,
+    "passed": true
+  }
+}

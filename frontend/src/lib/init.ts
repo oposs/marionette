@@ -92,6 +92,13 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 	if (typeof window !== 'undefined') {
 		(window as unknown as { __mrnSendAction: typeof sendAction }).__mrnSendAction =
 			sendAction;
+		// Phase 14 Plan 08 UAT hook: expose setData so the Chrome/Playwright
+		// UAT can synthesize `/_errors/{bind}` entries to verify the Field
+		// anatomy renders the Field.Error slot. Same safety argument as
+		// __mrnSendAction — anything an attacker can do via this hook they
+		// can already do by crafting a raw WebSocket PatchMessage.
+		(window as unknown as { __mrnSetData: typeof setData }).__mrnSetData =
+			setData;
 	}
 }
 
