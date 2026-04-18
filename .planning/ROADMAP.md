@@ -32,7 +32,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
 - [x] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
 - [x] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility (completed 2026-04-11)
-- [ ] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections
+- [x] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections (completed 2026-04-18)
 - [ ] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue
 
 ## Phase Details
@@ -133,7 +133,7 @@ Plans:
 - [x] 14-05-PLAN.md — Add Textarea SDUI component + registry + backend builder (D-E3)
 - [x] 14-06-PLAN.md — Add RadioGroup + Switch SDUI components + registry + backend builders + RadioOption (D-E4)
 - [x] 14-07-PLAN.md — Add FieldSet + FieldSeparator SDUI components (responsive grid + cols override) + backend builders (D-C1 / D-C2 / D-C3 / D-C4)
-- [ ] 14-08-PLAN.md — Delete FormScreen orphan + migrate contact.rs edit form + spec/PROTOCOL.md + E2E + visual rebaseline + Chrome-MCP UAT
+- [x] 14-08-PLAN.md — Delete FormScreen orphan + migrate contact.rs edit form + spec/PROTOCOL.md + E2E + visual rebaseline + Chrome-MCP UAT
 **UI hint**: yes
 
 ### Phase 15: CRM Migration & Validation
@@ -167,7 +167,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
-| 14. FormScreen Enhancements | v1.1 | 7/8 | In Progress|  |
+| 14. FormScreen Enhancements | v1.1 | 8/8 | Complete   | 2026-04-18 |
 | 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
 
 ---
