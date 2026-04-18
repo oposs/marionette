@@ -1760,4 +1760,118 @@ mod tests {
         );
         assert!(found.contact_opt_in);
     }
+
+    // -----------------------------------------------------------------
+    // Phase 15 Plan 04 Task 2 — RED/GREEN gates for contact.rs refactor
+    // -----------------------------------------------------------------
+    //
+    // Source-grep assertions on the module source verify that:
+    //   1. Contact edit form envelope uses form_shell() (D-B2 refactor).
+    //   2. Inline tag-add form uses "+ Add tag" + Container flex layout.
+    //   3. Inline note-add form uses "+ Add note" + Container flex flex-col layout.
+    //   4. Inline note-add input is Textarea (not TextInput) with rows(3).
+    //   5. handle_contact_save emits validation_error_patch per D-D1.
+    //   6. handle_contact_tag_save emits validation_error_patch per D-D1.
+    //   7. Legacy BadPayload branches for the above field-level errors are gone.
+
+    const THIS_FILE: &str = include_str!("contact.rs");
+
+    #[test]
+    fn contact_edit_form_envelope_uses_form_shell() {
+        // D-B2: Phase-14 edit-form Container::new().build_with_children()
+        // envelope compresses to form_shell(...).
+        // Check for the actual call signature (with newline after the opening
+        // paren) so assertion text doesn't self-satisfy.
+        assert!(
+            THIS_FILE.contains("form_shell(\n"),
+            "expected form_shell(\\n ...) envelope wiring in contact.rs"
+        );
+        // The old manual Container::new().id("contact-form-root")...build_with_children()
+        // envelope wiring must be gone.
+        assert!(
+            !THIS_FILE.contains(".id(\"contact-form-root\")\n        .children(all_nodes)\n        .build_with_children()"),
+            "old manual Container envelope wiring must be replaced with form_shell"
+        );
+    }
+
+    #[test]
+    fn inline_tag_add_uses_plus_label_and_flex_row() {
+        // 15-UI-SPEC §5: "+ Add tag" label + Container class "flex gap-2 items-end".
+        assert!(
+            THIS_FILE.contains("Button::new(\"+ Add tag\")"),
+            "expected Button::new(\"+ Add tag\") (old label was \"Add Tag\")"
+        );
+        assert!(
+            THIS_FILE.contains("\"flex gap-2 items-end\""),
+            "expected tag-form-row Container class \"flex gap-2 items-end\""
+        );
+        // Old "Add Tag" Button::new literal must be gone.
+        assert!(
+            !THIS_FILE.contains("Button::new(\"Add Tag\")"),
+            "old Button::new(\"Add Tag\") must be replaced"
+        );
+    }
+
+    #[test]
+    fn inline_note_add_uses_plus_label_and_flex_col() {
+        // 15-UI-SPEC §6: "+ Add note" label + Container class "flex flex-col gap-2 items-end".
+        assert!(
+            THIS_FILE.contains("Button::new(\"+ Add note\")"),
+            "expected Button::new(\"+ Add note\") (old label was \"Add Note\")"
+        );
+        assert!(
+            THIS_FILE.contains("\"flex flex-col gap-2 items-end\""),
+            "expected note-form-row Container class \"flex flex-col gap-2 items-end\""
+        );
+        // Old "Add Note" Button::new literal must be gone.
+        assert!(
+            !THIS_FILE.contains("Button::new(\"Add Note\")"),
+            "old Button::new(\"Add Note\") must be replaced"
+        );
+    }
+
+    #[test]
+    fn inline_note_add_uses_textarea_rows_3() {
+        // 15-UI-SPEC §6: upgrade TextInput -> Textarea with rows(3).
+        assert!(
+            THIS_FILE.contains("Textarea::new(\"Add note\")"),
+            "expected Textarea::new(\"Add note\") for inline note-add input"
+        );
+    }
+
+    #[test]
+    fn contact_save_uses_validation_error_patch() {
+        // D-D1: per-field /_errors/contactForm/* patches on validation failure.
+        assert!(
+            THIS_FILE.contains("validation_error_patch("),
+            "expected validation_error_patch(...) in handle_contact_save"
+        );
+        // Old name/email BadPayload branches must be gone.
+        assert!(
+            !THIS_FILE.contains("BadPayload(\n            \"Contact name is required\""),
+            "old BadPayload(\"Contact name is required\") must be replaced"
+        );
+        assert!(
+            !THIS_FILE.contains("BadPayload(\"Email is required\""),
+            "old BadPayload(\"Email is required\") must be replaced"
+        );
+        assert!(
+            !THIS_FILE.contains("BadPayload(\n            \"Invalid email format\""),
+            "old BadPayload(\"Invalid email format\") must be replaced"
+        );
+    }
+
+    #[test]
+    fn contact_tag_save_uses_validation_error_patch_for_empty_tag() {
+        // D-D1: per-field /_errors/tagForm/name patch instead of BadPayload.
+        // The tag-save handler must emit at /_errors/tagForm/name (matching tag_input.bind).
+        assert!(
+            THIS_FILE.contains("/tagForm/name"),
+            "expected /tagForm/name bind path (matches tag_input.bind(...))"
+        );
+        assert!(
+            !THIS_FILE.contains("BadPayload(\"Tag name is required\""),
+            "old BadPayload(\"Tag name is required\") must be replaced"
+        );
+    }
 }

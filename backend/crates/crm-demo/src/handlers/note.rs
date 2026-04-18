@@ -118,3 +118,32 @@ pub async fn handle_note_save(ctx: HandlerContext) -> ActionResult {
         Err(ActionError::Internal("Unexpected state".into()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! Phase 15 Plan 04 Task 2 — RED/GREEN gate for note.rs validation rewiring.
+    //!
+    //! Source-grep assertion over the handler module source: the empty-body
+    //! branch MUST use `validation_error_patch` at the `/noteForm/text` bind
+    //! path rather than `ActionError::BadPayload`.
+
+    const THIS_FILE: &str = include_str!("note.rs");
+
+    #[test]
+    fn note_save_uses_validation_error_patch_for_empty_body() {
+        // D-D1: per-field /_errors/noteForm/text patch instead of form-level BadPayload.
+        assert!(
+            THIS_FILE.contains("validation_error_patch("),
+            "expected validation_error_patch(...) in handle_note_save"
+        );
+        assert!(
+            THIS_FILE.contains("/noteForm/text"),
+            "expected /noteForm/text bind path (matches TextInput.bind(...) in contact.rs)"
+        );
+        // Old empty-text BadPayload branch must be gone.
+        assert!(
+            !THIS_FILE.contains("BadPayload(\"Note text is required\""),
+            "old BadPayload(\"Note text is required\") must be replaced"
+        );
+    }
+}
