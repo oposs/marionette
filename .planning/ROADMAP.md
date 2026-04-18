@@ -33,7 +33,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
 - [x] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility (completed 2026-04-11)
 - [x] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections (completed 2026-04-18)
-- [ ] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue
+- [x] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue (completed 2026-04-18)
 
 ## Phase Details
 
@@ -152,7 +152,7 @@ Plans:
 - [x] 15-04-PLAN.md — Handler sweep B: interaction + contact inline/refactor + note/tag save validation
 - [x] 15-05-PLAN.md — Scope-closure bundle (D-G1 dev-gate, D-G2 Form.svelte payload, D-G3 Button builder, D-G4 node: prefix)
 - [x] 15-06-PLAN.md — Flowbite CI guard + doc brand-voice sweep + PROTOCOL.md validation surgery
-- [ ] 15-07-PLAN.md — E2E specs + visual rebaseline + Chrome-MCP/Playwright UAT per screen + phase-gate
+- [x] 15-07-PLAN.md — E2E specs + visual rebaseline + Chrome-MCP/Playwright UAT per screen + phase-gate
 **UI hint**: yes
 
 ## Progress
@@ -176,7 +176,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
 | 14. FormScreen Enhancements | v1.1 | 8/8 | Complete    | 2026-04-18 |
-| 15. CRM Migration & Validation | v1.1 | 6/7 | In Progress | - |
+| 15. CRM Migration & Validation | v1.1 | 7/7 | Complete    | 2026-04-18 |
 
 ---
 *Created: 2026-01-24*
