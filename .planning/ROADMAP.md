@@ -146,8 +146,8 @@ Plans:
   3. CRM navigation, CRUD operations, search/filtering, and Listmonk integration all work as before
 **Plans**: 7 plans
 Plans:
-- [ ] 15-01-PLAN.md — Contact schema extension (country/notes/opt_in) + persistence + integration test
-- [ ] 15-02-PLAN.md — form_shell() + validation_error_patch() helpers with unit tests
+- [x] 15-01-PLAN.md — Contact schema extension (country/notes/opt_in) + persistence + integration test
+- [x] 15-02-PLAN.md — form_shell() + validation_error_patch() helpers with unit tests
 - [ ] 15-03-PLAN.md — Handler sweep A: company + user edit forms (FieldSet, RadioGroup, validation rewiring)
 - [ ] 15-04-PLAN.md — Handler sweep B: interaction + contact inline/refactor + note/tag save validation
 - [ ] 15-05-PLAN.md — Scope-closure bundle (D-G1 dev-gate, D-G2 Form.svelte payload, D-G3 Button builder, D-G4 node: prefix)
@@ -176,7 +176,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
 | 14. FormScreen Enhancements | v1.1 | 8/8 | Complete    | 2026-04-18 |
-| 15. CRM Migration & Validation | v1.1 | 0/7 | Planned | - |
+| 15. CRM Migration & Validation | v1.1 | 2/7 | In Progress | - |
 
 ---
 *Created: 2026-01-24*
