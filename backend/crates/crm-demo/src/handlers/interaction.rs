@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-
 use sea_orm::{ActiveModelTrait, ActiveValue::{NotSet, Set}};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, Container, Form, Heading, Select, SelectOption, TextInput,
+    form_shell, Button, Container, FieldSet, Form, Heading, RadioGroup, RadioOption, Textarea,
+    TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
+use marionette::validation::validation_error_patch;
 use marionette_protocol::messages::ActionMessage;
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
@@ -52,6 +52,14 @@ struct InteractionSavePayload {
 }
 
 /// Handle the `interaction_form` action: render a form for logging an interaction.
+///
+/// Phase 15 Plan 04 (D-A1 + D-B1 + D-E1 + D-E3): the form uses the canonical
+/// Phase 14 composition — single `FieldSet("Interaction")` with
+/// `[type_radio, subject, date, notes]`, action row, and `form_shell`
+/// envelope. `type` migrated from `Select` to `RadioGroup` per D-E1; `notes`
+/// upgraded from `TextInput` to `Textarea` with `full_width(true)` per the
+/// 15-UI-SPEC §Textarea full_width Contract; `date` carries the locked
+/// description string per the 15-UI-SPEC §Description Copy Contract.
 pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
     let payload = Payload::<InteractionFormPayload>::from_context(&ctx)?;
     let contact_id = payload.0.contact_id;
@@ -60,78 +68,105 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
         .id("interaction-form-heading")
         .build();
 
-    let type_select = Select::new(
-        "Type",
-        vec![
-            SelectOption {
-                value: "call".into(),
-                label: "Call".into(),
-            },
-            SelectOption {
-                value: "email".into(),
-                label: "Email".into(),
-            },
-            SelectOption {
-                value: "meeting".into(),
-                label: "Meeting".into(),
-            },
-        ],
-    )
-    .id("interaction-type")
-    .bind("/interactionForm/interaction_type")
-    .build();
-
-    let subject_input = TextInput::new("Subject")
-        .id("interaction-subject")
-        .bind("/interactionForm/subject")
-        .build();
-
-    let date_input = TextInput::new("Date (YYYY-MM-DD HH:MM)")
-        .id("interaction-date")
-        .bind("/interactionForm/date")
-        .build();
-
-    let notes_input = TextInput::new("Notes")
-        .id("interaction-notes")
-        .bind("/interactionForm/notes")
-        .build();
-
-    let save_button = Button::new("Save Interaction")
-        .id("interaction-save-btn")
-        .action(ComponentAction::submit("interaction_save"))
-        .build();
-
-    let cancel_button = Button::new("Cancel")
-        .id("interaction-cancel")
+    let back_button = Button::new("← Back")
+        .id("interaction-form-back")
+        .variant("outline")
         .action(ComponentAction::click("contact_list"))
         .build();
 
-    let (form_child, form_descendants) = Form::new()
-        .id("interaction-form")
-        .children(vec![
-            type_select,
-            subject_input,
-            date_input,
-            notes_input,
-            save_button,
-            cancel_button,
-        ])
+    // type: RadioGroup (D-E1) — replaces the Phase 14 Select. 3 options
+    // vertically; no per-option descriptions per 15-UI-SPEC §RadioGroup
+    // Production Contract (labels are self-explanatory).
+    let type_options = vec![
+        RadioOption {
+            value: "call".into(),
+            label: "Call".into(),
+            description: None,
+        },
+        RadioOption {
+            value: "email".into(),
+            label: "Email".into(),
+            description: None,
+        },
+        RadioOption {
+            value: "meeting".into(),
+            label: "Meeting".into(),
+            description: None,
+        },
+    ];
+    let type_radio = RadioGroup::new("Type", type_options)
+        .id("interaction-form-type")
+        .bind("/interactionForm/interaction_type")
+        .required(true)
+        .build();
+
+    let subject_input = TextInput::new("Subject")
+        .id("interaction-form-subject")
+        .bind("/interactionForm/subject")
+        .required(true)
+        .build();
+
+    let date_input = TextInput::new("Date")
+        .id("interaction-form-date")
+        .bind("/interactionForm/date")
+        .input_type("datetime-local")
+        .required(true)
+        .description("Format: YYYY-MM-DD HH:MM (24-hour).")
+        .build();
+
+    // notes: Textarea full_width (upgraded from TextInput) — 15-UI-SPEC
+    // §Textarea full_width Contract requires `full_width(true)` + `rows(4)`.
+    let notes_textarea = Textarea::new("Notes")
+        .id("interaction-form-notes")
+        .bind("/interactionForm/notes")
+        .rows(4u32)
+        .full_width(true)
+        .placeholder("Describe what happened, decisions made, or follow-ups needed…")
+        .build();
+
+    let (interaction_set, interaction_descendants) = FieldSet::new()
+        .id("interaction-set")
+        .legend("Interaction")
+        .children(vec![type_radio, subject_input, date_input, notes_textarea])
         .build_tree();
 
-    let all_nodes = vec![heading, form_child];
+    let cancel_button = Button::new("Cancel")
+        .id("interaction-form-cancel")
+        .variant("outline")
+        .action(ComponentAction::click("contact_list"))
+        .build();
 
-    let container_nodes = Container::new()
-        .id("interaction-form-root")
-        .children(all_nodes)
-        .build_with_children();
+    let save_button = Button::new("Save interaction")
+        .id("interaction-form-save")
+        .variant("default")
+        .action(ComponentAction::submit("interaction_save"))
+        .build();
 
-    let mut nodes = HashMap::new();
-    for (id, component) in container_nodes {
-        nodes.insert(id, component);
-    }
-    for (id, component) in form_descendants {
-        nodes.insert(id, component);
-    }
+    let (action_row, action_row_descendants) = Container::new()
+        .id("interaction-form-actions")
+        .class("flex gap-2 justify-end")
+        .children(vec![cancel_button, save_button])
+        .build_tree();
+
+    let (form_child, form_descendants) = Form::new()
+        .id("interaction-form")
+        .children(vec![interaction_set, action_row])
+        .build_tree();
+
+    // Collect all descendants from the three sub-trees (fieldset children,
+    // action row children, form children) for the form_shell envelope.
+    let mut all_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    all_descendants.extend(interaction_descendants);
+    all_descendants.extend(action_row_descendants);
+    all_descendants.extend(form_descendants);
+
+    let (root, nodes) = form_shell(
+        "interaction-form-root",
+        heading,
+        back_button,
+        form_child,
+        all_descendants,
+    );
 
     let data = serde_json::json!({
         "interactionForm": {
@@ -147,7 +182,7 @@ pub async fn handle_interaction_form(ctx: HandlerContext) -> ActionResult {
         ProtocolMessage::Render(RenderMessage {
             id: ctx.action.id.clone(),
             surface: "content".into(),
-            root: "interaction-form-root".into(),
+            root,
             nodes,
             data,
         }),
@@ -180,23 +215,41 @@ fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
 }
 
 /// Handle the `interaction_save` action: validate, insert, audit, and re-render contact form.
+///
+/// Phase 15 Plan 04 D-D1: per-field validation emits `/_errors{bind}` patches
+/// via `validation_error_patch` instead of form-level `BadPayload` toasts. The
+/// `interaction_type` allowlist stays server-authoritative (T-15-03-PLAN04-a
+/// mitigation — RadioGroup is UX-only; a malicious client could send arbitrary
+/// strings, so the server must still validate).
 pub async fn handle_interaction_save(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
     let session = Session::from_context(&ctx)?;
     let payload = Payload::<InteractionSavePayload>::from_context(&ctx)?;
     let data = payload.0.interaction_form;
 
-    // Validate required fields
+    // PHASE 15 D-D1 — per-field validation. Collect top-to-bottom in form
+    // field display order (type, subject, date) per 15-RESEARCH Pitfall #1.
+    let mut errors: Vec<(String, String)> = Vec::new();
+    if !["call", "email", "meeting"].contains(&data.interaction_type.as_str()) {
+        errors.push((
+            "/interactionForm/interaction_type".into(),
+            "Choose one of the listed options.".into(),
+        ));
+    }
     if data.subject.trim().is_empty() {
-        return Err(ActionError::BadPayload("Subject is required".into()));
+        errors.push((
+            "/interactionForm/subject".into(),
+            "Subject is required.".into(),
+        ));
     }
     if data.date.trim().is_empty() {
-        return Err(ActionError::BadPayload("Date is required".into()));
-    }
-    if !["call", "email", "meeting"].contains(&data.interaction_type.as_str()) {
-        return Err(ActionError::BadPayload(
-            "Type must be call, email, or meeting".into(),
+        errors.push((
+            "/interactionForm/date".into(),
+            "Date is required.".into(),
         ));
+    }
+    if !errors.is_empty() {
+        return Ok(vec![validation_error_patch("content", errors)]);
     }
 
     let caller_id: i32 = session
@@ -276,10 +329,13 @@ mod tests {
             THIS_FILE.contains("RadioGroup::new(\"Type\""),
             "expected RadioGroup::new(\"Type\", ...) in interaction.rs"
         );
-        // Old Select::new must be gone from the type field.
+        // Old type-select Select construction must be gone.
+        // Look for the Phase 14 Select::new literal wrapper "Type" to
+        // differentiate from the RadioGroup construction — they share the
+        // "Type" label but diverge on the builder name.
         assert!(
-            !THIS_FILE.contains("let type_select = Select::new"),
-            "old type_select Select::new must be removed"
+            !THIS_FILE.contains("Select::new(\n        \"Type\","),
+            "old Select::new(\"Type\", ...) construction must be removed"
         );
     }
 
