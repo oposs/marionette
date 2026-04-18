@@ -82,21 +82,22 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 	// Connect WebSocket and route messages through the dispatcher
 	connect(wsUrl, handleMessage);
 
-	// E2E test hook: expose sendAction on window so Playwright tests can
-	// dispatch protocol actions programmatically (Phase 12 Plan 08's D-A6
-	// focus-preservation test needs to trigger `contact_country_change`
-	// WITHOUT moving keyboard focus off the currently-focused text input).
-	// This is a narrow, intentional test-only surface and is safe in
-	// production: anything an attacker can do via `window.__mrnSendAction`
-	// they can already do by crafting a raw WebSocket ActionMessage.
-	if (typeof window !== 'undefined') {
+	// E2E / UAT test hooks: expose sendAction + setData on window so Playwright
+	// tests and the Chrome UAT driver can dispatch protocol actions and
+	// synthesize `/_errors/{bind}` patches programmatically.
+	//
+	// Phase 15 D-G1 — gate the assignments behind
+	// `import.meta.env.DEV`. Vite tree-shakes the entire `if` block at
+	// production build time (Rollup's DCE pass recognises the literal
+	// `import.meta.env.DEV` constant inlined to `false`), so the hooks
+	// disappear from the final bundle. UAT + E2E tests run under
+	// `vite dev` where DEV is true, so the hooks remain available for
+	// test drivers. Keeping both hook assignments inside the same outer
+	// `if` — do NOT gate each hook separately — lets the dead-code
+	// elimination strip the whole block.
+	if (typeof window !== 'undefined' && import.meta.env.DEV) {
 		(window as unknown as { __mrnSendAction: typeof sendAction }).__mrnSendAction =
 			sendAction;
-		// Phase 14 Plan 08 UAT hook: expose setData so the Chrome/Playwright
-		// UAT can synthesize `/_errors/{bind}` entries to verify the Field
-		// anatomy renders the Field.Error slot. Same safety argument as
-		// __mrnSendAction — anything an attacker can do via this hook they
-		// can already do by crafting a raw WebSocket PatchMessage.
 		(window as unknown as { __mrnSetData: typeof setData }).__mrnSetData =
 			setData;
 	}

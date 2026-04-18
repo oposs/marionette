@@ -1,7 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-// @ts-expect-error — node:fs resolves under Playwright runtime but not in svelte-check (same pattern as tests/e2e/ci-guards.spec.ts; tracked in deferred-items.md)
 import * as fs from 'node:fs';
-// @ts-expect-error — node:path resolves under Playwright runtime but not in svelte-check
 import * as path from 'node:path';
 const cwd = (globalThis as { process?: { cwd(): string } }).process?.cwd() ?? '.';
 
