@@ -1,0 +1,8 @@
+{
+  "scenario": "empty note submit",
+  "expected_error_path": "/_errors/noteForm/text",
+  "observed_errors": [
+    "Note cannot be empty."
+  ],
+  "passed": true
+}

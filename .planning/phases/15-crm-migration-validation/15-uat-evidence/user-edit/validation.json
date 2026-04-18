@@ -1,0 +1,8 @@
+{
+  "scenario": "submit with empty Name",
+  "expected_error_path": "/_errors/userForm/name",
+  "observed_errors": [
+    "Name is required."
+  ],
+  "passed": true
+}
