@@ -545,3 +545,74 @@ pub async fn handle_company_delete(ctx: HandlerContext) -> ActionResult {
     // Re-render the list
     render_company_list(&ctx).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Phase 15 D-D1 / T-15-03-PLAN03-a: required-field validation pushes
+    /// a `/companyForm/name` error when name is empty or whitespace.
+    #[test]
+    fn collect_company_save_errors_flags_empty_name() {
+        let errors = collect_company_save_errors("", Some("https://ex.com"), None);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/companyForm/name");
+        assert_eq!(errors[0].1, "Name is required.");
+
+        let errors_ws = collect_company_save_errors("   ", None, None);
+        assert_eq!(errors_ws.len(), 1, "whitespace-only name should fail");
+        assert_eq!(errors_ws[0].0, "/companyForm/name");
+    }
+
+    /// Phase 15 D-D1: website URL prefix check is enforced when a
+    /// non-empty string is supplied; empty / None are permitted.
+    #[test]
+    fn collect_company_save_errors_flags_bad_website() {
+        let errors = collect_company_save_errors("Acme", Some("acme.com"), None);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/companyForm/website");
+        assert!(errors[0].1.contains("http://"));
+        assert!(errors[0].1.contains("https://"));
+
+        // Empty website string OK.
+        assert!(
+            collect_company_save_errors("Acme", Some(""), None).is_empty(),
+            "empty website should not produce an error"
+        );
+        // None OK.
+        assert!(
+            collect_company_save_errors("Acme", None, None).is_empty(),
+            "missing website should not produce an error"
+        );
+        // http:// OK.
+        assert!(
+            collect_company_save_errors("Acme", Some("http://ex.com"), None).is_empty()
+        );
+        // https:// OK.
+        assert!(
+            collect_company_save_errors("Acme", Some("https://ex.com"), None).is_empty()
+        );
+    }
+
+    /// Phase 15 D-D1: multiple invalid fields are reported together in
+    /// form-display order (name first, then website).
+    #[test]
+    fn collect_company_save_errors_preserves_field_order() {
+        let errors = collect_company_save_errors("", Some("not-a-url"), None);
+        assert_eq!(errors.len(), 2);
+        assert_eq!(errors[0].0, "/companyForm/name");
+        assert_eq!(errors[1].0, "/companyForm/website");
+    }
+
+    /// Phase 15 D-D1: valid inputs return an empty vec — the caller short-
+    /// circuits and proceeds to DB write.
+    #[test]
+    fn collect_company_save_errors_valid_input_empty() {
+        let errors = collect_company_save_errors(
+            "Acme",
+            Some("https://acme.example"),
+            Some("1 Market St"),
+        );
+        assert!(errors.is_empty());
+    }
+}
