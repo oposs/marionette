@@ -40,7 +40,7 @@ pub struct TextInput {
     pub description: Option<String>,
     /// When `true`, the field's `Field.Field` wrapper spans every column of
     /// its parent `FieldSet` grid (Phase 14 D-C4). Used for long-text or
-    /// full-width fields inside a 2-col FieldSet.
+    /// full-width fields inside a 2-col `FieldSet`.
     #[builder(optional)]
     pub full_width: Option<bool>,
 }
@@ -52,11 +52,11 @@ pub struct SelectOption {
     pub label: String,
 }
 
-/// Option entry for a RadioGroup component (Phase 14 D-E4).
+/// Option entry for a `RadioGroup` component (Phase 14 D-E4).
 ///
 /// Mirrors `SelectOption` but adds an optional per-option `description`
 /// rendered as 12px muted text beneath the option label (14-UI-SPEC.md
-/// §Component Visual Contracts — RadioGroup). When `description` is
+/// §Component Visual Contracts — `RadioGroup`). When `description` is
 /// `None`, serde omits the key entirely via `skip_serializing_if`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RadioOption {
@@ -91,7 +91,7 @@ pub struct Select {
     pub description: Option<String>,
     /// When `true`, the field's `Field.Field` wrapper spans every column of
     /// its parent `FieldSet` grid (Phase 14 D-C4). Used for Select fields
-    /// that should take the full FieldSet row.
+    /// that should take the full `FieldSet` row.
     #[builder(optional)]
     pub full_width: Option<bool>,
 }
@@ -110,7 +110,7 @@ pub struct Checkbox {
     pub description: Option<String>,
     /// When `true`, the field's `Field.Field` wrapper spans every column
     /// of its parent `FieldSet` grid (Phase 14 D-C4). Used for consent
-    /// checkboxes that should take the full FieldSet row.
+    /// checkboxes that should take the full `FieldSet` row.
     #[builder(optional)]
     pub full_width: Option<bool>,
 }
@@ -220,7 +220,7 @@ pub struct Textarea {
     pub description: Option<String>,
     /// When `true`, the field's `Field.Field` wrapper spans every column of
     /// its parent `FieldSet` grid (Phase 14 D-C4). Long-text fields typically
-    /// take the full row inside a 2-col FieldSet.
+    /// take the full row inside a 2-col `FieldSet`.
     #[builder(optional)]
     pub full_width: Option<bool>,
 }

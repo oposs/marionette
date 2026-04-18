@@ -599,6 +599,34 @@ Per-field and form-level errors both flow through the data store via JSON Pointe
 
 Servers clear errors by patching the path to an empty string / empty array. There is no client-side validation — every error message is server-authoritative and flows through the standard patch mechanism.
 
+#### Worked example: multi-field validation on form submit
+
+A handler receiving an invalid form payload returns a single `PatchMessage`
+with one `SetData` op per invalid field, targeting the form's surface. The
+frontend's `Field.Error` anatomy picks up each entry and renders it inline
+below the bound control.
+
+```json
+{
+  "type": "patch",
+  "surface": "content",
+  "patch": [
+    { "op": "set", "path": "/_errors/contactForm/name",  "value": "Contact name is required." },
+    { "op": "set", "path": "/_errors/contactForm/email", "value": "Please enter a valid email address." }
+  ]
+}
+```
+
+The save handler that produced this patch returns `Ok(vec![patch])` — NOT
+`Err(ActionError::BadPayload)`. `ErrorMessage` is reserved for protocol-level
+failures (malformed action payload, unknown surface, server crash, auth
+failure). Field-level validation is data, and flows through the normal patch
+channel.
+
+When the user fixes the offending fields and resubmits, the next success
+render replaces the surface data wholesale, clearing any prior `_errors`.
+The handler does not need to emit "clear error" patches explicitly.
+
 ## Data Binding
 
 Components bind to application data using JSON Pointer paths ([RFC 6901](https://datatracker.ietf.org/doc/html/rfc6901)).
@@ -799,24 +827,6 @@ errors:
 ```
 
 An `ErrorMessage` contains an `errors` array. Each entry has a required `message` (human-readable) and an optional `path` (JSON Pointer to the relevant data location).
-
-### Validation Errors as Data
-
-**Field-level validation errors are data patches**, not error messages. The server patches error information into the data model, and components bind to it. This keeps validation state in the reactive data flow.
-
-```yaml
-# Server patches validation errors into data:
-type: patch
-patch:
-  - path: "/contactForm/errors"
-    value:
-      - path: "/contactForm/data/email"
-        message: "Invalid email address"
-      - path: "/contactForm/data/phone"
-        message: "Phone number must include country code"
-```
-
-A component bound to `/contactForm/errors` displays these errors inline. When the user corrects the fields and resubmits, the server either patches the errors to an empty array (valid) or patches new errors (still invalid).
 
 ### When to Use Which
 

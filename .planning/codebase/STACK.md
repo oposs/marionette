@@ -44,7 +44,7 @@
 - `@sveltejs/kit 2.55` with `@sveltejs/adapter-static 3.0` - SPA mode, outputs to `frontend/build/`
 - `vite 7.0` with `@tailwindcss/vite 4.2` plugin
 - `tailwindcss 4.2` - Utility CSS
-- `flowbite-svelte 1.31` + `flowbite-svelte-icons 3.1` - UI component library
+- `shadcn-svelte 1.2.7` + `bits-ui 2.17.3` + `@lucide/svelte 1.8.0` - UI component library
 
 **Frontend Routing:**
 - Custom Marionette router in `frontend/src/lib/routing/router.svelte.ts` (server-driven)

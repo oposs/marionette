@@ -257,7 +257,7 @@ The protocol is the transport. Applications add state as needed.
 
 **The protocol** is universal — it defines *how* backends and frontends communicate (Components, Data, Messages). Anyone can build a frontend library following this methodology.
 
-**A frontend library** implements the protocol with a specific component vocabulary. Think of it like a UI toolkit: base components (text-input, data-table, modal) that your application uses. Different libraries exist for different platforms — web with Flowbite, mobile with native widgets, TV with remote-friendly controls.
+**A frontend library** implements the protocol with a specific component vocabulary. Think of it like a UI toolkit: base components (text-input, data-table, modal) that your application uses. Different libraries exist for different platforms — web with shadcn-svelte, mobile with native widgets, TV with remote-friendly controls.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -265,7 +265,7 @@ The protocol is the transport. Applications add state as needed.
 │         (Components, Data, Messages patterns)           │
 ├─────────────────┬─────────────────┬─────────────────────┤
 │  Web Library    │ Mobile Library  │   TV Library        │
-│  (Flowbite)     │ (Native)        │   (Remote-friendly) │
+│ (shadcn-svelte) │ (Native)        │   (Remote-friendly) │
 │                 │                 │                     │
 │  text-input     │  text-field     │   focusable-input   │
 │  data-table     │  list-view      │   scrollable-list   │
@@ -627,7 +627,7 @@ spec/
     message.yaml
 ```
 
-### Phase 2: Marionette Frontend (Svelte 5 + Flowbite)
+### Phase 2: Marionette Frontend (Svelte 5 + shadcn-svelte)
 
 The "smart puppet" — renders whatever the backend sends, binds data reactively, sends actions on interaction.
 

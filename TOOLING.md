@@ -36,7 +36,7 @@ This is a web application with a Rust backend and Svelte frontend.
 ## Frontend (Svelte)
 
 - **Svelte 5** - Modern reactive UI framework
-- **Flowbite Svelte** - Tailwind CSS component library
+- **shadcn-svelte** - Tailwind CSS + bits-ui component library
 
 ## Development Approach
 
