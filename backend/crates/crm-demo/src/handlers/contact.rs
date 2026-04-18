@@ -7,11 +7,12 @@ use sea_orm::{
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, ColumnKind, Container, DataTable, FieldSeparator, FieldSet, Filter, Form, Heading,
-    Select, SelectOption, Switch, TableColumn, Text, Textarea, TextInput,
+    form_shell, Button, ColumnKind, Container, DataTable, FieldSeparator, FieldSet, Filter, Form,
+    Heading, Select, SelectOption, Switch, TableColumn, Text, Textarea, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
+use marionette::validation::validation_error_patch;
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
 use crate::entities::{company, contact, contact_tag, interaction, listmonk_sync, note, tag, user};
@@ -657,11 +658,18 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         ])
         .build_tree();
 
-    let mut all_nodes = Vec::new();
+    // PHASE 15 D-B2 — envelope refactor to form_shell().
+    //
+    // The form envelope (heading + back_button + form_child) is compressed
+    // via form_shell(). Tail sections — tags, notes list, interactions
+    // timeline, listmonk sync, mailing history — are collected in
+    // `tail_children` (as container children) and `extra_descendants` (as
+    // descendants that must land in the final nodes HashMap). After
+    // form_shell builds the core 3-child container, we splice the tail
+    // children onto its children list and merge their descendants into
+    // the nodes map. Structural output is identical to Phase 14.
+    let mut tail_children: Vec<(String, marionette_protocol::Component)> = Vec::new();
     let mut extra_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
-    all_nodes.push(heading);
-    all_nodes.push(back_button);
-    all_nodes.push(form_child);
     extra_descendants.extend(contact_info_descendants);
     extra_descendants.extend(organisation_descendants);
     extra_descendants.extend(preferences_descendants);
@@ -676,7 +684,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         let tags_heading = Heading::new("Tags")
             .id("tags-heading")
             .build();
-        all_nodes.push(tags_heading);
+        tail_children.push(tags_heading);
 
         // Load current tags for this contact
         let ct_rows = contact_tag::Entity::find()
@@ -704,26 +712,34 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     .id(&format!("tag-remove-{}", ct.contact_tag_tag))
                     .action(action)
                     .build();
-                all_nodes.push(remove_btn);
+                tail_children.push(remove_btn);
             }
         }
 
-        // Add-tag form: text input + submit button wrapped in a Form
-        let tag_input = TextInput::new("Add tag...")
+        // Add-tag form (Phase 15 — 15-UI-SPEC §5): Container wrapper
+        // class "flex gap-2 items-end" + "+ Add tag" label.
+        let tag_input = TextInput::new("Add tag")
             .id("tag-input")
             .bind("/tagForm/name")
             .build();
 
-        let tag_submit = Button::new("Add Tag")
+        let tag_submit = Button::new("+ Add tag")
             .id("tag-add")
             .action(ComponentAction::submit("contact_tag_save"))
             .build();
 
-        let (tag_form_child, tag_form_descendants) = Form::new()
-            .id("tag-form")
+        let (tag_row, tag_row_descendants) = Container::new()
+            .id("tag-form-row")
+            .class("flex gap-2 items-end")
             .children(vec![tag_input, tag_submit])
             .build_tree();
-        all_nodes.push(tag_form_child);
+
+        let (tag_form_child, tag_form_descendants) = Form::new()
+            .id("tag-form")
+            .children(vec![tag_row])
+            .build_tree();
+        tail_children.push(tag_form_child);
+        extra_descendants.extend(tag_row_descendants);
         extra_descendants.extend(tag_form_descendants);
 
         // --- Notes section ---
@@ -738,24 +754,35 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         let notes_heading = Heading::new("Notes")
             .id("notes-heading")
             .build();
-        all_nodes.push(notes_heading);
+        tail_children.push(notes_heading);
 
-        // Add-note form: text input + submit button wrapped in a Form
-        let note_input = TextInput::new("Add a note...")
+        // Add-note form (Phase 15 — 15-UI-SPEC §6): Textarea (upgraded
+        // from TextInput) + Container wrapper class
+        // "flex flex-col gap-2 items-end" + "+ Add note" label.
+        let note_input = Textarea::new("Add note")
             .id("note-input")
             .bind("/noteForm/text")
+            .rows(3u32)
+            .placeholder("Leave a note about this contact…")
             .build();
 
-        let note_submit = Button::new("Add Note")
+        let note_submit = Button::new("+ Add note")
             .id("note-submit")
             .action(ComponentAction::submit("note_save"))
             .build();
 
-        let (note_form_child, note_form_descendants) = Form::new()
-            .id("note-form")
+        let (note_row, note_row_descendants) = Container::new()
+            .id("note-form-row")
+            .class("flex flex-col gap-2 items-end")
             .children(vec![note_input, note_submit])
             .build_tree();
-        all_nodes.push(note_form_child);
+
+        let (note_form_child, note_form_descendants) = Form::new()
+            .id("note-form")
+            .children(vec![note_row])
+            .build_tree();
+        tail_children.push(note_form_child);
+        extra_descendants.extend(note_row_descendants);
         extra_descendants.extend(note_form_descendants);
 
         // Render existing notes as Text components
@@ -775,7 +802,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             let note_component = Text::new(&note_text)
                 .id(&format!("note-{}", n.note_id))
                 .build();
-            all_nodes.push(note_component);
+            tail_children.push(note_component);
         }
 
         // --- Interactions timeline section ---
@@ -803,7 +830,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         let interactions_heading = Heading::new("Interactions")
             .id("interaction-timeline-heading")
             .build();
-        all_nodes.push(interactions_heading);
+        tail_children.push(interactions_heading);
 
         // "Log Interaction" button with contact_id payload
         let mut log_action = ComponentAction::click("interaction_form");
@@ -815,7 +842,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .id("btn-log-interaction")
             .action(log_action)
             .build();
-        all_nodes.push(log_interaction_btn);
+        tail_children.push(log_interaction_btn);
 
         // Build interaction timeline as a DataTable
         let timeline_table = DataTable::new(vec![
@@ -853,7 +880,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         .id("interaction-timeline")
         .bind("/interactions")
         .build();
-        all_nodes.push(timeline_table);
+        tail_children.push(timeline_table);
 
         let interaction_rows: Vec<serde_json::Value> = interactions
             .iter()
@@ -888,7 +915,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         let sync_heading = Heading::new("Listmonk Sync")
             .id("sync-heading")
             .build();
-        all_nodes.push(sync_heading);
+        tail_children.push(sync_heading);
 
         let status_text = match &sync_record {
             Some(s) if s.listmonk_sync_status == "success" => format!(
@@ -906,7 +933,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         let sync_status = Text::new(&status_text)
             .id("sync-status")
             .build();
-        all_nodes.push(sync_status);
+        tail_children.push(sync_status);
 
         let mut sync_action = ComponentAction::click("listmonk_sync");
         sync_action.extra.insert(
@@ -917,13 +944,13 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .id("btn-sync")
             .action(sync_action)
             .build();
-        all_nodes.push(sync_button);
+        tail_children.push(sync_button);
 
         // --- Mailing History section ---
         let history_heading = Heading::new("Mailing History")
             .id("history-heading")
             .build();
-        all_nodes.push(history_heading);
+        tail_children.push(history_heading);
 
         let history_data = super::listmonk::get_cached_or_fetch_history(&*db.0, cid).await?;
         let has_history = history_data
@@ -940,7 +967,7 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .id("btn-refresh-history")
             .action(refresh_action)
             .build();
-        all_nodes.push(refresh_button);
+        tail_children.push(refresh_button);
 
         if has_history {
             let history_table = DataTable::new(vec![
@@ -966,12 +993,12 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .id("history-table")
             .bind("/mailingHistory")
             .build();
-            all_nodes.push(history_table);
+            tail_children.push(history_table);
         } else {
             let no_history = Text::new("No mailing history available. Sync contact first, then check back.")
                 .id("no-history")
                 .build();
-            all_nodes.push(no_history);
+            tail_children.push(no_history);
         }
 
         // Merge tagForm, noteForm, interactions, and mailingHistory data with contact_id
@@ -989,24 +1016,45 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
         }
     }
 
-    let container_nodes = Container::new()
-        .id("contact-form-root")
-        .children(all_nodes)
-        .build_with_children();
+    // PHASE 15 D-B2 — envelope via form_shell.
+    //
+    // form_shell builds the outer Container with children
+    // [heading, back_button, form_child]. To preserve Phase 14 visual
+    // behavior, we then:
+    //   (a) splice the `tail_children` IDs onto the root container's
+    //       children list so they render in the same order as before;
+    //   (b) merge each tail child's (id, component) into the returned
+    //       `nodes` HashMap so they resolve when the frontend walks the
+    //       adjacency list.
+    let (root, mut nodes) = form_shell(
+        "contact-form-root",
+        heading,
+        back_button,
+        form_child,
+        extra_descendants,
+    );
 
-    let mut nodes = HashMap::new();
-    for (id, component) in container_nodes {
-        nodes.insert(id, component);
-    }
-    for (id, component) in extra_descendants {
-        nodes.insert(id, component);
+    if !tail_children.is_empty() {
+        // Append tail ids onto the root container's children list.
+        if let Some(container) = nodes.get_mut(&root) {
+            let tail_ids: Vec<String> =
+                tail_children.iter().map(|(id, _)| id.clone()).collect();
+            match &mut container.children {
+                Some(existing) => existing.extend(tail_ids),
+                None => container.children = Some(tail_ids),
+            }
+        }
+        // Register each tail child in the nodes map.
+        for (id, component) in tail_children {
+            nodes.insert(id, component);
+        }
     }
 
     Ok(vec![
         ProtocolMessage::Render(RenderMessage {
             id: ctx.action.id.clone(),
             surface: "content".into(),
-            root: "contact-form-root".into(),
+            root,
             nodes,
             data: merged_data,
         }),
@@ -1045,19 +1093,29 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
     let payload = Payload::<ContactSavePayload>::from_context(&ctx)?;
     let data = payload.0.contact_form;
 
-    // Validate required fields
+    // PHASE 15 D-D1 — per-field validation via /_errors{bind} patches.
+    // Collect top-to-bottom in form field display order (name, email)
+    // per 15-RESEARCH Pitfall #1.
+    let mut errors: Vec<(String, String)> = Vec::new();
     if data.name.trim().is_empty() {
-        return Err(ActionError::BadPayload(
-            "Contact name is required".into(),
+        errors.push((
+            "/contactForm/name".into(),
+            "Contact name is required.".into(),
         ));
     }
     if data.email.trim().is_empty() {
-        return Err(ActionError::BadPayload("Email is required".into()));
-    }
-    if !data.email.contains('@') {
-        return Err(ActionError::BadPayload(
-            "Invalid email format".into(),
+        errors.push((
+            "/contactForm/email".into(),
+            "Email is required.".into(),
         ));
+    } else if !data.email.contains('@') {
+        errors.push((
+            "/contactForm/email".into(),
+            "Enter a valid email address.".into(),
+        ));
+    }
+    if !errors.is_empty() {
+        return Ok(vec![validation_error_patch("content", errors)]);
     }
 
     // Parse optional company FK
@@ -1318,7 +1376,16 @@ pub async fn handle_contact_tag_save(ctx: HandlerContext) -> ActionResult {
 
     let tag_name = data.name.trim().to_owned();
     if tag_name.is_empty() {
-        return Err(ActionError::BadPayload("Tag name is required".into()));
+        // PHASE 15 D-D1 — per-field /_errors/tagForm/name patch instead of
+        // form-level BadPayload toast. Matches tag_input.bind("/tagForm/name")
+        // in the inline tag-add form.
+        return Ok(vec![validation_error_patch(
+            "content",
+            vec![(
+                "/tagForm/name".to_string(),
+                "Tag name is required.".to_string(),
+            )],
+        )]);
     }
 
     let tag_id = find_or_create_tag(&*db.0, &tag_name).await?;

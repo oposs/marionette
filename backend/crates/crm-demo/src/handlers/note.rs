@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
+use marionette::validation::validation_error_patch;
 use marionette_protocol::messages::ActionMessage;
 
 use crate::entities::note;
@@ -30,9 +31,18 @@ pub async fn handle_note_save(ctx: HandlerContext) -> ActionResult {
     let payload = Payload::<NoteSavePayload>::from_context(&ctx)?;
     let data = payload.0.note_form;
 
-    // Validate text is not empty
+    // PHASE 15 D-D1 — per-field /_errors/noteForm/text patch on empty body
+    // (replaces form-level BadPayload toast). Bind path matches the
+    // Textarea.bind("/noteForm/text") in the inline note-add form in
+    // contact.rs (and the company.rs note-add form owned by Plan 03).
     if data.text.trim().is_empty() {
-        return Err(ActionError::BadPayload("Note text is required".into()));
+        return Ok(vec![validation_error_patch(
+            "content",
+            vec![(
+                "/noteForm/text".to_string(),
+                "Note cannot be empty.".to_string(),
+            )],
+        )]);
     }
 
     // Validate exactly one of contact_id or company_id is provided
