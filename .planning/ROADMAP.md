@@ -144,7 +144,15 @@ Plans:
   1. All CRM screens (login, companies, contacts, interactions, audit log) render and function correctly
   2. Zero Flowbite references remain anywhere in the codebase (grep confirms clean break)
   3. CRM navigation, CRUD operations, search/filtering, and Listmonk integration all work as before
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 15-01-PLAN.md — Contact schema extension (country/notes/opt_in) + persistence + integration test
+- [ ] 15-02-PLAN.md — form_shell() + validation_error_patch() helpers with unit tests
+- [ ] 15-03-PLAN.md — Handler sweep A: company + user edit forms (FieldSet, RadioGroup, validation rewiring)
+- [ ] 15-04-PLAN.md — Handler sweep B: interaction + contact inline/refactor + note/tag save validation
+- [ ] 15-05-PLAN.md — Scope-closure bundle (D-G1 dev-gate, D-G2 Form.svelte payload, D-G3 Button builder, D-G4 node: prefix)
+- [ ] 15-06-PLAN.md — Flowbite CI guard + doc brand-voice sweep + PROTOCOL.md validation surgery
+- [ ] 15-07-PLAN.md — E2E specs + visual rebaseline + Chrome-MCP/Playwright UAT per screen + phase-gate
 **UI hint**: yes
 
 ## Progress
@@ -168,7 +176,7 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
 | 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
 | 14. FormScreen Enhancements | v1.1 | 8/8 | Complete    | 2026-04-18 |
-| 15. CRM Migration & Validation | v1.1 | 0/0 | Not started | - |
+| 15. CRM Migration & Validation | v1.1 | 0/7 | Planned | - |
 
 ---
 *Created: 2026-01-24*
