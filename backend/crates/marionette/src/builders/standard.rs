@@ -1257,4 +1257,50 @@ mod tests {
         let props = component.props.unwrap();
         assert!(props.get("source").is_none() || props["source"].is_null());
     }
+
+    #[test]
+    fn form_shell_assembles_container_with_heading_back_form() {
+        let heading = Heading::new("Edit Company")
+            .id("company-form-heading")
+            .build();
+        let back_button = Button::new("← Back")
+            .id("company-form-back")
+            .variant("outline")
+            .action(marionette_protocol::ComponentAction::click("company_list"))
+            .build();
+        // A minimal Form with no children — build_tree returns the root tuple
+        // plus an empty descendants vec.
+        let (form_child, form_descendants) = Form::new().id("company-form").build_tree();
+
+        let (root_id, nodes) = form_shell(
+            "company-form-root",
+            heading,
+            back_button,
+            form_child,
+            form_descendants,
+        );
+
+        assert_eq!(root_id, "company-form-root");
+
+        // Nodes must include the root container, heading, back button, and form child.
+        assert!(nodes.contains_key("company-form-root"));
+        assert!(nodes.contains_key("company-form-heading"));
+        assert!(nodes.contains_key("company-form-back"));
+        assert!(nodes.contains_key("company-form"));
+
+        let container = nodes.get("company-form-root").expect("root container");
+        assert_eq!(container.r#type, "container");
+        let children = container
+            .children
+            .as_ref()
+            .expect("container has children");
+        assert_eq!(
+            children,
+            &vec![
+                "company-form-heading".to_string(),
+                "company-form-back".to_string(),
+                "company-form".to_string()
+            ]
+        );
+    }
 }
