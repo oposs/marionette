@@ -18,6 +18,63 @@
 //! clients to overwrite arbitrary `/_errors/*` entries via crafted
 //! action payloads.
 
+use marionette_protocol::data::PatchOperation;
+use marionette_protocol::messages::PatchMessage;
+use marionette_protocol::ProtocolMessage;
+
+/// Build a `PatchMessage` carrying one `SetData` op per invalid field.
+///
+/// # Arguments
+///
+/// * `surface` — target surface name (e.g., `"content"` for CRM forms).
+/// * `errors` — iterator of `(bind_path, human_message)` tuples.
+///   `bind_path` MUST start with `/` and match the field's existing
+///   `.bind(...)` argument. The helper prefixes it with `/_errors` so
+///   the result lands at `/_errors{bind}` in the surface data store,
+///   which is the path shape `Field.Error` renders from.
+///
+/// # Returns
+///
+/// A single `ProtocolMessage::Patch(PatchMessage)` — wrap in
+/// `Ok(vec![…])` from the caller.
+///
+/// The returned message has `id: None`; `ws.rs::propagate_id` fills
+/// the correlation id when the message is sent.
+///
+/// # Example
+///
+/// ```ignore
+/// use marionette::validation::validation_error_patch;
+///
+/// let errors = vec![
+///     ("/contactForm/name", "Name is required."),
+///     ("/contactForm/email", "Invalid email format."),
+/// ];
+/// let patch = validation_error_patch("content", errors);
+/// // Wrap and return from a save handler:
+/// // return Ok(vec![patch]);
+/// ```
+#[must_use]
+pub fn validation_error_patch<I, B, M>(surface: impl Into<String>, errors: I) -> ProtocolMessage
+where
+    I: IntoIterator<Item = (B, M)>,
+    B: Into<String>,
+    M: Into<String>,
+{
+    let ops: Vec<PatchOperation> = errors
+        .into_iter()
+        .map(|(bind, msg)| PatchOperation::Set {
+            path: format!("/_errors{}", bind.into()),
+            value: serde_json::Value::String(msg.into()),
+        })
+        .collect();
+    ProtocolMessage::Patch(PatchMessage {
+        id: None,
+        surface: surface.into(),
+        patch: ops,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
