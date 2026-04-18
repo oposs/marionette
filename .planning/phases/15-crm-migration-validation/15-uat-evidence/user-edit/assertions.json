@@ -1,0 +1,46 @@
+{
+  "screen": "user-edit",
+  "viewport": {
+    "desktop": [
+      1280,
+      720
+    ],
+    "mobile": [
+      375,
+      800
+    ]
+  },
+  "fieldset_legends": [
+    "Account",
+    "Permissions"
+  ],
+  "field_separator_count": 2,
+  "fields_in_order": [
+    "Name",
+    "Email",
+    "Password",
+    "Role",
+    "Preferred contact method",
+    "Email",
+    "SMS",
+    "Phone"
+  ],
+  "radio_group": {
+    "option_count": 3,
+    "data_states": [
+      "checked",
+      "unchecked",
+      "unchecked"
+    ],
+    "per_option_descriptions": [
+      "Receive updates by email.",
+      "Text messages to your phone.",
+      "A human will call you."
+    ]
+  },
+  "descriptions_present": {
+    "email": "Used for password resets and notifications."
+  },
+  "console_errors": 0,
+  "passed": true
+}

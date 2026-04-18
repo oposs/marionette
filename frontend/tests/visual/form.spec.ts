@@ -77,3 +77,132 @@ test('contact edit form — mobile 375px baseline', async ({ page }) => {
 		maxDiffPixels: 200,
 	});
 });
+
+// -----------------------------------------------------------------------------
+// Phase 15 Plan 07 — Company / User / Interaction edit form baselines.
+//
+// Six new snapshot cases (3 screens × desktop 1280×720 + mobile 375×800)
+// per 15-UI-SPEC §Visual Rebaseline Plan. First-run baselines created via
+// `npx playwright test tests/visual/form.spec.ts --update-snapshots`; lock
+// on a clean second run.
+//
+// The contact-edit baselines above must still match after the Plan 15-04
+// form_shell refactor (D-B2) — any diff there is a regression.
+// -----------------------------------------------------------------------------
+
+async function openCompanyEditForm(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hook = (window as any).__mrnSendAction as
+			| ((
+					name: string,
+					payload?: Record<string, unknown>,
+					source?: string,
+			  ) => void)
+			| undefined;
+		if (!hook) throw new Error('__mrnSendAction hook missing');
+		hook('company_edit', { company_id: 1 }, 'company-edit-1');
+	});
+	await expect(page.getByRole('heading', { name: 'Edit Company' })).toBeVisible({
+		timeout: 5000,
+	});
+}
+
+async function openUserEditForm(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hook = (window as any).__mrnSendAction as
+			| ((
+					name: string,
+					payload?: Record<string, unknown>,
+					source?: string,
+			  ) => void)
+			| undefined;
+		if (!hook) throw new Error('__mrnSendAction hook missing');
+		hook('user_edit', { user_id: 1 }, 'user-edit-1');
+	});
+	await expect(page.getByRole('heading', { name: 'Edit User' })).toBeVisible({
+		timeout: 5000,
+	});
+}
+
+async function openInteractionForm(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const hook = (window as any).__mrnSendAction as
+			| ((
+					name: string,
+					payload?: Record<string, unknown>,
+					source?: string,
+			  ) => void)
+			| undefined;
+		if (!hook) throw new Error('__mrnSendAction hook missing');
+		hook('interaction_form', { contact_id: 1 }, 'interaction-form-1');
+	});
+	await expect(page.getByRole('heading', { name: 'Log Interaction' })).toBeVisible({
+		timeout: 5000,
+	});
+}
+
+test('company edit form — desktop baseline', async ({ page }) => {
+	await loginDemo(page);
+	await openCompanyEditForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('company-edit-form.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});
+
+test('company edit form — mobile 375px baseline', async ({ page }) => {
+	await page.setViewportSize({ width: 375, height: 800 });
+	await loginDemo(page);
+	await openCompanyEditForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('company-edit-form-mobile.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});
+
+test('user edit form — desktop baseline', async ({ page }) => {
+	await loginDemo(page);
+	await openUserEditForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('user-edit-form.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});
+
+test('user edit form — mobile 375px baseline', async ({ page }) => {
+	await page.setViewportSize({ width: 375, height: 800 });
+	await loginDemo(page);
+	await openUserEditForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('user-edit-form-mobile.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});
+
+test('interaction edit form — desktop baseline', async ({ page }) => {
+	await loginDemo(page);
+	await openInteractionForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('interaction-edit-form.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});
+
+test('interaction edit form — mobile 375px baseline', async ({ page }) => {
+	await page.setViewportSize({ width: 375, height: 800 });
+	await loginDemo(page);
+	await openInteractionForm(page);
+	await page.waitForSelector('[data-slot="field"]', { state: 'visible' });
+	await expect(page).toHaveScreenshot('interaction-edit-form-mobile.png', {
+		fullPage: true,
+		maxDiffPixels: 200,
+	});
+});

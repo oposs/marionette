@@ -204,4 +204,107 @@ test.describe('Contact edit form (Phase 14 Plan 08)', () => {
 		});
 		await expect(optInSwitch).toBeVisible();
 	});
+
+	// -------------------------------------------------------------------------
+	// Phase 15 Plan 04 — Inline tag-add + note-add coverage.
+	//
+	// The contact edit view renders two inline forms per 15-UI-SPEC §5/§6:
+	//   - Tag-add: `Container class="flex gap-2 items-end"` wrapping a
+	//     TextInput ("Add tag" / #tag-input) and a primary `+ Add tag`
+	//     button (#tag-add); bind path /tagForm/name; action contact_tag_save.
+	//   - Note-add: `Container class="flex flex-col gap-2 items-end"`
+	//     wrapping a Textarea ("Add note" / #note-input) and a primary
+	//     `+ Add note` button (#note-submit); bind path /noteForm/text;
+	//     action note_save.
+	//
+	// Each inline form emits per-field /_errors{bind} on empty submit (Plan
+	// 04 wired /_errors/tagForm/name and /_errors/noteForm/text into the
+	// respective handlers via validation_error_patch).
+	// -------------------------------------------------------------------------
+
+	test('inline tag-add: "+ Add tag" submits a new tag and renders it', async ({
+		page,
+	}) => {
+		await login(page);
+		await openEditContactForm(page);
+
+		// Unique tag to avoid collisions across test runs / seeded data.
+		const tagValue = `t${Date.now()}`;
+		// Label-scoped locator — component builder `.id("tag-input")` sets
+		// the adjacency-list id, not the HTML input id attribute.
+		const tagInput = page
+			.locator('div[data-slot="field"]:has(label:has-text("Add tag"))')
+			.locator('input')
+			.first();
+		await tagInput.fill(tagValue);
+		await page.getByRole('button', { name: '+ Add tag' }).click();
+
+		// Tag appears in the tag list as a Button labeled with the tag
+		// value + color + a close indicator (the exact format is handler
+		// internal — assert that a button whose accessible name starts
+		// with the tag value exists after re-render).
+		await expect(
+			page.getByRole('button', { name: new RegExp(`^${tagValue}`) }),
+		).toBeVisible({ timeout: 5000 });
+	});
+
+	test('inline tag-add validation: empty submit emits /_errors/tagForm/name Field.Error', async ({
+		page,
+	}) => {
+		await login(page);
+		await openEditContactForm(page);
+
+		const tagInput = page
+			.locator('div[data-slot="field"]:has(label:has-text("Add tag"))')
+			.locator('input')
+			.first();
+		await tagInput.fill('');
+		await page.getByRole('button', { name: '+ Add tag' }).click();
+
+		// The tag-input Field.Field must render a Field.Error with
+		// "required" copy.
+		const error = page
+			.locator('[data-slot="field-error"]')
+			.filter({ hasText: /required/i });
+		await expect(error).toBeVisible({ timeout: 5000 });
+	});
+
+	test('inline note-add: "+ Add note" submits a new note and renders it', async ({
+		page,
+	}) => {
+		await login(page);
+		await openEditContactForm(page);
+
+		const noteValue = `UAT note ${Date.now()}`;
+		// The note input is a Textarea — label "Add note".
+		const noteTextarea = page
+			.locator('div[data-slot="field"]:has(label:has-text("Add note"))')
+			.locator('textarea')
+			.first();
+		await noteTextarea.fill(noteValue);
+		await page.getByRole('button', { name: '+ Add note' }).click();
+
+		// Existing notes render as Text components whose text contains the
+		// submitted body (rendered as "[created_at] author: body").
+		await expect(page.getByText(noteValue)).toBeVisible({ timeout: 5000 });
+	});
+
+	test('inline note-add validation: empty submit emits /_errors/noteForm/text Field.Error', async ({
+		page,
+	}) => {
+		await login(page);
+		await openEditContactForm(page);
+
+		const noteTextarea = page
+			.locator('div[data-slot="field"]:has(label:has-text("Add note"))')
+			.locator('textarea')
+			.first();
+		await noteTextarea.fill('');
+		await page.getByRole('button', { name: '+ Add note' }).click();
+
+		const error = page
+			.locator('[data-slot="field-error"]')
+			.filter({ hasText: /required|empty/i });
+		await expect(error).toBeVisible({ timeout: 5000 });
+	});
 });

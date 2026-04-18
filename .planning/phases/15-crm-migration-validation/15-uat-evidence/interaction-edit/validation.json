@@ -1,0 +1,8 @@
+{
+  "scenario": "submit with empty Subject",
+  "expected_error_path": "/_errors/interactionForm/subject",
+  "observed_errors": [
+    "Subject is required."
+  ],
+  "passed": true
+}
