@@ -479,6 +479,9 @@ mod tests {
             contact_phone: None,
             contact_title: None,
             contact_company: None,
+            contact_country: None,
+            contact_notes: None,
+            contact_opt_in: false,
             contact_created_at: "2026-01-01 00:00:00".into(),
             contact_updated_at: "2026-01-01 00:00:00".into(),
         }

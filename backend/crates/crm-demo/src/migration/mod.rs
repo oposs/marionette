@@ -10,6 +10,7 @@ mod m20260323_000007_create_contact_tag;
 mod m20260323_000008_create_interaction;
 mod m20260323_000009_create_listmonk_sync;
 mod m20260323_000010_create_listmonk_cache;
+mod m20260418_000011_extend_contact;
 
 pub struct Migrator;
 
@@ -27,6 +28,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260323_000008_create_interaction::Migration),
             Box::new(m20260323_000009_create_listmonk_sync::Migration),
             Box::new(m20260323_000010_create_listmonk_cache::Migration),
+            Box::new(m20260418_000011_extend_contact::Migration),
         ]
     }
 }
