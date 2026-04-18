@@ -252,3 +252,110 @@ pub async fn handle_interaction_save(ctx: HandlerContext) -> ActionResult {
     };
     super::contact::handle_contact_form(new_ctx).await
 }
+
+#[cfg(test)]
+mod tests {
+    //! Phase 15 Plan 04 Task 1 — RED/GREEN gates for interaction form migration.
+    //!
+    //! RED gate: assert the expected Phase 15 shape of the interaction
+    //! form (RadioGroup for type, Textarea full_width for notes, FieldSet
+    //! envelope via form_shell, per-field validation_error_patch on save).
+    //!
+    //! The tests use source-level greps over this file rather than calling
+    //! the handlers — crm-demo is a pure binary crate so integration tests
+    //! can't import module-private symbols, and the handlers require a
+    //! full DB + Session context to run end-to-end. Source-grep assertions
+    //! pin the structural contract without that ceremony.
+
+    const THIS_FILE: &str = include_str!("interaction.rs");
+
+    #[test]
+    fn interaction_form_uses_radio_group_for_type() {
+        // D-E1: type field migrated from Select to RadioGroup.
+        assert!(
+            THIS_FILE.contains("RadioGroup::new(\"Type\""),
+            "expected RadioGroup::new(\"Type\", ...) in interaction.rs"
+        );
+        // Old Select::new must be gone from the type field.
+        assert!(
+            !THIS_FILE.contains("let type_select = Select::new"),
+            "old type_select Select::new must be removed"
+        );
+    }
+
+    #[test]
+    fn interaction_form_uses_textarea_full_width_for_notes() {
+        // 15-UI-SPEC §Textarea full_width Contract.
+        assert!(
+            THIS_FILE.contains("Textarea::new(\"Notes\")"),
+            "expected Textarea::new(\"Notes\") in interaction.rs"
+        );
+        assert!(
+            THIS_FILE.contains(".full_width(true)"),
+            "expected .full_width(true) on notes textarea"
+        );
+    }
+
+    #[test]
+    fn interaction_form_uses_fieldset_and_form_shell() {
+        // 15-UI-SPEC §Per-Screen §3.
+        assert!(
+            THIS_FILE.contains("FieldSet::new()"),
+            "expected FieldSet::new() envelope in interaction.rs"
+        );
+        assert!(
+            THIS_FILE.contains("legend(\"Interaction\")"),
+            "expected FieldSet legend \"Interaction\""
+        );
+        assert!(
+            THIS_FILE.contains("form_shell("),
+            "expected form_shell(...) envelope wiring"
+        );
+    }
+
+    #[test]
+    fn interaction_form_date_carries_locked_description() {
+        // 15-UI-SPEC §Description Copy Contract.
+        // Check via `.description(` call so the assertion text itself
+        // doesn't accidentally satisfy `.contains(...)` (self-reference).
+        assert!(
+            THIS_FILE.contains(".description(\"Format: YYYY-MM-DD HH:MM (24-hour).\")"),
+            "expected .description(\"Format: YYYY-MM-DD HH:MM ...\") on date field"
+        );
+    }
+
+    #[test]
+    fn interaction_save_uses_validation_error_patch() {
+        // D-D1: per-field /_errors{bind} patches on validation failure.
+        assert!(
+            THIS_FILE.contains("validation_error_patch("),
+            "expected validation_error_patch(...) in handle_interaction_save"
+        );
+        // Per-field BadPayload branches are replaced.
+        assert!(
+            !THIS_FILE.contains("BadPayload(\"Subject is required"),
+            "old BadPayload(\"Subject is required\") must be replaced"
+        );
+        assert!(
+            !THIS_FILE.contains("BadPayload(\"Date is required"),
+            "old BadPayload(\"Date is required\") must be replaced"
+        );
+        assert!(
+            !THIS_FILE.contains("BadPayload(\n                \"Type must be call"),
+            "old BadPayload(\"Type must be call, email, or meeting\") must be replaced"
+        );
+    }
+
+    #[test]
+    fn interaction_form_save_button_label() {
+        // 15-UI-SPEC §Copywriting — "Save interaction" (sentence case, not "Save Interaction").
+        assert!(
+            THIS_FILE.contains("Button::new(\"Save interaction\")"),
+            "expected Button::new(\"Save interaction\") (sentence case)"
+        );
+        assert!(
+            !THIS_FILE.contains("Button::new(\"Save Interaction\")"),
+            "old \"Save Interaction\" (title case) must be replaced"
+        );
+    }
+}
