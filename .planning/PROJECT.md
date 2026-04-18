@@ -32,6 +32,8 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 
 **Phase 10 complete** (2026-04-09): Foundation — shadcn-svelte initialized, CSS rewritten to OKLCH semantic tokens (Zinc), all Flowbite dependencies removed, 17 components stubbed with HTML+Tailwind
 
+**Phase 14 complete** (2026-04-18): FormScreen enhancements — all form leaves (TextInput/SelectInput/Checkbox/Textarea/RadioGroup/Switch) rewritten with shared Field.Field anatomy, new FieldSet (auto-responsive 2-col grid) + FieldSeparator structural primitives, orphan FormScreen.svelte deleted, CRM contact edit-form migrated to the new composition
+
 **Tech stack:** Rust (Axum, SeaORM, tokio), Svelte 5 (Flowbite, Vite), SQLite, ~53k LOC across 273 files
 
 ## Requirements
@@ -134,4 +136,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-09 after Phase 10 (foundation) completion*
+*Last updated: 2026-04-18 after Phase 14 (formscreen-enhancements) completion*
