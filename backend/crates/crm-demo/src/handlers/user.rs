@@ -4,11 +4,12 @@ use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait, PaginatorTrait};
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, ColumnKind, Container, DataTable, Form, Heading, Select, SelectOption, TableColumn,
-    TextInput,
+    form_shell, Button, ColumnKind, Container, DataTable, FieldSeparator, FieldSet, Form, Heading,
+    RadioGroup, RadioOption, Select, SelectOption, TableColumn, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
+use marionette::validation::validation_error_patch;
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
 use crate::entities::user;
@@ -160,6 +161,13 @@ struct UserFormData {
     email: String,
     password: String,
     role: String,
+    /// Phase 15 D-E2: UI-only demo field. Accepted in the payload so the
+    /// RadioGroup's submitted value deserialises cleanly, but discarded
+    /// server-side — no DB column, no audit entry. A future phase will
+    /// wire persistence if the field graduates out of demo status.
+    #[serde(default)]
+    #[allow(dead_code)]
+    preferred_contact_method: Option<String>,
 }
 
 /// Payload wrapper: the frontend sends all surface data, with form fields
@@ -171,6 +179,23 @@ struct UserSavePayload {
 }
 
 /// Handle the `user_new` / `user_edit` action: render a create/edit form.
+///
+/// PHASE 15 MIGRATION (D-A1 + D-B1 + D-D1 + D-E2 + D-E3): built via
+/// `form_shell()` + two `FieldSet`s (Account, Permissions) separated by
+/// a `FieldSeparator` per 15-UI-SPEC §Per-Screen §2 (5 fields → 2 sets).
+///
+/// - FieldSet "Account" wraps [name, email, password].
+/// - FieldSeparator between the two sets (explicit-node path, Phase 14
+///   D-C2 preference).
+/// - FieldSet "Permissions" wraps [role, preferred_contact_method].
+/// - email TextInput carries the locked description "Used for password
+///   resets and notifications." (D-E3 + §Description Copy Contract).
+/// - preferred_contact_method is a `RadioGroup` with 3 options
+///   (email/sms/phone), each carrying a per-option description from
+///   15-UI-SPEC §Description Copy Contract. Field is UI-only per D-E2 —
+///   the RadioGroup's submitted value is deserialised into
+///   `UserFormData::preferred_contact_method` but discarded
+///   (`#[allow(dead_code)]`).
 pub async fn handle_user_form(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
 
@@ -192,7 +217,8 @@ pub async fn handle_user_form(ctx: HandlerContext) -> ActionResult {
                     "name": found.user_name,
                     "email": found.user_email,
                     "password": "",
-                    "role": found.user_role
+                    "role": found.user_role,
+                    "preferred_contact_method": "email"
                 }
             }),
             "Edit User",
@@ -205,30 +231,60 @@ pub async fn handle_user_form(ctx: HandlerContext) -> ActionResult {
                     "name": "",
                     "email": "",
                     "password": "",
-                    "role": "user"
+                    "role": "user",
+                    "preferred_contact_method": "email"
                 }
             }),
             "New User",
         )
     };
 
+    // -- Heading + back button --
+
     let heading = Heading::new(form_title).id("user-form-heading").build();
+
+    let back_button = Button::new("← Back")
+        .id("user-form-back")
+        .variant("outline")
+        .action(ComponentAction::click("user_list"))
+        .build();
+
+    // -- FieldSet 1: Account --
 
     let name_input = TextInput::new("Name")
         .id("user-form-name")
         .bind("/userForm/name")
+        .required(true)
         .build();
 
     let email_input = TextInput::new("Email")
         .id("user-form-email")
         .bind("/userForm/email")
+        .input_type("email")
+        .required(true)
+        // 15-UI-SPEC §Description Copy Contract (D-E3)
+        .description("Used for password resets and notifications.")
         .build();
 
     let password_input = TextInput::new("Password")
         .id("user-form-password")
-        .input_type("password")
         .bind("/userForm/password")
+        .input_type("password")
         .build();
+
+    let (account_set, account_descendants) = FieldSet::new()
+        .id("user-account-set")
+        .legend("Account")
+        .children(vec![name_input, email_input, password_input])
+        .build_tree();
+
+    // -- Separator between Account and Permissions --
+
+    let separator = FieldSeparator::new()
+        .id("user-form-separator-1")
+        .build();
+
+    // -- FieldSet 2: Permissions --
 
     let role_select = Select::new(
         "Role",
@@ -247,48 +303,86 @@ pub async fn handle_user_form(ctx: HandlerContext) -> ActionResult {
     .bind("/userForm/role")
     .build();
 
-    let save_button = Button::new("Save")
-        .id("user-form-save")
-        .action(ComponentAction::submit("user_save"))
-        .build();
+    // 15-UI-SPEC §RadioGroup Production Contract + §Description Copy
+    // Contract (per-option description strings locked).
+    let preferred_radio = RadioGroup::new(
+        "Preferred contact method",
+        vec![
+            RadioOption {
+                value: "email".into(),
+                label: "Email".into(),
+                description: Some("Receive updates by email.".into()),
+            },
+            RadioOption {
+                value: "sms".into(),
+                label: "SMS".into(),
+                description: Some("Text messages to your phone.".into()),
+            },
+            RadioOption {
+                value: "phone".into(),
+                label: "Phone".into(),
+                description: Some("A human will call you.".into()),
+            },
+        ],
+    )
+    .id("user-form-preferred-contact-method")
+    .bind("/userForm/preferred_contact_method")
+    .build();
+
+    let (permissions_set, permissions_descendants) = FieldSet::new()
+        .id("user-permissions-set")
+        .legend("Permissions")
+        .children(vec![role_select, preferred_radio])
+        .build_tree();
+
+    // -- Action row (D-D1 Option A) --
 
     let cancel_button = Button::new("Cancel")
         .id("user-form-cancel")
+        .variant("outline")
         .action(ComponentAction::click("user_list"))
         .build();
 
-    let (form_child, form_descendants) = Form::new()
-        .id("user-form")
-        .children(vec![
-            name_input,
-            email_input,
-            password_input,
-            role_select,
-            save_button,
-            cancel_button,
-        ])
+    let save_button = Button::new("Save user")
+        .id("user-form-save")
+        .variant("default")
+        .action(ComponentAction::submit("user_save"))
+        .build();
+
+    let (action_row, action_row_descendants) = Container::new()
+        .id("user-form-actions")
+        .class("flex gap-2 justify-end")
+        .children(vec![cancel_button, save_button])
         .build_tree();
 
-    let all_nodes = vec![heading, form_child];
+    // -- Compose the form --
 
-    let container_nodes = Container::new()
-        .id("user-form-root")
-        .children(all_nodes)
-        .build_with_children();
+    let (form_child, form_descendants) = Form::new()
+        .id("user-form")
+        .children(vec![account_set, separator, permissions_set, action_row])
+        .build_tree();
 
-    let mut nodes = HashMap::new();
-    for (id, component) in container_nodes {
-        nodes.insert(id, component);
-    }
-    for (id, component) in form_descendants {
-        nodes.insert(id, component);
-    }
+    let mut all_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    all_descendants.extend(account_descendants);
+    all_descendants.extend(permissions_descendants);
+    all_descendants.extend(action_row_descendants);
+    all_descendants.extend(form_descendants);
+
+    // -- Outer shell via form_shell (D-B1) --
+
+    let (root, nodes) = form_shell(
+        "user-form-root",
+        heading,
+        back_button,
+        form_child,
+        all_descendants,
+    );
 
     Ok(vec![
         ProtocolMessage::Render(RenderMessage {
             id: ctx.action.id.clone(),
             surface: "content".into(),
-            root: "user-form-root".into(),
+            root,
             nodes,
             data: form_data,
         }),
@@ -318,7 +412,87 @@ fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
     })
 }
 
+/// Phase 15 D-D1: Collect per-field validation errors for a user save
+/// payload in form-display order (name → email → password → role).
+/// Returns a flat `Vec<(bind_path, message)>` that the caller feeds into
+/// `validation_error_patch`.
+///
+/// Password rules:
+/// - On create (`id == None`): password required, must be ≥8 chars.
+/// - On edit (`id == Some(_)`): blank password is OK (preserves the
+///   existing hash); non-empty but too-short still fails with the
+///   same "at least 8 characters" copy.
+///
+/// Bind paths are server-derived string literals — T-15-03-PLAN03-b
+/// mitigation (no user input interpolated into bind paths).
+///
+/// `preferred_contact_method` is NOT validated (D-E2 — UI-only demo).
+#[must_use]
+fn collect_user_save_errors(
+    id: Option<i32>,
+    name: &str,
+    email: &str,
+    password: &str,
+    role: &str,
+) -> Vec<(String, String)> {
+    let mut errors: Vec<(String, String)> = Vec::new();
+    if name.trim().is_empty() {
+        errors.push(("/userForm/name".into(), "Name is required.".into()));
+    }
+    if email.trim().is_empty() {
+        errors.push(("/userForm/email".into(), "Email is required.".into()));
+    } else if !email.contains('@') {
+        errors.push((
+            "/userForm/email".into(),
+            "Enter a valid email address.".into(),
+        ));
+    }
+    // Password rules depend on create vs. edit (per existing handler contract).
+    match id {
+        None => {
+            // Create mode — password required.
+            if password.is_empty() {
+                errors.push((
+                    "/userForm/password".into(),
+                    "Password is required.".into(),
+                ));
+            } else if password.len() < 8 {
+                errors.push((
+                    "/userForm/password".into(),
+                    "Password must be at least 8 characters.".into(),
+                ));
+            }
+        }
+        Some(_) => {
+            // Edit mode — blank password preserves existing hash; only
+            // reject too-short non-empty passwords.
+            if !password.is_empty() && password.len() < 8 {
+                errors.push((
+                    "/userForm/password".into(),
+                    "Password must be at least 8 characters.".into(),
+                ));
+            }
+        }
+    }
+    if role != "admin" && role != "user" {
+        errors.push((
+            "/userForm/role".into(),
+            "Choose one of the listed roles (admin or user).".into(),
+        ));
+    }
+    errors
+}
+
 /// Handle the `user_save` action: create or update a user.
+///
+/// PHASE 15 D-D1: per-field validation emits `/_errors/{bind}` patches
+/// via `validation_error_patch()` on the `content` surface instead of
+/// `Err(ActionError::BadPayload(...))`. `ActionError::BadPayload` stays
+/// reserved for protocol-layer failures (JSON parse, missing
+/// `form_bind`) per D-D4.
+///
+/// `preferred_contact_method` (D-E2) is deserialised into `UserFormData`
+/// but discarded — no DB column, no audit entry.
 pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
     use sea_orm::ActiveValue::Set;
 
@@ -327,28 +501,16 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
     let payload = Payload::<UserSavePayload>::from_context(&ctx)?;
     let data = payload.0.user_form;
 
-    // Validate required fields
-    if data.name.trim().is_empty() {
-        return Err(ActionError::BadPayload("Name is required".into()));
-    }
-    if data.email.trim().is_empty() {
-        return Err(ActionError::BadPayload("Email is required".into()));
-    }
-    if data.role != "admin" && data.role != "user" {
-        return Err(ActionError::BadPayload(
-            "Role must be 'admin' or 'user'".into(),
-        ));
+    // Phase 15 D-D1 — per-field validation via /_errors{bind} patches.
+    let errors =
+        collect_user_save_errors(data.id, &data.name, &data.email, &data.password, &data.role);
+    if !errors.is_empty() {
+        return Ok(vec![validation_error_patch("content", errors)]);
     }
 
     match data.id {
         None => {
-            // Create mode: password required and minimum 8 chars
-            if data.password.len() < 8 {
-                return Err(ActionError::BadPayload(
-                    "Password must be at least 8 characters".into(),
-                ));
-            }
-
+            // Create mode: password required and minimum 8 chars (validated above).
             let password = data.password.clone();
             let hash = tokio::task::spawn_blocking(move || bcrypt::hash(password, 10))
                 .await
@@ -407,13 +569,8 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
             active.user_email = Set(data.email.clone());
             active.user_role = Set(data.role.clone());
 
-            // Only update password if provided
+            // Only update password if provided (length already checked above).
             if !data.password.is_empty() {
-                if data.password.len() < 8 {
-                    return Err(ActionError::BadPayload(
-                        "Password must be at least 8 characters".into(),
-                    ));
-                }
                 let password = data.password.clone();
                 let hash = tokio::task::spawn_blocking(move || bcrypt::hash(password, 10))
                     .await
