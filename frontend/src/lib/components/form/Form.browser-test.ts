@@ -37,7 +37,66 @@ test('prevents default submit and dispatches action', async () => {
 	// Dispatch submit event on the form
 	form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
 
+	// Without a `bind` prop the dispatch still fires with an empty object —
+	// the D-G2 wiring only enriches the payload when `bind` is set (see the
+	// dedicated D-G2 test below).
 	expect(sendAction).toHaveBeenCalledWith('save-form', {}, undefined);
+});
+
+// -----------------------------------------------------------------------------
+// Phase 15 Plan 05 (D-G2) — Form.svelte submit now dispatches the collected
+// form values (the subtree at `/bind` in the data store), not an empty `{}`
+// object. This proves the WR-01 fix from Phase 14 review: handlers wired to
+// `Form.action` now receive the actual form payload.
+// -----------------------------------------------------------------------------
+
+test('submit dispatches collected form values when bind is set (D-G2)', async () => {
+	// Seed the data store for the form's surface with the bound subtree.
+	setFullState('test-d-g2', {
+		myForm: { name: 'Alice', email: 'alice@example.com' },
+	});
+
+	const screen = await render(Form, {
+		props: {
+			props: {},
+			surface: 'test-d-g2',
+			bind: '/myForm',
+			action: { type: 'submit', name: 'test_submit', target: 'content' },
+		},
+	});
+
+	const form = screen.baseElement.querySelector('form') as HTMLFormElement;
+	form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+
+	// The dispatch argument shape is `(name, payload, target)` — payload must
+	// be the bound subtree, NOT `{}`.
+	expect(sendAction).toHaveBeenCalledWith(
+		'test_submit',
+		{ name: 'Alice', email: 'alice@example.com' },
+		'content',
+	);
+});
+
+test('submit falls back to {} payload when bind is set but no data exists (D-G2)', async () => {
+	// Surface exists but `bind` points at a path with no data — payload
+	// should be `{}`, not `undefined` (the sendAction contract expects an
+	// object). We seed the surface explicitly (empty) to avoid the
+	// `state_unsafe_mutation` that auto-creating a fresh surface from
+	// inside a `$derived` expression triggers.
+	setFullState('test-d-g2-empty', {});
+	const screen = await render(Form, {
+		props: {
+			props: {},
+			surface: 'test-d-g2-empty',
+			bind: '/missingForm',
+			action: { type: 'submit', name: 'empty_submit' },
+		},
+	});
+
+	const form = screen.baseElement.querySelector('form') as HTMLFormElement;
+	form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true }));
+
+	expect(sendAction).toHaveBeenCalledWith('empty_submit', {}, undefined);
 });
 
 // -----------------------------------------------------------------------------
