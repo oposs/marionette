@@ -1094,6 +1094,9 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
                 contact_phone: Set(data.phone),
                 contact_title: Set(data.title),
                 contact_company: Set(company_id),
+                contact_country: NotSet,
+                contact_notes: NotSet,
+                contact_opt_in: NotSet,
                 contact_created_at: NotSet,
                 contact_updated_at: NotSet,
             };

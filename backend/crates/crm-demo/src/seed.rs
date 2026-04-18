@@ -111,14 +111,50 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
     // Named contacts kept stable so seed_tags/seed_notes/seed_interactions
     // lookups by contact_name continue to work.
     #[allow(clippy::type_complexity)]
-    let named_contacts: Vec<(&str, &str, Option<&str>, Option<&str>, Option<i32>)> = vec![
-        ("Alice Johnson", "alice@acme.example.com", Some("+1-555-0101"), Some("CEO"), acme.as_ref().map(|c| c.company_id)),
-        ("Bob Smith", "bob@globex.example.com", Some("+1-555-0102"), Some("CTO"), globex.as_ref().map(|c| c.company_id)),
-        ("Carol Williams", "carol@example.com", None, Some("Freelancer"), None),
+    let named_contacts: Vec<(
+        &str,
+        &str,
+        Option<&str>,
+        Option<&str>,
+        Option<i32>,
+        Option<&str>,
+        Option<&str>,
+        bool,
+    )> = vec![
+        (
+            "Alice Johnson",
+            "alice@acme.example.com",
+            Some("+1-555-0101"),
+            Some("CEO"),
+            acme.as_ref().map(|c| c.company_id),
+            Some("CH"),
+            Some("Interested in Q2 enterprise tier."),
+            true,
+        ),
+        (
+            "Bob Smith",
+            "bob@globex.example.com",
+            Some("+1-555-0102"),
+            Some("CTO"),
+            globex.as_ref().map(|c| c.company_id),
+            Some("US"),
+            None,
+            false,
+        ),
+        (
+            "Carol Williams",
+            "carol@example.com",
+            None,
+            Some("Freelancer"),
+            None,
+            None,
+            Some("Long-form note: available for contract work starting Q3."),
+            true,
+        ),
     ];
 
     if needs_named_seed {
-        for (name, email, phone, title, company_id) in named_contacts {
+        for (name, email, phone, title, company_id, country, notes, opt_in) in named_contacts {
             let model = contact::ActiveModel {
                 contact_id: NotSet,
                 contact_name: Set(name.into()),
@@ -126,6 +162,9 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
                 contact_phone: Set(phone.map(String::from)),
                 contact_title: Set(title.map(String::from)),
                 contact_company: Set(company_id),
+                contact_country: Set(country.map(String::from)),
+                contact_notes: Set(notes.map(String::from)),
+                contact_opt_in: Set(opt_in),
                 contact_created_at: NotSet,
                 contact_updated_at: NotSet,
             };
@@ -166,6 +205,9 @@ pub async fn seed_contacts(db: &DatabaseConnection) -> Result<(), DbErr> {
             contact_phone: Set(Some(phone)),
             contact_title: Set(Some(title.into())),
             contact_company: Set(company_id),
+            contact_country: Set(None),
+            contact_notes: Set(None),
+            contact_opt_in: Set(false),
             contact_created_at: NotSet,
             contact_updated_at: NotSet,
         };

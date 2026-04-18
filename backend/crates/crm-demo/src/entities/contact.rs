@@ -11,6 +11,9 @@ pub struct Model {
     pub contact_phone: Option<String>,
     pub contact_title: Option<String>,
     pub contact_company: Option<i32>,
+    pub contact_country: Option<String>,
+    pub contact_notes: Option<String>,
+    pub contact_opt_in: bool,
     pub contact_created_at: String,
     pub contact_updated_at: String,
 }
