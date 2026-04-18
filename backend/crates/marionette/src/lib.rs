@@ -9,6 +9,7 @@ pub mod extractors;
 pub mod migration;
 pub mod router;
 pub mod session;
+pub mod validation;
 pub mod ws;
 
 pub use db::{init_db, session as db_session, test_db};
