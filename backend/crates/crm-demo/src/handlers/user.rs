@@ -446,3 +446,143 @@ pub async fn handle_user_save(ctx: HandlerContext) -> ActionResult {
     // After save, re-render the user list
     render_user_list(&ctx).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Phase 15 D-D1 / T-15-03-PLAN03-b: required-name validation.
+    #[test]
+    fn collect_user_save_errors_flags_empty_name() {
+        let errors = collect_user_save_errors(
+            None,
+            "",
+            "alice@example.com",
+            "correcthorse",
+            "admin",
+        );
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/userForm/name");
+        assert_eq!(errors[0].1, "Name is required.");
+    }
+
+    /// Phase 15 D-D1: email required + must contain `@`.
+    #[test]
+    fn collect_user_save_errors_flags_bad_email() {
+        // Empty email.
+        let errors = collect_user_save_errors(
+            None,
+            "Alice",
+            "",
+            "correcthorse",
+            "admin",
+        );
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/userForm/email");
+        assert_eq!(errors[0].1, "Email is required.");
+
+        // Missing @.
+        let errors2 = collect_user_save_errors(
+            None,
+            "Alice",
+            "notanemail",
+            "correcthorse",
+            "admin",
+        );
+        assert_eq!(errors2.len(), 1);
+        assert_eq!(errors2[0].0, "/userForm/email");
+        assert!(errors2[0].1.contains("valid email"));
+    }
+
+    /// Phase 15 D-D1: enum mismatch on role produces
+    /// `/userForm/role` error in the new validation-patch shape.
+    #[test]
+    fn collect_user_save_errors_flags_bad_role() {
+        let errors = collect_user_save_errors(
+            None,
+            "Alice",
+            "alice@example.com",
+            "correcthorse",
+            "superuser",
+        );
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/userForm/role");
+        assert!(errors[0].1.contains("admin") || errors[0].1.contains("listed"));
+    }
+
+    /// Phase 15 D-D1: on create (id = None), blank password fails with
+    /// the locked copy "Password is required."
+    #[test]
+    fn collect_user_save_errors_flags_empty_password_on_create() {
+        let errors = collect_user_save_errors(
+            None,
+            "Alice",
+            "alice@example.com",
+            "",
+            "admin",
+        );
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/userForm/password");
+        assert_eq!(errors[0].1, "Password is required.");
+    }
+
+    /// Phase 15 D-D1: on edit (id = Some), blank password is OK (the
+    /// existing hash is preserved server-side). Only short non-empty
+    /// passwords fail.
+    #[test]
+    fn collect_user_save_errors_allows_blank_password_on_edit() {
+        // Blank on edit is fine.
+        let errors = collect_user_save_errors(
+            Some(7),
+            "Alice",
+            "alice@example.com",
+            "",
+            "admin",
+        );
+        assert!(errors.is_empty(), "blank password on edit should be OK");
+
+        // Too-short non-empty on edit still fails.
+        let errors2 = collect_user_save_errors(
+            Some(7),
+            "Alice",
+            "alice@example.com",
+            "short",
+            "admin",
+        );
+        assert_eq!(errors2.len(), 1);
+        assert_eq!(errors2[0].0, "/userForm/password");
+        assert!(errors2[0].1.contains("at least 8 characters"));
+    }
+
+    /// Phase 15 D-D1: multi-field validation preserves form-display
+    /// order (name → email → password → role).
+    #[test]
+    fn collect_user_save_errors_preserves_field_order() {
+        let errors = collect_user_save_errors(
+            None,
+            "",
+            "",
+            "",
+            "bogus",
+        );
+        assert_eq!(errors.len(), 4);
+        assert_eq!(errors[0].0, "/userForm/name");
+        assert_eq!(errors[1].0, "/userForm/email");
+        assert_eq!(errors[2].0, "/userForm/password");
+        assert_eq!(errors[3].0, "/userForm/role");
+    }
+
+    /// Phase 15 D-D1: valid input returns empty vec.
+    #[test]
+    fn collect_user_save_errors_valid_input_empty() {
+        let errors = collect_user_save_errors(
+            None,
+            "Alice",
+            "alice@example.com",
+            "correcthorse",
+            "admin",
+        );
+        assert!(errors.is_empty());
+    }
+}
+
