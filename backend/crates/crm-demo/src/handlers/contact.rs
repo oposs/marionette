@@ -1504,7 +1504,9 @@ pub async fn handle_contact_tag_remove(ctx: HandlerContext) -> ActionResult {
 pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult {
     use marionette_protocol::data::PatchOperation;
     use marionette_protocol::messages::PatchMessage;
-    use marionette_protocol::{Component, ComponentAction};
+    // `ComponentAction` is still used for the toast click action; the
+    // `Component` import was dropped in Phase 15 D-G3 because the hand-rolled
+    // literal is now constructed via the `Button` builder.
 
     // Extract the new country value. The Button / SelectInput payload
     // pattern embeds the full surface data under the surface root, so the
@@ -1641,16 +1643,15 @@ pub async fn handle_contact_country_change(ctx: HandlerContext) -> ActionResult 
             _ => "none",
         }
     );
-    let mut toast_props = serde_json::Map::new();
-    toast_props.insert("label".into(), serde_json::json!(toast_label));
-    let toast_node = Component {
-        r#type: "button".into(),
-        props: Some(serde_json::Value::Object(toast_props)),
-        children: None,
-        bind: None,
-        action: Some(ComponentAction::click("dismiss_toast")),
-        visible: None,
-    };
+    // Phase 15 D-G3 — build the toast node via the canonical Button builder
+    // instead of a hand-rolled Component literal. Matches IN-01 from Phase 14
+    // verification (15-PATTERNS.md item 12). The builder sets `label`
+    // automatically from `Button::new(&toast_label)`, so we drop the
+    // separate `toast_props` Map construction as well.
+    let (_toast_id, toast_node) = Button::new(&toast_label)
+        .id("toast-country-change")
+        .action(ComponentAction::click("dismiss_toast"))
+        .build();
     let toasts_ops: Vec<PatchOperation> = vec![
         // Idempotent cleanup of any stale toast with the same id.
         PatchOperation::RemoveChild {

@@ -25,9 +25,19 @@
 
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
-		if (action) {
-			sendAction(action.name ?? 'submit', {}, action.target);
-		}
+		if (!action) return;
+		// Phase 15 D-G2 — pass collected form values as the submit payload,
+		// not `{}`. When `bind` is set, the Form's bound subtree in the data
+		// store already holds the latest values (every leaf Field writes
+		// directly to `/bind/<field>` via setData on input). When `bind` is
+		// absent the dispatch still fires with an empty object; the
+		// handler-side contract is that `action` being set implies the
+		// caller wants the dispatch regardless of payload shape.
+		const payload =
+			bind !== undefined
+				? ((getData(surface, bind) as Record<string, unknown> | undefined) ?? {})
+				: {};
+		sendAction(action.name ?? 'submit', payload, action.target);
 	}
 </script>
 

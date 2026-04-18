@@ -18,11 +18,8 @@
  */
 
 import { test, expect } from '@playwright/test';
-// @ts-expect-error — node:fs resolves under Playwright runtime but not in svelte-check
 import { existsSync } from 'node:fs';
-// @ts-expect-error — node:path resolves under Playwright runtime but not in svelte-check
 import { resolve } from 'node:path';
-// @ts-expect-error — node:url resolves under Playwright runtime but not in svelte-check
 import { fileURLToPath } from 'node:url';
 
 // Use import.meta.url to avoid __dirname which isn't typed without @types/node.
