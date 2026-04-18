@@ -79,11 +79,10 @@ struct ContactIdPayload {
 
 /// Inner form data for a contact (create or update).
 ///
-/// Phase 14 Plan 08: `notes`, `opt_in`, and `country` are accepted by the
-/// handler but not yet persisted — the contact entity doesn't have
-/// columns for them. Phase 15 will add the schema. The `#[serde(default)]`
-/// + `rename` annotations keep payload-shape tolerance without forcing
-/// the frontend to send every field on every submit.
+/// Phase 15 Plan 01: `country`, `notes`, and `opt_in` are now persisted
+/// via the extended contact schema (m20260418_000011_extend_contact).
+/// The `#[serde(default)]` annotations keep payload-shape tolerance so
+/// the frontend doesn't have to send every field on every submit.
 #[derive(Deserialize)]
 struct ContactFormData {
     id: Option<i32>,
@@ -93,13 +92,10 @@ struct ContactFormData {
     title: Option<String>,
     company: Option<String>,
     #[serde(default)]
-    #[allow(dead_code)]
     country: Option<String>,
     #[serde(default)]
-    #[allow(dead_code)]
     notes: Option<String>,
     #[serde(default, rename = "optIn")]
-    #[allow(dead_code)]
     opt_in: Option<bool>,
 }
 
@@ -1089,14 +1085,14 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
 
             let new_contact = contact::ActiveModel {
                 contact_id: NotSet,
-                contact_name: Set(data.name),
-                contact_email: Set(data.email),
-                contact_phone: Set(data.phone),
-                contact_title: Set(data.title),
+                contact_name: Set(data.name.clone()),
+                contact_email: Set(data.email.clone()),
+                contact_phone: Set(data.phone.clone()),
+                contact_title: Set(data.title.clone()),
                 contact_company: Set(company_id),
-                contact_country: NotSet,
-                contact_notes: NotSet,
-                contact_opt_in: NotSet,
+                contact_country: Set(data.country.clone()),
+                contact_notes: Set(data.notes.clone()),
+                contact_opt_in: Set(data.opt_in.unwrap_or(false)),
                 contact_created_at: NotSet,
                 contact_updated_at: NotSet,
             };
@@ -1139,6 +1135,9 @@ pub async fn handle_contact_save(ctx: HandlerContext) -> ActionResult {
             active.contact_phone = Set(data.phone.clone());
             active.contact_title = Set(data.title.clone());
             active.contact_company = Set(company_id);
+            active.contact_country = Set(data.country.clone());
+            active.contact_notes = Set(data.notes.clone());
+            active.contact_opt_in = Set(data.opt_in.unwrap_or(false));
             active.contact_updated_at = Set(now_sqlite());
 
             active
@@ -1706,5 +1705,59 @@ mod tests {
         let dr = parsed.date.unwrap();
         assert_eq!(dr.from.as_deref(), Some("2026-01-01"));
         assert_eq!(dr.to.as_deref(), Some("2026-04-01"));
+    }
+
+    /// Phase 15 Plan 01: round-trip proof that the three new columns
+    /// (`contact_country`, `contact_notes`, `contact_opt_in`) persist
+    /// through an in-memory SQLite DB after the
+    /// `m20260418_000011_extend_contact` migration runs. This covers
+    /// the Phase 14 Known Stub #1 closure (D-C1..D-C3) at the entity
+    /// layer — a separate end-to-end test would additionally exercise
+    /// the handler's JSON deserialisation path, but the handler is
+    /// already covered by `contact_filter_params_*` tests above.
+    #[tokio::test]
+    async fn contact_round_trips_country_notes_opt_in() {
+        use crate::migration::Migrator;
+        use sea_orm::{
+            ActiveModelTrait,
+            ActiveValue::{NotSet, Set},
+            Database, EntityTrait,
+        };
+        use sea_orm_migration::MigratorTrait;
+
+        let db = Database::connect("sqlite::memory:")
+            .await
+            .expect("connect in-memory sqlite");
+        Migrator::up(&db, None)
+            .await
+            .expect("run CRM migrations (including extend_contact)");
+
+        let new_contact = contact::ActiveModel {
+            contact_id: NotSet,
+            contact_name: Set("Test Person".into()),
+            contact_email: Set("test@example.com".into()),
+            contact_phone: Set(None),
+            contact_title: Set(None),
+            contact_company: Set(None),
+            contact_country: Set(Some("CH".into())),
+            contact_notes: Set(Some("Round-trip test note.".into())),
+            contact_opt_in: Set(true),
+            contact_created_at: NotSet,
+            contact_updated_at: NotSet,
+        };
+        let inserted = new_contact.insert(&db).await.expect("insert contact");
+
+        let found = contact::Entity::find_by_id(inserted.contact_id)
+            .one(&db)
+            .await
+            .expect("query contact")
+            .expect("row exists");
+
+        assert_eq!(found.contact_country.as_deref(), Some("CH"));
+        assert_eq!(
+            found.contact_notes.as_deref(),
+            Some("Round-trip test note.")
+        );
+        assert!(found.contact_opt_in);
     }
 }
