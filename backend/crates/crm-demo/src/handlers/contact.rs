@@ -446,11 +446,6 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
             .map_err(|e| ActionError::Internal(e.to_string()))?
             .ok_or_else(|| ActionError::Internal("Contact not found".into()))?;
         (
-            // Phase 14 Plan 08: `notes` and `optIn` are surfaced for the
-            // new Textarea + Switch primitives. The contact entity does
-            // not yet have these columns (Phase 15 will add them), so
-            // they seed to empty/false on both new and edit paths and
-            // the handler below reads-but-skips-persistence for them.
             serde_json::json!({
                 "contactForm": {
                     "id": found.contact_id,
@@ -459,9 +454,9 @@ pub async fn handle_contact_form(ctx: HandlerContext) -> ActionResult {
                     "phone": found.contact_phone.as_deref().unwrap_or(""),
                     "title": found.contact_title.as_deref().unwrap_or(""),
                     "company": found.contact_company.map(|id| id.to_string()).unwrap_or_default(),
-                    "country": "",
-                    "notes": "",
-                    "optIn": false
+                    "country": found.contact_country.as_deref().unwrap_or(""),
+                    "notes": found.contact_notes.as_deref().unwrap_or(""),
+                    "optIn": found.contact_opt_in,
                 }
             }),
             "Edit Contact",
