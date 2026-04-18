@@ -1,9 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error node:fs types not wired into frontend tsconfig yet (deferred-items)
 import * as fs from 'node:fs';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error node:path types not wired into frontend tsconfig yet
 import * as path from 'node:path';
 const cwd = (globalThis as { process?: { cwd(): string } }).process?.cwd() ?? '.';
 

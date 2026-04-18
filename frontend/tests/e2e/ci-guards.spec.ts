@@ -23,7 +23,6 @@ import { test, expect } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// @ts-expect-error — node:child_process resolves under Playwright runtime but not in svelte-check
 import { execSync } from 'node:child_process';
 
 // Use import.meta.url to avoid __dirname which isn't typed without @types/node.
