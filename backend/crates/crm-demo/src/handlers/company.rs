@@ -4,10 +4,12 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, PaginatorT
 use serde::Deserialize;
 
 use marionette::builders::standard::{
-    Button, ColumnKind, Container, DataTable, Form, Heading, TableColumn, Text, TextInput,
+    form_shell, Button, ColumnKind, Container, DataTable, FieldSet, Form, Heading, TableColumn,
+    Text, Textarea, TextInput,
 };
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::{Db, FromHandlerContext, HandlerContext, Payload, Session};
+use marionette::validation::validation_error_patch;
 use marionette_protocol::{ComponentAction, ProtocolMessage, RenderMessage};
 
 use crate::entities::{company, contact, note, user};
@@ -144,6 +146,17 @@ pub async fn handle_company_list(ctx: HandlerContext) -> ActionResult {
 }
 
 /// Handle the `company_new` / `company_edit` action: render a create/edit form.
+///
+/// PHASE 15 MIGRATION (D-A1 + D-B1 + D-B2 + D-D1 + D-E3 + D-I): built via
+/// `form_shell()` + `FieldSet` per the Phase 14 canonical composition
+/// (15-PATTERNS.md SP-1) and the 15-UI-SPEC §Per-Screen §1 contract:
+/// - `FieldSet("Company details")` wraps `[name, website, address]`.
+/// - `name` carries the locked description string from 15-UI-SPEC
+///   §Description Copy Contract ("Will appear on invoices and contact
+///   details.").
+/// - Action row `flex gap-2 justify-end` wraps `[Cancel, Save company]`.
+/// - Inline note-add form uses UI-SPEC §6 layout (`flex flex-col
+///   gap-2 items-end` wrapper, Textarea with `rows(3)`, "+ Add note").
 pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
     let db = Db::from_context(&ctx)?;
 
@@ -183,18 +196,33 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         )
     };
 
+    // -- Heading + back button --
+
     let heading = Heading::new(form_title)
         .id("company-form-heading")
         .build();
 
+    let back_button = Button::new("← Back")
+        .id("company-form-back")
+        .variant("outline")
+        .action(ComponentAction::click("company_list"))
+        .build();
+
+    // -- FieldSet 1: Company details --
+
     let name_input = TextInput::new("Name")
         .id("company-form-name")
         .bind("/companyForm/name")
+        .required(true)
+        // 15-UI-SPEC §Description Copy Contract (D-E3)
+        .description("Will appear on invoices and contact details.")
         .build();
 
     let website_input = TextInput::new("Website")
         .id("company-form-website")
         .bind("/companyForm/website")
+        .input_type("url")
+        .placeholder("https://example.com")
         .build();
 
     let address_input = TextInput::new("Address")
@@ -202,37 +230,55 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         .bind("/companyForm/address")
         .build();
 
-    let save_button = Button::new("Save")
-        .id("company-form-save")
-        .action(ComponentAction::submit("company_save"))
-        .build();
+    let (details_set, details_descendants) = FieldSet::new()
+        .id("company-details-set")
+        .legend("Company details")
+        .children(vec![name_input, website_input, address_input])
+        .build_tree();
+
+    // -- Action row (D-D1 Option A: flex gap-2 justify-end) --
 
     let cancel_button = Button::new("Cancel")
         .id("company-form-cancel")
+        .variant("outline")
         .action(ComponentAction::click("company_list"))
         .build();
 
-    let (form_child, form_descendants) = Form::new()
-        .id("company-form")
-        .children(vec![
-            name_input,
-            website_input,
-            address_input,
-            save_button,
-            cancel_button,
-        ])
+    let save_button = Button::new("Save company")
+        .id("company-form-save")
+        .variant("default")
+        .action(ComponentAction::submit("company_save"))
+        .build();
+
+    let (action_row, action_row_descendants) = Container::new()
+        .id("company-form-actions")
+        .class("flex gap-2 justify-end")
+        .children(vec![cancel_button, save_button])
         .build_tree();
 
-    let mut all_nodes = Vec::new();
-    let mut extra_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
-    all_nodes.push(heading);
-    all_nodes.push(form_child);
-    extra_descendants.extend(form_descendants);
+    // -- Compose the form --
 
+    let (form_child, form_descendants) = Form::new()
+        .id("company-form")
+        .children(vec![details_set, action_row])
+        .build_tree();
+
+    // Collect all descendants in a single flat vec.
+    let mut all_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    all_descendants.extend(details_descendants);
+    all_descendants.extend(action_row_descendants);
+    all_descendants.extend(form_descendants);
+
+    // -- Post-form content (edit mode only): linked contacts table + notes --
+    //
+    // These are appended to the outer Container AFTER the form. We build an
+    // auxiliary node vec and fold it into the form_shell output at the end.
+    let mut post_form_nodes: Vec<(String, marionette_protocol::Component)> = Vec::new();
+    let mut post_form_descendants: Vec<(String, marionette_protocol::Component)> = Vec::new();
     let mut merged_data = form_data;
 
-    // In edit mode, add linked contacts sub-table and notes section
     if let Some(cid) = company_id {
+        // --- Linked contacts sub-table ---
         let linked_contacts = contact::Entity::find()
             .filter(contact::Column::ContactCompany.eq(cid))
             .order_by_asc(contact::Column::ContactName)
@@ -275,8 +321,8 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             .bind("/linkedContacts")
             .build();
 
-            all_nodes.push(contacts_heading);
-            all_nodes.push(contacts_table);
+            post_form_nodes.push(contacts_heading);
+            post_form_nodes.push(contacts_table);
 
             let contact_rows: Vec<serde_json::Value> = linked_contacts
                 .iter()
@@ -301,7 +347,7 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             }
         }
 
-        // Notes section
+        // --- Notes section ---
         let notes = note::Entity::find()
             .filter(note::Column::NoteCompany.eq(cid))
             .order_by_desc(note::Column::NoteCreatedAt)
@@ -309,30 +355,40 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             .await
             .map_err(|e| ActionError::Internal(e.to_string()))?;
 
-        let notes_heading = Heading::new("Notes")
-            .id("notes-heading")
-            .build();
-        all_nodes.push(notes_heading);
+        let notes_heading = Heading::new("Notes").id("notes-heading").build();
+        post_form_nodes.push(notes_heading);
 
-        // Add-note form
-        let note_input = TextInput::new("Add a note...")
+        // Inline note-add form — 15-UI-SPEC §6 locked layout:
+        // `flex flex-col gap-2 items-end` wrapper, Textarea with rows(3),
+        // primary Button labeled "+ Add note".
+        let note_input = Textarea::new("Add a note...")
             .id("note-input")
             .bind("/noteForm/text")
+            .rows(3u32)
+            .full_width(true)
             .build();
 
-        let note_submit = Button::new("Add Note")
+        let note_submit = Button::new("+ Add note")
             .id("note-submit")
+            .variant("default")
             .action(ComponentAction::submit("note_save"))
             .build();
 
-        let (note_form_child, note_form_descendants) = Form::new()
-            .id("note-form")
+        let (note_row, note_row_descendants) = Container::new()
+            .id("company-note-form-row")
+            .class("flex flex-col gap-2 items-end")
             .children(vec![note_input, note_submit])
             .build_tree();
-        all_nodes.push(note_form_child);
-        extra_descendants.extend(note_form_descendants);
 
-        // Render existing notes
+        let (note_form_child, note_form_descendants) = Form::new()
+            .id("note-form")
+            .children(vec![note_row])
+            .build_tree();
+        post_form_nodes.push(note_form_child);
+        post_form_descendants.extend(note_row_descendants);
+        post_form_descendants.extend(note_form_descendants);
+
+        // Render existing notes as plain text rows.
         for n in &notes {
             let author_name = user::Entity::find_by_id(n.note_user)
                 .one(&*db.0)
@@ -348,7 +404,7 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
             let note_component = Text::new(&note_text)
                 .id(&format!("note-{}", n.note_id))
                 .build();
-            all_nodes.push(note_component);
+            post_form_nodes.push(note_component);
         }
 
         if let Some(obj) = merged_data.as_object_mut() {
@@ -359,24 +415,47 @@ pub async fn handle_company_form(ctx: HandlerContext) -> ActionResult {
         }
     }
 
-    let container_nodes = Container::new()
-        .id("company-form-root")
-        .children(all_nodes)
-        .build_with_children();
+    // -- Outer shell via form_shell (D-B1) --
+    //
+    // form_shell wraps [heading, back_button, form_child] in the outer
+    // Container. Post-form content (linked contacts, notes, note-form) is
+    // appended to that Container's children below.
+    let (root, mut nodes) = form_shell(
+        "company-form-root",
+        heading,
+        back_button,
+        form_child,
+        all_descendants,
+    );
 
-    let mut nodes = HashMap::new();
-    for (id, component) in container_nodes {
-        nodes.insert(id, component);
-    }
-    for (id, component) in extra_descendants {
-        nodes.insert(id, component);
+    // Append post-form content to the outer Container's children list.
+    if !post_form_nodes.is_empty() {
+        if let Some(container) = nodes.get_mut(&root) {
+            let existing: Vec<String> = container
+                .children
+                .clone()
+                .unwrap_or_default();
+            let appended_ids: Vec<String> = post_form_nodes
+                .iter()
+                .map(|(id, _)| id.clone())
+                .collect();
+            let mut merged_children = existing;
+            merged_children.extend(appended_ids);
+            container.children = Some(merged_children);
+        }
+        for (id, component) in post_form_nodes {
+            nodes.insert(id, component);
+        }
+        for (id, component) in post_form_descendants {
+            nodes.insert(id, component);
+        }
     }
 
     Ok(vec![
         ProtocolMessage::Render(RenderMessage {
             id: ctx.action.id.clone(),
             surface: "content".into(),
-            root: "company-form-root".into(),
+            root,
             nodes,
             data: merged_data,
         }),
@@ -406,7 +485,43 @@ fn nav_active_patch(active_slug: &str) -> marionette_protocol::ProtocolMessage {
     })
 }
 
+/// Phase 15 D-D1: Collect per-field validation errors for a company save
+/// payload in form-display order (name → website). Returns a flat
+/// `Vec<(bind_path, message)>` that the caller feeds into
+/// `validation_error_patch`.
+///
+/// Bind paths are server-derived string literals — T-15-03-PLAN03-a
+/// mitigation (no user input interpolated into bind paths).
+#[must_use]
+fn collect_company_save_errors(
+    name: &str,
+    website: Option<&str>,
+    _address: Option<&str>,
+) -> Vec<(String, String)> {
+    let mut errors: Vec<(String, String)> = Vec::new();
+    if name.trim().is_empty() {
+        errors.push((
+            "/companyForm/name".into(),
+            "Name is required.".into(),
+        ));
+    }
+    if let Some(w) = website {
+        if !w.is_empty() && !w.starts_with("http://") && !w.starts_with("https://") {
+            errors.push((
+                "/companyForm/website".into(),
+                "Website must start with http:// or https://.".into(),
+            ));
+        }
+    }
+    errors
+}
+
 /// Handle the `company_save` action: create or update a company.
+///
+/// PHASE 15 D-D1: per-field validation emits `/_errors/{bind}` patches via
+/// `validation_error_patch()` instead of `Err(ActionError::BadPayload(...))`.
+/// `ActionError::BadPayload` stays reserved for protocol-layer failures
+/// (JSON parse, missing `form_bind`) per D-D4.
 pub async fn handle_company_save(ctx: HandlerContext) -> ActionResult {
     use sea_orm::ActiveValue::{NotSet, Set};
 
@@ -415,11 +530,14 @@ pub async fn handle_company_save(ctx: HandlerContext) -> ActionResult {
     let payload = Payload::<CompanySavePayload>::from_context(&ctx)?;
     let data = payload.0.company_form;
 
-    // Validate required fields
-    if data.name.trim().is_empty() {
-        return Err(ActionError::BadPayload(
-            "Company name is required".into(),
-        ));
+    // Phase 15 D-D1 — per-field validation via /_errors{bind} patches.
+    let errors = collect_company_save_errors(
+        &data.name,
+        data.website.as_deref(),
+        data.address.as_deref(),
+    );
+    if !errors.is_empty() {
+        return Ok(vec![validation_error_patch("content", errors)]);
     }
 
     let caller_id: i32 = session
@@ -544,4 +662,75 @@ pub async fn handle_company_delete(ctx: HandlerContext) -> ActionResult {
 
     // Re-render the list
     render_company_list(&ctx).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Phase 15 D-D1 / T-15-03-PLAN03-a: required-field validation pushes
+    /// a `/companyForm/name` error when name is empty or whitespace.
+    #[test]
+    fn collect_company_save_errors_flags_empty_name() {
+        let errors = collect_company_save_errors("", Some("https://ex.com"), None);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/companyForm/name");
+        assert_eq!(errors[0].1, "Name is required.");
+
+        let errors_ws = collect_company_save_errors("   ", None, None);
+        assert_eq!(errors_ws.len(), 1, "whitespace-only name should fail");
+        assert_eq!(errors_ws[0].0, "/companyForm/name");
+    }
+
+    /// Phase 15 D-D1: website URL prefix check is enforced when a
+    /// non-empty string is supplied; empty / None are permitted.
+    #[test]
+    fn collect_company_save_errors_flags_bad_website() {
+        let errors = collect_company_save_errors("Acme", Some("acme.com"), None);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].0, "/companyForm/website");
+        assert!(errors[0].1.contains("http://"));
+        assert!(errors[0].1.contains("https://"));
+
+        // Empty website string OK.
+        assert!(
+            collect_company_save_errors("Acme", Some(""), None).is_empty(),
+            "empty website should not produce an error"
+        );
+        // None OK.
+        assert!(
+            collect_company_save_errors("Acme", None, None).is_empty(),
+            "missing website should not produce an error"
+        );
+        // http:// OK.
+        assert!(
+            collect_company_save_errors("Acme", Some("http://ex.com"), None).is_empty()
+        );
+        // https:// OK.
+        assert!(
+            collect_company_save_errors("Acme", Some("https://ex.com"), None).is_empty()
+        );
+    }
+
+    /// Phase 15 D-D1: multiple invalid fields are reported together in
+    /// form-display order (name first, then website).
+    #[test]
+    fn collect_company_save_errors_preserves_field_order() {
+        let errors = collect_company_save_errors("", Some("not-a-url"), None);
+        assert_eq!(errors.len(), 2);
+        assert_eq!(errors[0].0, "/companyForm/name");
+        assert_eq!(errors[1].0, "/companyForm/website");
+    }
+
+    /// Phase 15 D-D1: valid inputs return an empty vec — the caller short-
+    /// circuits and proceeds to DB write.
+    #[test]
+    fn collect_company_save_errors_valid_input_empty() {
+        let errors = collect_company_save_errors(
+            "Acme",
+            Some("https://acme.example"),
+            Some("1 Market St"),
+        );
+        assert!(errors.is_empty());
+    }
 }
