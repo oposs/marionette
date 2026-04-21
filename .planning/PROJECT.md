@@ -129,6 +129,7 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 | Gallery app as second demo alongside CRM | CRM is too opinionated as a design-iteration surface; gallery serves visual iteration + SDUI-frontend exerciser | → v1.2 |
 | Auto-discoverable demos via `#[gallery_demo]` + inventory/linkme | Long-haul investment — eliminates registry drift as new components land; gated behind `gallery` cargo feature so production consumers stay lean | → v1.2 Phase A |
 | Pure `fn() -> Node` demo contract | Keeps demo code in the `marionette` crate harmless; composite demos are nested fn calls; stateful fixtures live in the gallery binary, not the framework crate | → v1.2 |
+| linkme over inventory for gallery-demo registry | Type-safe `#[distributed_slice]` attribute binds element type to the static slice declaration; zero runtime cost (no ctor-style global initializers); explicit mental model consistent with marionette's clean-framework posture. Stable-iteration-order promise is owned by marionette (sort at iteration time), not delegated to linkme — linkme's native link-time order is not portable across platforms. Decision record: `.planning/phases/16-framework-hooks/16-CONTEXT.md` D-A1. | ✓ Good — v1.2 Phase 16 |
 
 ---
 ## Evolution
