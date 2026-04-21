@@ -6,6 +6,7 @@ pub mod builders;
 pub mod db;
 pub mod error;
 pub mod extractors;
+pub mod gallery;
 pub mod migration;
 pub mod router;
 pub mod session;
