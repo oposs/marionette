@@ -181,7 +181,7 @@ Plans:
 - [x] 16-01-PLAN.md — marionette::gallery module: DemoEntry, linkme-backed DEMOS slice, registered_demos() API + gallery cargo feature
 - [x] 16-02-PLAN.md — #[gallery_demo] attribute proc macro in marionette-macros (darling attr parsing + syn signature validation)
 - [x] 16-03-PLAN.md — gallery-smoke crate with toy demo + trybuild error-message fixtures + FRAME-03 symbol-table test
-- [ ] 16-04-PLAN.md — docs closure: PROJECT.md Key Decisions row for linkme + STATE.md blocker close + Phase 17 hand-off
+- [x] 16-04-PLAN.md — docs closure: PROJECT.md Key Decisions row for linkme + STATE.md blocker close + Phase 17 hand-off
 **UI hint**: no
 
 ### Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos
