@@ -176,7 +176,12 @@ Plans:
   2. `marionette::registered_demos()` (or equivalent) returns a stable-ordered iterator of `DemoEntry { key, fn_ptr }` values backed by `inventory` or `linkme` — registration-library choice logged in PROJECT.md Key Decisions with rationale
   3. Default `cargo build -p marionette` compiles zero demo symbols and zero registry entries (verified by a test inspecting artifact contents or symbol table); enabling the `gallery` feature brings them back
   4. A smoke test in the workspace registers a toy demo fn via `#[gallery_demo]`, enables the `gallery` feature, iterates the registry, and asserts the toy key is present in stable order
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 16-01-PLAN.md — marionette::gallery module: DemoEntry, linkme-backed DEMOS slice, registered_demos() API + gallery cargo feature
+- [ ] 16-02-PLAN.md — #[gallery_demo] attribute proc macro in marionette-macros (darling attr parsing + syn signature validation)
+- [ ] 16-03-PLAN.md — gallery-smoke crate with toy demo + trybuild error-message fixtures + FRAME-03 symbol-table test
+- [ ] 16-04-PLAN.md — docs closure: PROJECT.md Key Decisions row for linkme + STATE.md blocker close + Phase 17 hand-off
 **UI hint**: no
 
 ### Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos
