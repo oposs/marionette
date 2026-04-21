@@ -19,7 +19,11 @@ sea-orm-migration.workspace = true
 axum-extra.workspace = true
 chrono.workspace = true
 futures.workspace = true
+linkme = { workspace = true, optional = true }
 
 [dev-dependencies]
 sea-orm = { workspace = true, features = ["mock"] }
 tokio-tungstenite.workspace = true
+
+[features]
+gallery = ["dep:linkme"]
