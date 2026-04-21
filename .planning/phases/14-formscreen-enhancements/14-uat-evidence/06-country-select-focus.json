@@ -1,9 +1,0 @@
-{
-  "tag": "INPUT",
-  "name": null,
-  "type": "email",
-  "value": "alice@example.com",
-  "cursor": null,
-  "canton_field_present": true,
-  "passed": true
-}

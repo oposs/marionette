@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
-status: defining-requirements
-stopped_at: Milestone v1.2 opened — defining requirements
+status: roadmap-defined
+stopped_at: v1.2 roadmap defined — Phases 16–20 mapped, ready to plan Phase 16
 last_updated: "2026-04-21T17:14:00.000Z"
-last_activity: 2026-04-21 -- v1.1 closed, v1.2 opened via /gsd-new-milestone
+last_activity: 2026-04-21 -- v1.2 roadmap written (Phases 16–20), all 16 requirements mapped
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** v1.2 — gallery-demo + auto-discoverable component demos (defining requirements)
+**Current focus:** v1.2 — gallery-demo + auto-discoverable component demos (Phases 16–20 scoped; Phase 16 up next)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 16 — Framework Hooks (next; not yet planned)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-21 — Milestone v1.2 started via /gsd-new-milestone
+Status: Roadmap defined; awaiting `/gsd-plan-phase 16`
+Last activity: 2026-04-21 — v1.2 roadmap created via /gsd-roadmap (16 requirements → 5 phases, 100% coverage)
 
-Progress: v1.2 just opened — phase decomposition pending roadmapper run.
+Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_demo]` proc macro, registry iteration API, and `gallery` cargo feature gate — the rails everything else rides on.
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Recent decisions affecting v1.2:
 - [v1.2]: Auto-discoverable demos via `#[gallery_demo]` proc macro + `inventory`/`linkme` distributed slice; gated behind `gallery` cargo feature on `marionette` crate so production consumers do not compile demo code
 - [v1.2]: Demo contract is a pure `fn() -> Node`; composite demos are nested function calls; stateful fixtures live in the gallery binary, not the framework crate
 - [v1.2]: Nested AppShell is an intentional capability exerciser, not a stunt — exposes whether shadcn Sidebar provider-context and mobile-sheet behaviour compose under nesting
+- [v1.2]: Phase 17 bundles gallery-crate skeleton (CRATE-01/02) with colocated built-in demos (DEMO-01/02) because CRATE-02's auto-nav is only verifiable once DEMO-01's sweep has landed
 
 See also: `.planning/notes/2026-04-21-gallery-demo-architecture.md` (full design) and `.planning/seeds/gallery-live-token-editor.md` (scope-flexible theme-editor seed).
 
@@ -74,13 +75,14 @@ None carried over from v1.1.
 
 ### Blockers/Concerns
 
-- **AppShell nestability unknown** — Phase 12's AppShell uses shadcn SidebarProvider context, `--sidebar-*` CSS tokens, mobile sheet behaviour, and a keyboard shortcut. These may or may not compose cleanly when an outer shell hosts an inner shell. v1.2's exerciser phase is the place this will surface; may require non-trivial fixes.
-- **Registration library selection** — `inventory` vs `linkme` decision deferred to Phase A scoping. `inventory` is widely used; `linkme` gives more explicit control. Pick during `/gsd-plan-phase`.
-- **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision.
+- **AppShell nestability unknown** — Phase 12's AppShell uses shadcn SidebarProvider context, `--sidebar-*` CSS tokens, mobile sheet behaviour, and a keyboard shortcut. These may or may not compose cleanly when an outer shell hosts an inner shell. Phase 19 (exerciser, EXER-01) is the place this will surface; may require non-trivial fixes or a deferred-item note.
+- **Registration library selection** — `inventory` vs `linkme` decision deferred to Phase 16 scoping. `inventory` is widely used; `linkme` gives more explicit control. Pick during `/gsd-plan-phase 16`.
+- **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision (tracked in v1.3+ as GALLERY-LINT).
+- **Phase 20 scope risk** — THEME-01 is explicitly scope-flexible per seed `gallery-live-token-editor`; if Phases 16–19 overrun, Phase 20 is the natural deferral target.
 - Pre-existing concerns carried from v1.1 (unchanged): 5 popup browser-test failures, some clippy pedantic warnings in crm-demo from toolchain drift.
 
 ## Session Continuity
 
 Last session: 2026-04-21T17:14:00.000Z
-Stopped at: Milestone v1.2 opened; `/gsd-new-milestone` still running — requirements + roadmap steps ahead
-Resume: continue `/gsd-new-milestone` workflow at "Research Decision" step (step 8)
+Stopped at: v1.2 roadmap written (Phases 16–20); 16/16 requirements mapped
+Resume: run `/gsd-plan-phase 16` to decompose the Framework Hooks phase into executable plans

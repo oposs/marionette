@@ -3,7 +3,8 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-9 (shipped 2026-04-08)
-- 🚧 **v1.1 shadcn-svelte + High-Level Components** — Phases 10-15 (in progress)
+- ✅ **v1.1 shadcn-svelte + High-Level Components** — Phases 10-15 (shipped 2026-04-18)
+- 🚧 **v1.2 Gallery Demo App + Auto-Discoverable Component Demos** — Phases 16-20 (in progress)
 
 ## Phases
 
@@ -24,16 +25,27 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 </details>
 
-### 🚧 v1.1 shadcn-svelte + High-Level Components (In Progress)
+<details>
+<summary>✅ v1.1 shadcn-svelte + High-Level Components (Phases 10-15) — SHIPPED 2026-04-18</summary>
 
-**Milestone Goal:** Replace Flowbite with shadcn-svelte and add high-level organisational components (AppShell, enhanced DataTable, enhanced FormScreen) so apps get professional screens out of the box.
+- [x] **Phase 10: Foundation** — Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
+- [x] **Phase 11: Leaf Component Migration** — Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-10)
+- [x] **Phase 12: Protocol Node Patching + AppShell** — Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
+- [x] **Phase 13: DataTable Enhancements** — Server-driven filter bar, infinite scroll, and column visibility (completed 2026-04-11)
+- [x] **Phase 14: FormScreen Enhancements** — Consistent field styling and grouped card sections (completed 2026-04-18)
+- [x] **Phase 15: CRM Migration & Validation** — Migrate all CRM screens and validate zero Flowbite residue (completed 2026-04-18)
 
-- [x] **Phase 10: Foundation** - Install shadcn-svelte, rewrite CSS theming, remove all Flowbite dependencies (completed 2026-04-09)
-- [x] **Phase 11: Leaf Component Migration** - Re-implement all existing SDUI components with shadcn-svelte primitives and lucide icons (completed 2026-04-09)
-- [x] **Phase 12: Protocol Node Patching + AppShell** - Extend the protocol with incremental component-tree patches, then build the responsive AppShell on top (completed 2026-04-10)
-- [x] **Phase 13: DataTable Enhancements** - Server-driven filter bar, infinite scroll, and column visibility (completed 2026-04-11)
-- [x] **Phase 14: FormScreen Enhancements** - Consistent field styling and grouped card sections (completed 2026-04-18)
-- [x] **Phase 15: CRM Migration & Validation** - Migrate all CRM screens and validate zero Flowbite residue (completed 2026-04-18)
+</details>
+
+### 🚧 v1.2 Gallery Demo App + Auto-Discoverable Component Demos (In Progress)
+
+**Milestone Goal:** Ship a dedicated gallery app that serves as both a visual-iteration harness and an SDUI-frontend exerciser, backed by a first-class auto-discoverable demo mechanism colocated with every marionette built-in — so design iteration stops being blocked by the opinionated CRM surface and new components automatically surface in the gallery.
+
+- [ ] **Phase 16: Framework Hooks** — `#[gallery_demo]` proc macro + `inventory`/`linkme` registration backbone + `gallery` cargo feature gate on the `marionette` crate
+- [ ] **Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos** — new `gallery-demo` workspace member with auto-discovered AppShell nav; `gallery_demo()` siblings for every existing built-in component
+- [ ] **Phase 18: Catalog Screens** — Buttons & Actions, Forms, DataTable, Feedback, Typography & tokens
+- [ ] **Phase 19: Exerciser Screens** — Nested AppShell, Rapid Patching, Pathological Scale
+- [ ] **Phase 20: Live Token Editor** — CSS-token editor screen with live apply + exportable `@theme` block (scope-flexible)
 
 ## Phase Details
 
@@ -155,10 +167,75 @@ Plans:
 - [x] 15-07-PLAN.md — E2E specs + visual rebaseline + Chrome-MCP/Playwright UAT per screen + phase-gate
 **UI hint**: yes
 
+### Phase 16: Framework Hooks
+**Goal**: The auto-discovery spine is in place — `#[gallery_demo]` proc macro, a stable registry-iteration API backed by `inventory` or `linkme`, and a `gallery` cargo feature gate that keeps production builds of `marionette` free of demo code
+**Depends on**: Phase 15 (v1.1 complete)
+**Requirements**: FRAME-01, FRAME-02, FRAME-03
+**Success Criteria** (what must be TRUE):
+  1. Applying `#[gallery_demo]` to a `pub fn name() -> Node` registers the function in a compile-time distributed slice keyed by component-type name; misuse (wrong signature, wrong visibility) produces a clear compiler error that names the violated rule
+  2. `marionette::registered_demos()` (or equivalent) returns a stable-ordered iterator of `DemoEntry { key, fn_ptr }` values backed by `inventory` or `linkme` — registration-library choice logged in PROJECT.md Key Decisions with rationale
+  3. Default `cargo build -p marionette` compiles zero demo symbols and zero registry entries (verified by a test inspecting artifact contents or symbol table); enabling the `gallery` feature brings them back
+  4. A smoke test in the workspace registers a toy demo fn via `#[gallery_demo]`, enables the `gallery` feature, iterates the registry, and asserts the toy key is present in stable order
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos
+**Goal**: The `gallery-demo` crate exists as the 5th workspace member with a thin in-memory backend, and every existing built-in component in `marionette/src/builders/` ships a pure-fn `gallery_demo() -> Node` sibling — so adding a new `#[gallery_demo]` anywhere in the workspace automatically surfaces it in the gallery's AppShell nav on next build
+**Depends on**: Phase 16
+**Requirements**: CRATE-01, CRATE-02, DEMO-01, DEMO-02
+**Success Criteria** (what must be TRUE):
+  1. `cargo run -p gallery-demo` starts the app on its own port against the shared frontend with no auth, no database, no migrations — only `Arc<RwLock<_>>` in-memory state
+  2. The gallery's AppShell navigation is built at runtime by iterating the auto-discovered demo registry (no hand-maintained menu list); adding a new `#[gallery_demo]` and rebuilding causes the new entry to appear in nav without touching the gallery binary
+  3. Every currently-registered built-in component (Button, TextInput, SelectInput, Checkbox, Textarea, RadioGroup, Switch, DataTable, AppShell, NavItem, Sidebar pieces, ModalSurface, ConfirmDialog, ToastSurface, FieldSet, FieldSeparator, Container, Heading, plus any others) has a `pub fn gallery_demo() -> Node` sibling annotated with `#[gallery_demo]`
+  4. `GALLERY-DEMOS.md` (under `backend/crates/marionette/` or equivalent) documents the pure-fn contract: no external state, no I/O, no fixtures; composite demos are nested `gallery_demo()` calls; stateful fixtures live in gallery handlers
+  5. Each built-in demo renders without panicking when visited in the running gallery; clicking every nav entry produces a screen, not an error surface
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 18: Catalog Screens
+**Goal**: Five clean catalog screens compose the built-in demos into curated showcases — Buttons & Actions, Forms, DataTable, Feedback, and Typography & tokens — each demonstrating the full visual surface for its component family
+**Depends on**: Phase 17
+**Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05
+**Success Criteria** (what must be TRUE):
+  1. Buttons & Actions screen renders every Button variant × size × state combination (default / destructive / outline / ghost / link × sm/md/lg × normal/disabled/loading/icon-only) visible on one page
+  2. Forms screen renders every input type (text / select / checkbox / switch / radio / textarea) across normal / disabled / error / focused / with-description states, grouped with `FieldSet` and `FieldSeparator`, and includes a live validation patch-demo where correcting an invalid field clears its error via node patch
+  3. DataTable screen shows the filter bar, virtualized infinite scroll, column visibility toggle, and per-`ColumnKind` rendering seeded with ≥500 synthetic rows so virtualization actually engages
+  4. Feedback screen shows toast dispatch, confirm dialog flow, modal surface, and empty / loading / error placeholder states side-by-side and individually triggerable
+  5. Typography & tokens screen renders the full text scale, the lucide-svelte icon catalog (searchable or in a grid), and OKLCH swatches for every semantic token defined in `app.css`
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 19: Exerciser Screens
+**Goal**: Three frontend robustness exercisers — Nested AppShell, Rapid Patching, Pathological Scale — surface capability edges that a clean business app never hits, and capture any gaps as deferred items
+**Depends on**: Phase 17
+**Requirements**: EXER-01, EXER-02, EXER-03
+**Success Criteria** (what must be TRUE):
+  1. Nested AppShell screen renders an outer AppShell hosting an inner AppShell in its content slot; observations about `SidebarProvider` context behaviour, mobile-sheet composition, keyboard shortcut scoping, and `--sidebar-*` token inheritance are captured in the phase report (gaps deferred to v1.3 seeds rather than forcing fixes in v1.2)
+  2. Rapid Patching screen fires node patches at a configurable interval (default ≈500 ms) while a text input retains focus; PATCH-02's focus-preservation invariant holds for ≥60 seconds of sustained mutation pressure without losing focus or cursor position
+  3. Pathological Scale screen mounts a single page containing a DataTable seeded with ≥10 000 synthetic rows and a FormScreen with ≥80 synthetic fields; the page renders without freezing the browser, virtualization keeps scroll responsive, and observed performance baselines (time-to-first-paint, scroll FPS) are recorded in the phase report
+  4. Every exerciser screen is reachable from the auto-discovered gallery nav and executes without console errors under normal use
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 20: Live Token Editor
+**Goal**: The gallery includes a Live Token Editor screen that lets a designer tweak core shadcn theme tokens in real time and export the result as a pasteable `@theme`/`:root` block — the single highest-leverage force multiplier for look-and-feel iteration (scope-flexible per seed `gallery-live-token-editor`)
+**Depends on**: Phase 17 (catalog screens not strictly required, but landing after Phase 18 means the editor has stable screens to iterate against)
+**Requirements**: THEME-01
+**Success Criteria** (what must be TRUE):
+  1. Live Token Editor screen offers controls (color picker / slider / numeric input) for core shadcn theme variables — at minimum `--primary`, `--background`, `--foreground`, `--radius`, and the `--sidebar-*` family
+  2. Changing a control applies the value to `document.documentElement` via `style.setProperty()` and all currently-mounted gallery screens re-render with the new token in place (no backend round-trip required)
+  3. An export affordance emits the current token set as a pasteable `@theme`/`:root` block copyable to clipboard or visible in a read-only textarea
+  4. If token coverage is scoped down during execution, the reduced scope is documented in the phase report and the deferred tokens are recorded as a seed for v1.3
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
-Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both to be complete.
+
+- **v1.2 dependency chain:** Phase 16 (framework rails) must land before Phase 17 (demo colocation needs the proc macro + registry). Phase 17 must land before Phases 18, 19, and 20 (all three consume the demo registry and/or the running gallery binary).
+- **Parallelization after Phase 17:** Phases 18 (Catalog) and 19 (Exerciser) are independent screen sets and can execute in parallel — they touch disjoint gallery handlers, share no state, and their success criteria do not overlap. Phase 20 (Live Token Editor) can also start immediately after Phase 17, but is best scheduled after Phase 18 so there is a stable catalog surface for the designer to iterate against visually. If v1.2 budget tightens, Phase 20 is the natural deferral target (see seed `gallery-live-token-editor`).
+- **v1.0 / v1.1 historical order:** Phases 13 and 14 executed in parallel after Phase 12; Phase 15 required both.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -171,13 +248,18 @@ Phases 13 and 14 can execute in parallel after Phase 12. Phase 15 requires both 
 | 7. CRM Core | v1.0 | 3/3 | Complete | 2026-03-22 |
 | 8. CRM Features | v1.0 | 4/4 | Complete | 2026-03-23 |
 | 9. CRM Listmonk | v1.0 | 3/3 | Complete | 2026-03-23 |
-| 10. Foundation | v1.1 | 3/3 | Complete    | 2026-04-09 |
-| 11. Leaf Component Migration | v1.1 | 5/5 | Complete    | 2026-04-10 |
-| 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete    | 2026-04-10 |
-| 13. DataTable Enhancements | v1.1 | 7/7 | Complete   | 2026-04-11 |
-| 14. FormScreen Enhancements | v1.1 | 8/8 | Complete    | 2026-04-18 |
-| 15. CRM Migration & Validation | v1.1 | 7/7 | Complete    | 2026-04-18 |
+| 10. Foundation | v1.1 | 3/3 | Complete | 2026-04-09 |
+| 11. Leaf Component Migration | v1.1 | 5/5 | Complete | 2026-04-10 |
+| 12. Protocol Node Patching + AppShell | v1.1 | 8/8 | Complete | 2026-04-10 |
+| 13. DataTable Enhancements | v1.1 | 7/7 | Complete | 2026-04-11 |
+| 14. FormScreen Enhancements | v1.1 | 8/8 | Complete | 2026-04-18 |
+| 15. CRM Migration & Validation | v1.1 | 7/7 | Complete | 2026-04-18 |
+| 16. Framework Hooks | v1.2 | 0/? | Pending | — |
+| 17. Gallery Crate Skeleton + Colocated Built-in Demos | v1.2 | 0/? | Pending | — |
+| 18. Catalog Screens | v1.2 | 0/? | Pending | — |
+| 19. Exerciser Screens | v1.2 | 0/? | Pending | — |
+| 20. Live Token Editor | v1.2 | 0/? | Pending | — |
 
 ---
 *Created: 2026-01-24*
-*Updated: 2026-04-09 -- Phase 11 plans created*
+*Updated: 2026-04-21 — v1.2 roadmap appended (Phases 16–20)*

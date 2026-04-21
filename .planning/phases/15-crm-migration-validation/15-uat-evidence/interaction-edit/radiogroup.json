@@ -1,9 +1,0 @@
-{
-  "scenario": "click each interaction type option",
-  "final_states": [
-    "unchecked",
-    "unchecked",
-    "checked"
-  ],
-  "passed": true
-}

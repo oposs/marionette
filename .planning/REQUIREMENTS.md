@@ -67,27 +67,28 @@ Populated by `/gsd-plan-phase` runs as phases are defined.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FRAME-01 | _pending roadmap_ | Pending |
-| FRAME-02 | _pending roadmap_ | Pending |
-| FRAME-03 | _pending roadmap_ | Pending |
-| CRATE-01 | _pending roadmap_ | Pending |
-| CRATE-02 | _pending roadmap_ | Pending |
-| DEMO-01  | _pending roadmap_ | Pending |
-| DEMO-02  | _pending roadmap_ | Pending |
-| CAT-01   | _pending roadmap_ | Pending |
-| CAT-02   | _pending roadmap_ | Pending |
-| CAT-03   | _pending roadmap_ | Pending |
-| CAT-04   | _pending roadmap_ | Pending |
-| CAT-05   | _pending roadmap_ | Pending |
-| EXER-01  | _pending roadmap_ | Pending |
-| EXER-02  | _pending roadmap_ | Pending |
-| EXER-03  | _pending roadmap_ | Pending |
-| THEME-01 | _pending roadmap_ | Pending |
+| FRAME-01 | Phase 16 | Pending |
+| FRAME-02 | Phase 16 | Pending |
+| FRAME-03 | Phase 16 | Pending |
+| CRATE-01 | Phase 17 | Pending |
+| CRATE-02 | Phase 17 | Pending |
+| DEMO-01  | Phase 17 | Pending |
+| DEMO-02  | Phase 17 | Pending |
+| CAT-01   | Phase 18 | Pending |
+| CAT-02   | Phase 18 | Pending |
+| CAT-03   | Phase 18 | Pending |
+| CAT-04   | Phase 18 | Pending |
+| CAT-05   | Phase 18 | Pending |
+| EXER-01  | Phase 19 | Pending |
+| EXER-02  | Phase 19 | Pending |
+| EXER-03  | Phase 19 | Pending |
+| THEME-01 | Phase 20 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 16 total
-- Mapped to phases: 0 (roadmapper runs next)
-- Unmapped: 16
+- Mapped to phases: 16 (Phases 16–20)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21 via /gsd-new-milestone*
+*Traceability populated: 2026-04-21 via /gsd-roadmap (v1.2 Phases 16–20)*

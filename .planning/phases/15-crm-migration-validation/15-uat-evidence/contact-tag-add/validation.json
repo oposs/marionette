@@ -1,8 +1,0 @@
-{
-  "scenario": "empty tag submit",
-  "expected_error_path": "/_errors/tagForm/name",
-  "observed_errors": [
-    "Tag name is required."
-  ],
-  "passed": true
-}

@@ -1,6 +1,0 @@
-{
-  "note": "BadPayload from handle_contact_save returns a form-level ErrorMessage at main/_errors. UAT-03 above proves the Field-level error render path works when /_errors/{bind} is populated.",
-  "console_errors": [],
-  "server_errors_if_exposed": null,
-  "passed": true
-}
