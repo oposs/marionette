@@ -62,13 +62,19 @@ pub fn gallery_demo_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // 6. Emit cfg-gated fn + cfg-gated linkme static (D-B1).
     //    The linkme path re-routes through marionette::gallery::__linkme
-    //    so consumer crates don't need their own `linkme` dep.
+    //    so consumer crates don't need their own `linkme` dep. The
+    //    `#[linkme(crate = ...)]` attribute tells linkme's own proc macro
+    //    where to find its runtime types — without it, linkme hardcodes
+    //    `::linkme` and the consumer crate would need a direct linkme dep
+    //    (see linkme-impl/src/attr.rs `linkme_path`).
     quote! {
         #[cfg(feature = "gallery")]
         #func
 
         #[cfg(feature = "gallery")]
         #[::marionette::gallery::__linkme::distributed_slice(::marionette::gallery::DEMOS)]
+        #[linkme(crate = ::marionette::gallery::__linkme)]
+        #[allow(non_upper_case_globals)]
         static #static_ident: ::marionette::gallery::DemoEntry =
             ::marionette::gallery::DemoEntry {
                 key: #key,

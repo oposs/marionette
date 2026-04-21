@@ -1,0 +1,5 @@
+error: #[gallery_demo] fn must return `Node` (an alias for `(String, marionette_protocol::Component)`)
+ --> tests/ui/fail_wrong_return.rs:4:26
+  |
+4 | pub fn wrong_return() -> Vec<u32> {
+  |                          ^^^^^^^^

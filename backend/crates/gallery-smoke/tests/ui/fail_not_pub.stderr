@@ -1,0 +1,19 @@
+error: #[gallery_demo] requires `pub fn` visibility (found private fn)
+ --> tests/ui/fail_not_pub.rs:6:4
+  |
+6 | fn private_demo() -> Node {
+  |    ^^^^^^^^^^^^
+
+warning: unused import: `marionette::builders::standard::Text`
+ --> tests/ui/fail_not_pub.rs:1:5
+  |
+1 | use marionette::builders::standard::Text;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `marionette::gallery::Node`
+ --> tests/ui/fail_not_pub.rs:2:5
+  |
+2 | use marionette::gallery::Node;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^

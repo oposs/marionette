@@ -1,0 +1,5 @@
+error: #[gallery_demo] can only be applied to `pub fn` items (not structs, enums, modules, or other items)
+ --> tests/ui/fail_applied_to_struct.rs:4:1
+  |
+4 | pub struct NotAFn;
+  | ^^^^^^^^^^^^^^^^^^
