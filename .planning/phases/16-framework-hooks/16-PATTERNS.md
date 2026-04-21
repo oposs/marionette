@@ -19,7 +19,7 @@
 | **NEW** `backend/crates/gallery-smoke/src/lib.rs` | library crate entry (registers one demo) | compile-time registration | `marionette/src/builders/node.rs` (tiny pub module) + `marionette/tests/macro_tests.rs` (demonstrates macro at crate boundary) | role-match |
 | **NEW** `backend/crates/gallery-smoke/tests/registry_roundtrip.rs` | integration test (`#[test]` fns) | assertion-based | `marionette/tests/macro_tests.rs` (integration-style macro test) | exact |
 | **NEW** `backend/crates/gallery-smoke/tests/ui/*.rs` + `.stderr` | trybuild compile-fail fixtures | compile-error snapshot | **NO IN-REPO ANALOG** — trybuild is first use in the repo; follow external trybuild idiom per RESEARCH §5 | none (use external pattern) |
-| **NEW** `backend/crates/gallery-smoke/tests/compile_errors.rs` | trybuild driver (`#[test]`) | test-harness invocation | `marionette/tests/macro_tests.rs` (skeletal test file) | role-match |
+| **NEW** `backend/crates/gallery-smoke/tests/ui_errors.rs` | trybuild driver (`#[test]`) | test-harness invocation | `marionette/tests/macro_tests.rs` (skeletal test file) | role-match |
 
 ## Pattern Assignments
 

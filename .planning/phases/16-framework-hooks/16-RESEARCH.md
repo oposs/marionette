@@ -1270,28 +1270,38 @@ scope).
 | A5 | CI's `dtolnay/rust-toolchain@stable` does not roll fast enough that trybuild `.stderr` files regress between merges | §5 | Medium — if a new stable changes diagnostic wording, CI breaks on a PR unrelated to macros. Mitigation: documented `TRYBUILD=overwrite` recovery procedure in `tests/ui/README.md` |
 | A6 | Phase 17's DEMO-01 convention ("every built-in has a `gallery_demo()`") maps 1:1 to explicit `key = "..."` overrides (no ambiguity in the mapping) | CONTEXT.md D-C1 | Low — mechanical sweep during Phase 17 |
 
-## Open Questions for Planner
+## Open Questions for Planner (RESOLVED)
 
-These are genuine gaps the planner should resolve (either by making a judgment call or by
-surfacing to the user via `/gsd-plan-check`):
+These questions were resolved by the planner during Phase 16 plan creation (commit `3a4bdbe`).
+Resolutions are recorded inline so downstream agents see the final decisions without re-reading
+the plans.
 
 1. **Plan granularity — 4 plans (Areas A/B/C/D) vs. 3 plans (A+B combined + C + D)?** CONTEXT.md
    §specifics suggests "one plan per area" is reasonable but ultimately the planner's call.
    This research recommends 4 plans with Plan 01 (A+B combined because both touch
    `marionette/`) + Plan 02 (C) + Plan 03 (D) + Plan 04 (docs/closure). A 3-plan variant
    dropping Plan 04 into Plan 03 is acceptable.
+   **RESOLVED:** 4 plans — 16-01 (gallery module + feature), 16-02 (gallery_demo macro),
+   16-03 (gallery-smoke + symbol test), 16-04 (docs closure). Wave 1: 01+02 parallel;
+   Wave 2: 03; Wave 3: 04. See `16-01-PLAN.md` through `16-04-PLAN.md`.
 
 2. **Re-export `linkme` from `marionette` vs. have consumers declare it?** §5 recommends
    re-export for API hygiene. The planner decides whether Plan 01 adds the re-export, or
    Plan 03 adds `linkme` to `gallery-smoke`'s Cargo.toml directly. Either works; re-export is
    cleaner but requires a public path decision (`marionette::gallery::__linkme` vs
    `marionette::__private::linkme`).
+   **RESOLVED:** Re-export `linkme` from `marionette::gallery::__linkme` (the module's
+   hidden-but-accessible API surface). Macro-emitted paths reference `::marionette::gallery::__linkme`
+   so consumers do not need to declare `linkme` themselves. Locked in 16-01-PLAN.md.
 
 3. **Whether `Node` is re-exported from `marionette::gallery` or stays only at
    `marionette::builders::Node`.** §3 recommends re-exporting so `use marionette::gallery::
    {Node, DemoEntry, registered_demos}` composes cleanly for Phase 17. Either direction
    works; the alternative is `use marionette::builders::Node; use marionette::gallery::
    {DemoEntry, registered_demos};`.
+   **RESOLVED:** Re-export `Node` from `marionette::gallery`. Phase 17 composite demos
+   import everything from one path: `use marionette::gallery::{Node, DemoEntry, registered_demos};`.
+   Locked in 16-01-PLAN.md.
 
 4. **Parallel-test target-dir isolation in the FRAME-03 symbol-table test.** §4 describes the
    cargo-cache-thrash risk when the symbol test and the gallery-smoke test run in parallel.
@@ -1299,16 +1309,30 @@ surfacing to the user via `/gsd-plan-check`):
    target-dir isolation; (b) add `#[ignore]` and run only under a specific `cargo test
    --ignored` pass; (c) collapse both FRAME-03 sub-tests into a single `#[test]` that runs
    both builds sequentially.
+   **RESOLVED:** Option (a) — per-test `--target-dir`. The FRAME-03 symbol test in
+   `backend/crates/marionette/tests/no_gallery_symbols.rs` spawns two subprocess `cargo build`
+   invocations, each with a dedicated `--target-dir` under `target/no-gallery-symbols-test-<profile>/`.
+   No `#[ignore]` required; the test runs under the normal `cargo test --workspace` pass.
+   Locked in 16-03-PLAN.md Task 4.
 
 5. **Trybuild toolchain pinning — pin via `rust-toolchain.toml` or commit current-stable
    `.stderr` and document `TRYBUILD=overwrite`?** §5 recommends the latter. If the project
    later decides to pin, a single-line `rust-toolchain.toml` at repo root does it.
+   **RESOLVED:** No toolchain pin. Commit current-stable `.stderr` snapshots alongside the
+   trybuild `.rs` fixtures. `backend/crates/gallery-smoke/tests/ui/README.md` documents the
+   `TRYBUILD=overwrite cargo test -p gallery-smoke --test ui_errors` recovery procedure for
+   post-rustc-upgrade diagnostic-wording churn. Locked in 16-03-PLAN.md Task 3.
 
 6. **Sort/dedup implementation tested as global-state integration vs. pure-function unit?**
    §7 boundary conditions notes that testing the collision-check against global linker state
    is fragile; refactoring `build_sorted` to a pure function `fn sort_entries(entries: &[&'static
    DemoEntry]) -> Vec<&'static DemoEntry>` enables direct unit tests. Planner decides:
    refactor for testability (recommended) vs. accept global-state test difficulty.
+   **RESOLVED:** Refactor for testability. `backend/crates/marionette/src/gallery.rs`
+   exposes a pure `fn sort_entries(entries: &[&'static DemoEntry]) -> Vec<&'static DemoEntry>`
+   under a private scope plus `#[cfg(test)]` `pub(crate)` export. Unit tests in
+   `gallery::tests` exercise empty-input, single-entry, pre-sorted, reverse-sorted, and
+   duplicate-key paths without touching the global `DEMOS` slice. Locked in 16-01-PLAN.md Task 2.
 
 ## Recommended Plan Decomposition
 
