@@ -4,6 +4,7 @@
 
 mod action;
 mod component_builder;
+mod gallery_demo;
 mod requires;
 
 use proc_macro::TokenStream;
@@ -63,4 +64,36 @@ pub fn action(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn requires(attr: TokenStream, item: TokenStream) -> TokenStream {
     requires::requires_impl(attr.into(), item.into()).into()
+}
+
+/// Register a gallery demo function for auto-discovery.
+///
+/// Applied to a `pub fn name() -> Node`, emits a cfg-gated copy of the fn
+/// plus a `#[linkme::distributed_slice(marionette::gallery::DEMOS)]` static
+/// that registers the fn in the gallery registry. Both items are gated
+/// behind `#[cfg(feature = "gallery")]` on the consumer crate — under
+/// default build, neither the fn symbol nor the registry entry exists.
+///
+/// # Arguments
+///
+/// - `key = "..."` (optional) — registry sort key. Defaults to the fn ident.
+/// - `name = "..."` (optional) — nav-facing label. Defaults to title-cased `key`.
+///
+/// # Example
+///
+/// ```ignore
+/// use marionette::gallery::Node;
+/// use marionette_macros::gallery_demo;
+///
+/// #[gallery_demo(key = "button", name = "Button")]
+/// pub fn gallery_demo() -> Node {
+///     Button::new("Click").build()
+/// }
+/// ```
+///
+/// Misuse (non-`pub`, args, generics, `async`, wrong return type, or applied
+/// to a non-fn item) produces a compile error that names the violated rule.
+#[proc_macro_attribute]
+pub fn gallery_demo(attr: TokenStream, item: TokenStream) -> TokenStream {
+    gallery_demo::gallery_demo_impl(attr.into(), item.into()).into()
 }
