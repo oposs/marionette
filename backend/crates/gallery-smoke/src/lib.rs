@@ -18,9 +18,10 @@ use marionette::gallery::Node;
 use marionette_macros::gallery_demo;
 
 /// Toy demo registered against the Phase 16 registry. The `#[test]` in
-/// `tests/registry_roundtrip.rs` asserts this key + display_name appear
+/// `tests/registry_roundtrip.rs` asserts this key + `display_name` appear
 /// when `registered_demos()` is invoked.
 #[gallery_demo(key = "smoke", name = "Smoke Check")]
+#[must_use]
 pub fn smoke() -> Node {
     Text::new("gallery-smoke").build()
 }
