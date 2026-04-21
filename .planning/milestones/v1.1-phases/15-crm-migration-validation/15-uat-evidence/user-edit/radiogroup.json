@@ -1,0 +1,16 @@
+{
+  "scenario": "click each RadioGroup option",
+  "observed": {
+    "after_sms": [
+      "unchecked",
+      "checked",
+      "unchecked"
+    ],
+    "after_phone": [
+      "unchecked",
+      "unchecked",
+      "checked"
+    ]
+  },
+  "passed": true
+}

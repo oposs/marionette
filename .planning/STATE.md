@@ -1,83 +1,86 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: shadcn-svelte + High-Level Components
-status: executing
-stopped_at: Phase 15 verified — v1.1 milestone complete
-last_updated: "2026-04-18T09:45:11.452Z"
-last_activity: 2026-04-18 -- Phase 15 execution started
+milestone: v1.2
+milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
+status: defining-requirements
+stopped_at: Milestone v1.2 opened — defining requirements
+last_updated: "2026-04-21T17:14:00.000Z"
+last_activity: 2026-04-21 -- v1.1 closed, v1.2 opened via /gsd-new-milestone
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 38
-  completed_plans: 37
-  percent: 97
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-08)
+See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 15 — crm-migration-validation
+**Current focus:** v1.2 — gallery-demo + auto-discoverable component demos (defining requirements)
 
 ## Current Position
 
-Phase: 15 (crm-migration-validation) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 15
-Last activity: 2026-04-18 -- Phase 15 execution started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-21 — Milestone v1.2 started via /gsd-new-milestone
 
-Progress: [███████░░░] 67% (v1.1 — 4 of 6 phases complete; remaining: 14, 15)
+Progress: v1.2 just opened — phase decomposition pending roadmapper run.
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (through v1.1):**
 
-- Total plans completed: 63 (v1.0 + v1.1 through Phase 13)
+- Total plans completed: 70 (v1.0 32 + v1.1 38)
+- v1.0 duration: ~3 months wall-clock
+- v1.1 duration: ~10 days wall-clock (2026-04-08 to 2026-04-18)
 - Phase 13 duration: ~3 hours wall-clock (discuss → research → plan → revision → execute → verify → UAT)
 
-**By Phase (v1.0 archived):**
+**By Phase (v1.0 + v1.1, archived):**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| v1.0 (9 phases) | 32 | ~148min | ~4.6min |
-| 10 | 3 | - | - |
-| 11 | 5 | - | - |
-| 12 | 8 | - | - |
-| 13 | 7 | ~180min | ~25min |
-| 14 | 8 | - | - |
+| Phase | Plans | Notes |
+|-------|-------|-------|
+| v1.0 (1–9) | 32 | MVP — protocol, frontend lib, backend toolkit, CRM core + features + listmonk |
+| 10 | 3 | Foundation: shadcn init + Flowbite removal |
+| 11 | 5 | Leaf component migration |
+| 12 | 8 | Protocol node-patch + AppShell |
+| 13 | 7 | DataTable (filter/virtualize/column viz) |
+| 14 | 8 | FormScreen primitives |
+| 15 | 7 | CRM migration + validation |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
 
-- [v1.1]: Clean break from Flowbite -- no gradual migration, CSS conflicts make dual-stack untenable
-- [v1.1 — REVISED in Phase 13]: ~~No TanStack Table~~ → **TanStack Table Core adopted in server-driven mode** (client-side row models disabled via `manualSorting`; filter bar kept form-pattern, outside TanStack). Chosen because the shadcn-svelte data-table recipe is the canonical pattern and hand-rolling UI was explicitly rejected by user preference. See 13-CONTEXT.md D-A1 and 13-RESEARCH.md for the full rationale.
-- [v1.1 — REVISED in Phase 13]: ~~Keep custom virtual scroll~~ → **@tanstack/svelte-virtual adopted, store adapter rejected**. Phase 13 Wave 0 smoke test confirmed issue #866 under Svelte 5 (empty table). Adopted the virtual-core-direct fallback via `createRuneVirtualizer` wrapper in `frontend/src/lib/utils/virtualizer.svelte.ts` (~140 lines around `@tanstack/virtual-core` directly).
-- [Phase 13]: Generic `fetch_rows` backend handler keyed on `source` component id (D-H1)
-- [Phase 13]: Stale-response discard via DataTable-local action-id tracking, guaranteed by server FIFO ordering (D-H3)
-- [Phase 13]: TableScreen.svelte retired; CRM handlers compose `Container([Heading, Buttons, DataTable])` directly (D-A2)
+Recent decisions affecting v1.2:
+
+- [v1.2]: Gallery app is a second demo alongside the CRM (separate workspace crate `backend/crates/gallery-demo/`, thin backend, no auth, no DB) — dedicated surface for visual iteration and frontend capability exercise
+- [v1.2]: Auto-discoverable demos via `#[gallery_demo]` proc macro + `inventory`/`linkme` distributed slice; gated behind `gallery` cargo feature on `marionette` crate so production consumers do not compile demo code
+- [v1.2]: Demo contract is a pure `fn() -> Node`; composite demos are nested function calls; stateful fixtures live in the gallery binary, not the framework crate
+- [v1.2]: Nested AppShell is an intentional capability exerciser, not a stunt — exposes whether shadcn Sidebar provider-context and mobile-sheet behaviour compose under nesting
+
+See also: `.planning/notes/2026-04-21-gallery-demo-architecture.md` (full design) and `.planning/seeds/gallery-live-token-editor.md` (scope-flexible theme-editor seed).
 
 ### Pending Todos
 
-None.
+None carried over from v1.1.
 
 ### Blockers/Concerns
 
-- Toast replacement strategy (Sonner vs shadcn Toast) needs decision (Phase 11)
-- Field components without Superforms approach needs validation (Phase 14)
-- Pre-existing `TextInput handleBlur → NodeRenderer.bind undefined` regression logged for Phase 14 (see 13-deferred-items.md)
-- Pre-existing 5 popup browser-test failures (ConfirmDialog, ToastSurface) logged for future cleanup
-- crm-demo has 76-86 pre-existing clippy pedantic warnings (toolchain drift from Phase 12); not introduced by Phase 13
+- **AppShell nestability unknown** — Phase 12's AppShell uses shadcn SidebarProvider context, `--sidebar-*` CSS tokens, mobile sheet behaviour, and a keyboard shortcut. These may or may not compose cleanly when an outer shell hosts an inner shell. v1.2's exerciser phase is the place this will surface; may require non-trivial fixes.
+- **Registration library selection** — `inventory` vs `linkme` decision deferred to Phase A scoping. `inventory` is widely used; `linkme` gives more explicit control. Pick during `/gsd-plan-phase`.
+- **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision.
+- Pre-existing concerns carried from v1.1 (unchanged): 5 popup browser-test failures, some clippy pedantic warnings in crm-demo from toolchain drift.
 
 ## Session Continuity
 
-Last session: 2026-04-18T09:45:11.446Z
-Stopped at: Phase 15 verified — v1.1 milestone complete
-Resume file: .planning/phases/15-crm-migration-validation/15-VERIFICATION.md
+Last session: 2026-04-21T17:14:00.000Z
+Stopped at: Milestone v1.2 opened; `/gsd-new-milestone` still running — requirements + roadmap steps ahead
+Resume: continue `/gsd-new-milestone` workflow at "Research Decision" step (step 8)

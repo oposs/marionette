@@ -2,39 +2,38 @@
 
 ## What This Is
 
-OpenSDUI is an open protocol specification for server-driven UI. Marionette is its reference implementation: a Svelte 5 + Flowbite frontend library paired with a Rust + Axum backend toolkit. The backend controls what the frontend renders using three primitives — components, data, and messages. A demo CRM validates the protocol end-to-end with authentication, CRUD, search/filtering, and Listmonk integration.
+OpenSDUI is an open protocol specification for server-driven UI. Marionette is its reference implementation: a Svelte 5 + shadcn-svelte frontend library paired with a Rust + Axum backend toolkit. The backend controls what the frontend renders using three primitives — components, data, and messages. A demo CRM validates the protocol end-to-end with authentication, CRUD, search/filtering, and Listmonk integration; a companion gallery app (v1.2) serves as the design-iteration harness and frontend-capability exerciser.
 
 ## Core Value
 
 The protocol must be clean, well-specified, and demonstrate that server-driven UI can be done right — enabling rapid business app development where backend developers control UI without requiring frontend expertise.
 
-## Current Milestone: v1.1 shadcn-svelte + High-Level Components
+## Current Milestone: v1.2 Gallery Demo App + Auto-Discoverable Component Demos
 
-**Goal:** Replace Flowbite with shadcn-svelte and add high-level organisational components to Marionette so apps get professional screens out of the box without reinventing layout patterns.
+**Goal:** Ship a dedicated gallery app that serves as both a visual-iteration harness and an SDUI-frontend exerciser, backed by a first-class auto-discoverable demo mechanism colocated with every marionette built-in component — so design iteration stops being blocked by the opinionated CRM surface and so new components automatically surface in the gallery.
 
 **Target features:**
-- Clean break: Flowbite → shadcn-svelte for all component rendering
-- AppShell component: nav area, header, footer, content — works on desktop and mobile with responsive behavior
-- Form component: structured layout with action buttons, special widgets, proper spacing and visual hierarchy
-- DataTable component: infinite scroll, built-in filtering, sorting
-- Review and consolidate backend component builders to match
-- CRM demo fully migrated to new components
+- `#[gallery_demo]` proc macro in `marionette-macros` with `inventory`/`linkme` distributed-slice registration
+- `gallery` cargo feature gate on the `marionette` crate (default OFF) — production consumers do not compile demo code
+- New `gallery-demo` workspace crate — thin backend (no auth, no DB, in-memory state only), AppShell-based nav
+- Colocated `gallery_demo() -> Node` siblings for all existing built-in component builders (~20 components), pure-fn contract
+- Catalog screens (Buttons, Forms, DataTable, Feedback, Typography & tokens) with composite demos via nested fn calls
+- Exerciser screens: Nested AppShell, rapid node-patching, pathological scale (stress-tests protocol + frontend)
+- Live CSS-token editor screen (scope-flexible; see seed `gallery-live-token-editor`)
 
 ## Current State
 
-**Shipped:** v1.0 MVP (2026-04-08)
+**Shipped:**
+- v1.0 MVP (2026-04-08)
+- v1.1 shadcn-svelte + High-Level Components (2026-04-18)
 
 **What's built:**
-- OpenAPI 3.1 protocol specification (6 message types, adjacency list components, JSON Pointer data binding)
-- Svelte 5 frontend library: 20+ SDUI components, reactive data store, dirty tracking, WebSocket transport, URL routing
-- Rust backend toolkit: derive macros, action routing, WebSocket sessions, SeaORM persistence
-- CRM demo: auth/roles, company/contact CRUD, notes, tags, search/filtering, interaction timeline, Listmonk sync
+- OpenAPI 3.1 protocol specification — now 1.1.0 with protocol node-patch operations (Phase 12)
+- Svelte 5 frontend library on shadcn-svelte primitives + lucide icons; AppShell, enhanced DataTable (filter bar, virtualization, column visibility), enhanced forms (Field anatomy, FieldSet/FieldSeparator, Textarea/RadioGroup/Switch)
+- Rust backend toolkit: derive macros, action routing, WebSocket sessions, SeaORM persistence; surface-scoped patches; hand-written AppShell builder
+- CRM demo fully migrated to the new stack (Phase 15) — Flowbite is gone; CI guards prevent regressions
 
-**Phase 10 complete** (2026-04-09): Foundation — shadcn-svelte initialized, CSS rewritten to OKLCH semantic tokens (Zinc), all Flowbite dependencies removed, 17 components stubbed with HTML+Tailwind
-
-**Phase 14 complete** (2026-04-18): FormScreen enhancements — all form leaves (TextInput/SelectInput/Checkbox/Textarea/RadioGroup/Switch) rewritten with shared Field.Field anatomy, new FieldSet (auto-responsive 2-col grid) + FieldSeparator structural primitives, orphan FormScreen.svelte deleted, CRM contact edit-form migrated to the new composition
-
-**Tech stack:** Rust (Axum, SeaORM, tokio), Svelte 5 (Flowbite, Vite), SQLite, ~53k LOC across 273 files
+**Tech stack:** Rust (Axum, SeaORM, tokio), Svelte 5 (shadcn-svelte, Vite), SQLite for the CRM demo only, ~53k LOC across 273 files
 
 ## Requirements
 
@@ -42,7 +41,6 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 
 - ✓ OpenAPI 3.1 specification defining components, data, messages — v1.0
 - ✓ Protocol manual explaining concepts, patterns, and rationale — v1.0
-- ✓ Svelte 5 + Flowbite component library — v1.0
 - ✓ Renders component adjacency lists from server — v1.0
 - ✓ Handles data binding via JSON Pointers — v1.0
 - ✓ Handles message passing to/from server — v1.0
@@ -55,15 +53,24 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 - ✓ Interactions/activity tracking per contact — v1.0
 - ✓ Listmonk integration: sync contacts to lists — v1.0
 - ✓ Listmonk integration: view mailing history per contact — v1.0
+- ✓ shadcn-svelte is the sole component framework (Flowbite fully removed, CI-guarded) — v1.1 Phase 10
+- ✓ All SDUI leaf components rebuilt on shadcn-svelte + lucide icons — v1.1 Phase 11
+- ✓ Protocol 1.1.0 with node-patch operations (set-node / delete-node / set-children) — v1.1 Phase 12
+- ✓ AppShell as a first-class SDUI component with responsive sidebar, mobile sheet, surface-scoped patches — v1.1 Phase 12
+- ✓ DataTable with server-driven filter bar, virtualized infinite scroll, column visibility — v1.1 Phase 13
+- ✓ Form Field anatomy (label/description/error) + FieldSet + FieldSeparator + Textarea + RadioGroup + Switch — v1.1 Phase 14
+- ✓ CRM demo fully migrated to the new stack end-to-end — v1.1 Phase 15
 
 ### Active
 
-- [ ] Replace Flowbite with shadcn-svelte across all frontend components
-- [ ] AppShell component: responsive nav/header/footer/content layout
-- [ ] Form component: structured layout with actions and special widgets
-- [ ] DataTable component: infinite scroll, filtering, sorting
-- [ ] Backend builders reviewed and consolidated for new component types
-- [ ] CRM demo migrated to new components end-to-end
+*Canonical list lives in `.planning/REQUIREMENTS.md` (populated by the requirements step of `/gsd-new-milestone`). Summary by category:*
+
+- [ ] **Framework hooks** — `#[gallery_demo]` proc macro, `inventory`/`linkme` registration backbone, `gallery` cargo feature gate
+- [ ] **Gallery crate skeleton** — new `backend/crates/gallery-demo/` workspace member, thin backend, AppShell-based nav from auto-discovered registry
+- [ ] **Colocated built-in demos** — pure-fn `gallery_demo() -> Node` siblings for every existing built-in component
+- [ ] **Catalog screens** — Buttons, Forms, DataTable, Feedback, Typography & tokens
+- [ ] **Exerciser screens** — Nested AppShell, rapid node-patching, pathological scale
+- [ ] **Live CSS-token editor** — scope-flexible, see seed `gallery-live-token-editor`
 
 ### Out of Scope
 
@@ -116,6 +123,12 @@ The protocol must be clean, well-specified, and demonstrate that server-driven U
 | Type-erased AppState extension | Avoids leaking app types into library crate | ✓ Good |
 | OnceLock for external service clients | Simple global access from handlers | ⚠️ Revisit — consider DI pattern for testability |
 | SQLite for demo CRM | Simplest persistence for demo, zero config | ✓ Good |
+| shadcn-svelte over Flowbite | Accessible primitives + theming model, drives CSS-token discipline | ✓ Good — v1.1 |
+| TanStack Table Core in server-driven mode | Canonical shadcn data-table recipe; client row models disabled via manualSorting | ✓ Good — v1.1 Phase 13 |
+| Protocol 1.1.0 node-patch operations | Closes CONCEPT.md's "patch by node ID" promise; enables focus-preservation across sibling mutation | ✓ Good — v1.1 Phase 12 |
+| Gallery app as second demo alongside CRM | CRM is too opinionated as a design-iteration surface; gallery serves visual iteration + SDUI-frontend exerciser | → v1.2 |
+| Auto-discoverable demos via `#[gallery_demo]` + inventory/linkme | Long-haul investment — eliminates registry drift as new components land; gated behind `gallery` cargo feature so production consumers stay lean | → v1.2 Phase A |
+| Pure `fn() -> Node` demo contract | Keeps demo code in the `marionette` crate harmless; composite demos are nested fn calls; stateful fixtures live in the gallery binary, not the framework crate | → v1.2 |
 
 ---
 ## Evolution
@@ -136,4 +149,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after Phase 14 (formscreen-enhancements) completion*
+*Last updated: 2026-04-21 — v1.1 milestone closed; v1.2 (gallery-demo + auto-discoverable component demos) opened*

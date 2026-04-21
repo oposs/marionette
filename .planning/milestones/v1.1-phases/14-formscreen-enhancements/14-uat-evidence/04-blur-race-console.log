@@ -1,0 +1,8 @@
+UAT-04 Blur-race silence — D-E2 verification
+console.error count: 0
+console.warn count:  0
+total log entries:   0
+
+
+assertion: expect 0 errors + 0 warnings after blur race
+passed:    true

@@ -40,3 +40,20 @@
 - Per-contact mailing history from Listmonk subscriber export with 15-minute local cache, DataTable display, and on-demand refresh
 
 ---
+
+## v1.1 shadcn-svelte + High-Level Components (Shipped: 2026-04-18)
+
+**Phases completed:** 6 phases (10–15), 38 plans
+
+**Key accomplishments:**
+
+- shadcn-svelte initialised as the sole component framework; all Flowbite packages, imports, and plugin references removed; app.css rewritten to OKLCH semantic colour tokens on the Zinc palette with shadcn theme plumbing; CI guard prevents Flowbite regressions
+- All 20+ SDUI leaf components (Button, TextInput, SelectInput, Checkbox, Textarea, RadioGroup, Switch, ModalSurface, ConfirmDialog, ToastSurface, DataTable, NavItem, Sidebar pieces, feedback primitives, FormScreen/TableScreen) rebuilt on shadcn-svelte primitives and lucide-svelte icons with passing component tests
+- Protocol version bumped to 1.1.0 with node-patch operations (`set-node`, `delete-node`, `set-children`) applied atomically alongside data ops; spec YAMLs and PROTOCOL.md updated to match; focus-preservation proven via browser test
+- AppShell delivered as a first-class SDUI component on top of shadcn Sidebar — collapsible desktop sidebar, mobile sheet, header/footer slots, `--sidebar-*` token theming — registered in defaults.ts with hand-written backend builder and slot children by name
+- Surface-scoped patches (SurfaceMount + fine-grained surfaces store) so a patch to one surface does not remount siblings; retired the legacy ConnectionBanner
+- DataTable rewritten to the shadcn recipe shape: server-driven filter bar, virtualised infinite scroll via `createRuneVirtualizer` wrapper around `@tanstack/virtual-core`, column visibility dropdown, per-kind cell rendering, stale-response discard, generic `fetch_rows` handler with source dispatch; CRM list handlers migrated; TableScreen retired
+- Form primitives rewritten around a shared Field.Field anatomy (label + description + error) with FieldSet (responsive 2-column grid + cols override) and FieldSeparator structural primitives; Textarea, RadioGroup, Switch added; FormScreen orphan deleted
+- CRM demo fully migrated to the new stack — contact schema extended (country/notes/opt_in), handler sweeps across company/user/interaction/contact/note/tag forms rewired for validation, Form payload + Button builder + node: prefix scope-closure bundle, documentation brand-voice sweep, E2E + Chrome-MCP UAT across every screen
+
+---
