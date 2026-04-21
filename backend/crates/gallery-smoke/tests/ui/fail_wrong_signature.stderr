@@ -1,0 +1,19 @@
+error: #[gallery_demo] fn must be `fn() -> Node` with zero arguments (found 1)
+ --> tests/ui/fail_wrong_signature.rs:6:17
+  |
+6 | pub fn has_args(_arg: u32) -> Node {
+  |                 ^^^^^^^^^
+
+warning: unused import: `marionette::builders::standard::Text`
+ --> tests/ui/fail_wrong_signature.rs:1:5
+  |
+1 | use marionette::builders::standard::Text;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `marionette::gallery::Node`
+ --> tests/ui/fail_wrong_signature.rs:2:5
+  |
+2 | use marionette::gallery::Node;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
