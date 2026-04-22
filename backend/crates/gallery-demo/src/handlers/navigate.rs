@@ -18,6 +18,7 @@ use marionette_protocol::{Component, ComponentAction, ProtocolMessage};
 use crate::home::build_home_page;
 
 #[allow(clippy::unused_async)] // HandlerContext requires async fn
+#[allow(clippy::too_many_lines)] // Top-level handler: seed + shell + 4 Renders
 pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
     // -- Sidebar: one NavItem per registered demo (flat alphabetical per D-C1) --
     let nav_items: Vec<(String, Component)> = registered_demos()

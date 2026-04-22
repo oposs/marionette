@@ -1,11 +1,12 @@
-//! Modal demo handlers — `gallery-demo/modal-open` and the frontend-hardcoded
-//! `close-modal` (NOT `gallery-demo/modal-close`, per RESEARCH.md §Pitfall 3
-//! which verifies that `frontend/src/lib/components/popup/ModalSurface.svelte:15`
-//! dispatches the literal string `"close-modal"`).
+//! Modal demo handlers — `gallery-demo/modal-open` opens an overlay by
+//! rendering a Container body (NOT a `type: "modal"` component — see G-01)
+//! into the `modal` sub-surface; `close-modal` (frontend-hardcoded) renders
+//! an empty Container sentinel that `ModalSurface.svelte` treats as closed
+//! (see frontend/src/lib/components/popup/ModalSurface.svelte's isOpen check).
 
 use std::collections::HashMap;
 
-use marionette::builders::{Container, Heading, Modal, Text};
+use marionette::builders::{Container, Heading, Text};
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
 use marionette_protocol::messages::RenderMessage;
@@ -13,15 +14,23 @@ use marionette_protocol::{Component, ProtocolMessage};
 
 #[allow(clippy::unused_async)]
 pub async fn handle_modal_open(ctx: HandlerContext) -> ActionResult {
-    let modal_root_id = "demo-modal-root".to_string();
+    // IMPORTANT: do NOT use Modal::new() here. The Modal builder emits
+    // `type: "modal"`, which the frontend registry maps to ModalSurface.svelte
+    // (frontend/src/lib/registry/defaults.ts:57). Rendering a `type: "modal"`
+    // Component into the modal sub-surface causes ModalSurface-inside-
+    // ModalSurface infinite recursion — tab lockup (G-01).
+    //
+    // ModalSurface.svelte already supplies the Dialog.Root + Dialog.Content
+    // chrome; the tree.root it renders is the INNER body only. So we emit
+    // a plain Container with the body children (Heading title + Text).
     let modal_title = Heading::new("Example modal")
         .id("demo-modal-title")
         .build();
     let modal_body = Text::new("Clicking X or the backdrop dismisses this dialog.")
         .id("demo-modal-body")
         .build();
-    let modal_nodes = Modal::new("Example modal")
-        .id(&modal_root_id)
+    let modal_nodes = Container::new()
+        .id("demo-modal-root")
         .children(vec![modal_title, modal_body])
         .build_with_children();
 
@@ -33,7 +42,7 @@ pub async fn handle_modal_open(ctx: HandlerContext) -> ActionResult {
     Ok(vec![ProtocolMessage::Render(RenderMessage {
         id: ctx.action.id.clone(),
         surface: "modal".into(),
-        root: modal_root_id,
+        root: "demo-modal-root".into(),
         nodes: map,
         data: serde_json::json!({}),
     })])
