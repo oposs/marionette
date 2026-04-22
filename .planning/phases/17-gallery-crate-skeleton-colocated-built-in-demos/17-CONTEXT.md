@@ -22,7 +22,7 @@ Phase 17 turns the Phase 16 framework rails into a **running gallery app** and p
 - **NOT exerciser screens.** Phase 19 (EXER-01/02/03) owns Nested AppShell, Rapid Patching, Pathological Scale.
 - **NOT the Live Token Editor.** Phase 20 (THEME-01).
 - **NOT a CI lint enforcing coverage.** GALLERY-LINT is v1.3+. Phase 17's coverage is delivered by sweep + documentation in GALLERY-DEMOS.md; drift risk is a known deferred concern.
-- **NOT a change to the `gallery` cargo feature, the `DemoEntry` shape, the `registered_demos()` API, or the `#[gallery_demo]` proc macro.** Phase 16 locked those; this phase consumes them verbatim. The only in-flight framework-level decision is the per-component file reorganization (D-B3), which reshapes `builders/` but touches no public API other than `pub use` re-exports.
+- **NOT a change to the `gallery` cargo feature, the `registered_demos()` iteration semantics, or the `#[gallery_demo]` macro's `key`/`name` arg handling.** Phase 16 locked those; this phase consumes them verbatim. Two in-flight framework-level changes ARE in scope: (1) a **Phase 16.5 micro-refactor** of `DemoEntry.render: fn() -> Node` → `fn() -> Vec<Node>` (per §D-Z1 — surfaced by research as a blocker for composite demos), and (2) the per-component file reorganization of `builders/standard.rs` (per §D-B3). Both touch narrow surfaces — no impact to the linkme backbone, feature gate, explicit-key requirement, pure-fn contract, or alphabetical ordering.
 - **NOT adding grouping metadata to `DemoEntry`.** The nav is flat alphabetical; grouping is a deferred idea if Phase 18/19 UX reveals the need.
 - **NOT extending `ActionRouter` with wildcard or fallback handlers.** Every demo action is explicitly registered by `gallery-demo/src/main.rs` under the `gallery-demo/*` namespace.
 - **NOT frontend work.** The existing `frontend/build` output is served by gallery-demo as-is. No Svelte component changes are expected.
@@ -31,6 +31,18 @@ Phase 17 turns the Phase 16 framework rails into a **running gallery app** and p
 
 <decisions>
 ## Implementation Decisions
+
+### Area Z — Phase 16.5 micro-refactor: `DemoEntry.render` signature (added 2026-04-22 after research surfaced blocker)
+
+- **D-Z1: `DemoEntry.render: fn() -> Vec<Node>` (flat-tree return shape).** Phase 16's original signature `fn() -> Node` (where `Node = (String, Component)`) cannot carry descendant nodes through the render path — the Render message's `nodes` HashMap needs every descendant, but a single tuple loses them. Composite demos (Form, FieldSet, DataTable, Modal, ConfirmDialog, Toast, AppShell — 7 of 19 in-scope demos) therefore cannot satisfy D-A1's hybrid density under the original signature. Phase 17 lands a **Phase 16.5 micro-refactor** as an early wave before the sweep: change `DemoEntry.render` to `fn() -> Vec<Node>`, update the `#[gallery_demo]` macro's signature check, update `gallery-smoke/src/lib.rs`'s `smoke()` fn + trybuild `.stderr` fixtures. Leaf demos return `vec![one_tuple]`; composites return `vec![root_tuple, ...descendants]`. Phase 16's core contract (linkme backbone, `gallery` feature gate, explicit `key = "..."` requirement, pure-fn, alphabetical iteration order) is **unchanged**. The `gallery-show` handler's match-then-Render pipeline consumes `Vec<Node>` directly: `let nodes_vec = entry.render(); let root_id = nodes_vec[0].0.clone(); let nodes_map: HashMap<_, _> = nodes_vec.into_iter().collect();`. This supersedes Phase 16 §D-C2's render-field line.
+
+  **Touched by this refactor (exhaustive):**
+  - `backend/crates/marionette/src/gallery.rs` — `DemoEntry.render` field type.
+  - `backend/crates/marionette-macros/src/gallery_demo.rs` — `return_type_is_node` check (line ~155 per research) becomes `return_type_is_vec_node`.
+  - `backend/crates/gallery-smoke/src/lib.rs` — `smoke()` returns `vec![Text::new("gallery-smoke").build()]`.
+  - `backend/crates/gallery-smoke/tests/ui/` — `.stderr` expectations for misapplication cases update to reference `Vec<Node>` rather than `Node`.
+
+  No other consumers of `registered_demos()` exist at Phase 16.5 time (gallery-demo doesn't exist yet). Minimal blast radius.
 
 ### Area A — Demo content density (what each `gallery_demo()` emits)
 
