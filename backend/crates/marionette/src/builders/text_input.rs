@@ -29,6 +29,30 @@ pub struct TextInput {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "text-input")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let a = TextInput::new("Label")
+        .bind("/demo/text-input/value")
+        .build();
+    let b = TextInput::new("Disabled")
+        .disabled(true)
+        .bind("/demo/text-input/value-disabled")
+        .build();
+    let c = TextInput::new("With description")
+        .description("Helper text rendered below via Field.Description.")
+        .bind("/demo/text-input/value-desc")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-text-input-root")
+        .children(vec![a, b, c])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -18,6 +18,29 @@ pub struct Button {
     pub disabled: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "button")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    use marionette_protocol::ComponentAction;
+
+    let primary = Button::new("Primary")
+        .action(ComponentAction::submit("gallery-demo/noop"))
+        .build();
+    let disabled = Button::new("Disabled").disabled(true).build();
+    let destructive = Button::new("Destructive")
+        .variant("destructive")
+        .action(ComponentAction::submit("gallery-demo/noop"))
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-button-root")
+        .children(vec![primary, disabled, destructive])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

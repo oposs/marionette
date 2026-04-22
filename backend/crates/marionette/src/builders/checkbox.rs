@@ -23,6 +23,28 @@ pub struct Checkbox {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "checkbox")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let a = Checkbox::new("Unchecked").bind("/demo/checkbox/a").build();
+    let b = Checkbox::new("With description")
+        .description("Helper text from Field.Description.")
+        .bind("/demo/checkbox/b")
+        .build();
+    let c = Checkbox::new("Disabled")
+        .disabled(true)
+        .bind("/demo/checkbox/c")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-checkbox-root")
+        .children(vec![a, b, c])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

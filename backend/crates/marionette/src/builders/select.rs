@@ -42,6 +42,40 @@ pub struct Select {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "select")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let options = vec![
+        SelectOption {
+            value: "apple".into(),
+            label: "Apple".into(),
+        },
+        SelectOption {
+            value: "banana".into(),
+            label: "Banana".into(),
+        },
+        SelectOption {
+            value: "cherry".into(),
+            label: "Cherry".into(),
+        },
+    ];
+    let a = Select::new("Fruit", options.clone())
+        .bind("/demo/select/value")
+        .build();
+    let b = Select::new("Disabled", options)
+        .disabled(true)
+        .bind("/demo/select/value-disabled")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-select-root")
+        .children(vec![a, b])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

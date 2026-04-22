@@ -28,6 +28,24 @@ pub struct Switch {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "switch")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let a = Switch::new("Wifi").bind("/demo/switch/checked-1").build();
+    let b = Switch::new("Bluetooth")
+        .description("With a helper line below via Field.Description.")
+        .bind("/demo/switch/checked-2")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-switch-root")
+        .children(vec![a, b])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
