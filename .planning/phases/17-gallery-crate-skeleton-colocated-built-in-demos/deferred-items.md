@@ -25,3 +25,22 @@ issues DIRECTLY caused by the current task's changes."
   `cargo clippy --workspace --features gallery -- -D warnings`) was run but
   cannot pass until those unrelated pedantic issues are addressed; per-plan
   clippy on the touched crates does pass.
+
+### Pre-existing ConfirmDialog browser-test failures (4 tests)
+
+- **Symptom:** `npx vitest run --config vitest-browser.config.ts
+  src/lib/components/popup/ConfirmDialog.browser-test.ts` reports 4/4
+  failures (`Cannot read properties of null` on `dialog-title`,
+  `dialog-footer` queries).
+- **Source:** Pre-existing — fails identically on the baseline (stashed
+  the ModalSurface.svelte change and re-ran on 2026-04-22; same 4/4
+  failures). Documented in `.planning/STATE.md` §Blockers/Concerns as
+  "5 popup browser-test failures" carried from v1.1.
+- **Scope boundary:** The ConfirmDialog tests do NOT exercise
+  ModalSurface.svelte — they wrap `ConfirmDialog` in a local
+  `ConfirmDialogTestWrapper.svelte` with `<Dialog.Root open={true}>`
+  directly. Plan 17-05 Task 4 touches only ModalSurface.svelte; the 4
+  failures predate the change.
+- **Resolution path:** Popup browser-test stabilization phase (v1.3+ or
+  a dedicated test-infra plan). ModalSurface browser tests still pass
+  (3/3) after Task 4's change.
