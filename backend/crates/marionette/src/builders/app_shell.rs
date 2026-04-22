@@ -244,56 +244,125 @@ impl AppShellBuilder {
 #[marionette_macros::gallery_demo(key = "app-shell")]
 #[must_use]
 pub fn gallery_demo() -> Vec<crate::gallery::Node> {
-    // D-A2: AppShell demo is hand-designed, not auto-nested. Renders inside
-    // the gallery's `content` sub-surface as a curated "this is how you'd
-    // really build it" showcase. Phase 19 EXER-01 tests outer+inner nesting
-    // explicitly — this demo is content-surface-only.
+    // D-A2 hand-designed: AppShell is a first-class SDUI component whose
+    // frontend uses `<Sidebar.Provider>` (shadcn-svelte). Nesting an
+    // AppShell inside the outer gallery's AppShell causes the inner
+    // Sidebar.Root to render at the same viewport position as outer,
+    // visually replacing the outer sidebar's 20 demo nav entries (G-02
+    // — confirmed UAT 2026-04-22). Until Phase 19 EXER-01 exercises
+    // nestable shells properly, this demo renders a STATIC VISUAL
+    // REPRESENTATION of the AppShell structure using plain Container
+    // + Heading + Text builders — no AppShell builder, no SurfaceMount,
+    // no Sidebar.Provider.
     use crate::builders::container::Container;
     use crate::builders::heading::Heading;
-    use crate::builders::nav_item::NavItem;
-    use crate::builders::side_nav::SideNav;
     use crate::builders::text::Text;
 
-    let nav_a = NavItem::new("Dashboard", "/demo/app-shell/dashboard")
-        .id("demo-app-shell-nav-a")
+    // ---- Explainer header ----
+    let heading = Heading::new("App Shell (structural preview)")
+        .id("demo-app-shell-heading")
+        .level(2)
         .build();
-    let nav_b = NavItem::new("Reports", "/demo/app-shell/reports")
-        .id("demo-app-shell-nav-b")
-        .build();
-    let nav_c = NavItem::new("Settings", "/demo/app-shell/settings")
-        .id("demo-app-shell-nav-c")
-        .build();
-    let (sidebar_root, sidebar_desc) = SideNav::new()
-        .id("demo-app-shell-sidebar")
-        .children(vec![nav_a, nav_b, nav_c])
-        .build_tree();
-
-    let header = Heading::new("Demo App")
-        .id("demo-app-shell-header-title")
-        .build();
-
-    let main_text = Text::new(
-        "This AppShell demo is hand-designed per D-A2 — Phase 19 \
-         EXER-01 exercises nested AppShell composition explicitly.",
+    let intro = Text::new(
+        "AppShell composes six slots: sidebar, header, main, footer, popups, toasts. \
+         This preview shows the static structure — Phase 19 EXER-01 will exercise \
+         nestable shells properly. Clicking this demo does NOT replace the gallery's \
+         own sidebar.",
     )
-    .id("demo-app-shell-main-text")
+    .id("demo-app-shell-intro")
     .build();
-    let (main_root, main_desc) = Container::new()
-        .id("demo-app-shell-main")
-        .children(vec![main_text])
-        .build_tree();
 
-    let mut descendants: Vec<crate::gallery::Node> = Vec::new();
-    descendants.extend(sidebar_desc);
-    descendants.extend(main_desc);
+    // ---- Sidebar slot (static representation) ----
+    let sidebar_label = Heading::new("Sidebar slot")
+        .id("demo-app-shell-sidebar-label")
+        .level(3)
+        .build();
+    let sidebar_a = Text::new("• Dashboard").id("demo-app-shell-nav-a").build();
+    let sidebar_b = Text::new("• Reports").id("demo-app-shell-nav-b").build();
+    let sidebar_c = Text::new("• Settings").id("demo-app-shell-nav-c").build();
+    let sidebar_box = Container::new()
+        .id("demo-app-shell-sidebar-box")
+        .children(vec![sidebar_label, sidebar_a, sidebar_b, sidebar_c])
+        .build_with_children();
 
-    AppShell::new()
+    // ---- Header slot (static representation) ----
+    let header_label = Heading::new("Header slot")
+        .id("demo-app-shell-header-label")
+        .level(3)
+        .build();
+    let header_content = Text::new("Title bar · User menu · Shortcuts")
+        .id("demo-app-shell-header-content")
+        .build();
+    let header_box = Container::new()
+        .id("demo-app-shell-header-box")
+        .children(vec![header_label, header_content])
+        .build_with_children();
+
+    // ---- Main slot (static representation) ----
+    let main_label = Heading::new("Main slot")
+        .id("demo-app-shell-main-label")
+        .level(3)
+        .build();
+    let main_content = Text::new("Primary content area — renders the current route's body.")
+        .id("demo-app-shell-main-content")
+        .build();
+    let main_box = Container::new()
+        .id("demo-app-shell-main-box")
+        .children(vec![main_label, main_content])
+        .build_with_children();
+
+    // ---- Footer + popups + toasts slots (short labels only, one Container per slot) ----
+    let footer_label = Heading::new("Footer slot")
+        .id("demo-app-shell-footer-label")
+        .level(3)
+        .build();
+    let footer_content = Text::new("Version · Connection status · Copyright")
+        .id("demo-app-shell-footer-content")
+        .build();
+    let footer_box = Container::new()
+        .id("demo-app-shell-footer-box")
+        .children(vec![footer_label, footer_content])
+        .build_with_children();
+
+    let popups_label = Heading::new("Popups + Toasts slots")
+        .id("demo-app-shell-popups-label")
+        .level(3)
+        .build();
+    let popups_content = Text::new(
+        "Sub-surfaces for modal/confirm overlays and ephemeral toast notifications.",
+    )
+    .id("demo-app-shell-popups-content")
+    .build();
+    let popups_box = Container::new()
+        .id("demo-app-shell-popups-box")
+        .children(vec![popups_label, popups_content])
+        .build_with_children();
+
+    // ---- Outer Container wraps the 5 slot-boxes in order ----
+    // Each slot_box is a Vec<Node> where [0] is the slot's root Container.
+    // We pass each slot_box[0].clone() as a child to the outer Container,
+    // and extend the return vec with slot_box[1..] (the slot's descendants).
+    let outer_children: Vec<crate::gallery::Node> = vec![
+        intro,
+        heading,
+        sidebar_box[0].clone(),
+        header_box[0].clone(),
+        main_box[0].clone(),
+        footer_box[0].clone(),
+        popups_box[0].clone(),
+    ];
+    let mut all = Container::new()
         .id("demo-app-shell-root")
-        .sidebar(sidebar_root)
-        .header(header)
-        .main(main_root)
-        .with_descendants(descendants)
-        .build_with_children()
+        .children(outer_children)
+        .build_with_children();
+
+    // Extend with each slot_box's descendants (skip index 0 — already consumed as the child).
+    all.extend(sidebar_box.into_iter().skip(1));
+    all.extend(header_box.into_iter().skip(1));
+    all.extend(main_box.into_iter().skip(1));
+    all.extend(footer_box.into_iter().skip(1));
+    all.extend(popups_box.into_iter().skip(1));
+    all
 }
 
 #[cfg(test)]
