@@ -8,7 +8,7 @@
 
 use std::collections::HashMap;
 
-use marionette::builders::{AppShell, Container, Heading, NavItem, SideNav, SurfaceMount};
+use marionette::builders::{AppShell, Container, Heading, NavItem, SideNav, SurfaceMount, Text};
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
 use marionette::gallery::registered_demos;
@@ -48,10 +48,15 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
         .build_tree();
 
     // -- Footer: version + connection-status binding (mirrors CRM's D-B6) --
-    let footer_version = Heading::new("Marionette Gallery · v1.2")
+    //
+    // G-06 (Phase 17 Plan 17-05 Task 1): Footer must render as small muted
+    // text. `Heading::new(...)` renders as <h2 class="text-xl font-semibold">,
+    // overriding the footer wrapper's `text-xs text-muted-foreground`. Swap to
+    // `Text::new(...)` so inherited footer typography takes effect.
+    let footer_version = Text::new("Marionette Gallery · v1.2")
         .id("footer-version")
         .build();
-    let footer_status = Heading::new("connected")
+    let footer_status = Text::new("connected")
         .id("footer-connection-status")
         .bind("/system/connectionStatus")
         .build();
@@ -102,6 +107,21 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
     let mut toasts_map: HashMap<String, Component> = HashMap::new();
     toasts_map.insert(toasts_root_tuple.0.clone(), toasts_root_tuple.1);
 
+    // -- Modal root seed (Container so ModalSurface does not render LoadingSkeleton) --
+    //
+    // G-07 (Phase 17 Plan 17-05 Task 1): Without this Render, SurfaceMount("modal")
+    // has no tree on initial page load, so the frontend renders a grey
+    // `LoadingSkeleton` placeholder below the footer on Home. Mirrors the toasts
+    // seed pattern used by CRM (crm-demo/src/main.rs:293-309).
+    //
+    // The "modal-empty" id is the canonical "closed" sentinel — ModalSurface.svelte
+    // treats an empty Container root as the closed state (see G-04 fix in
+    // frontend/src/lib/components/popup/ModalSurface.svelte). handle_modal_close
+    // and confirm_close_with_toast both emit the same sentinel.
+    let (modal_root_tuple, _) = Container::new().id("modal-empty").build_tree();
+    let mut modal_map: HashMap<String, Component> = HashMap::new();
+    modal_map.insert(modal_root_tuple.0.clone(), modal_root_tuple.1);
+
     Ok(vec![
         ProtocolMessage::Render(RenderMessage {
             id: None,
@@ -122,6 +142,13 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
             surface: "toasts".into(),
             root: toasts_root_tuple.0,
             nodes: toasts_map,
+            data: serde_json::json!({}),
+        }),
+        ProtocolMessage::Render(RenderMessage {
+            id: None,
+            surface: "modal".into(),
+            root: modal_root_tuple.0,
+            nodes: modal_map,
             data: serde_json::json!({}),
         }),
     ])
