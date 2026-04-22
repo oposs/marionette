@@ -36,6 +36,33 @@ pub struct FieldSet {
     pub cols: Option<u8>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01 composite) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "field-set")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    // D-A1 composite nesting: FieldSet groups two input demos.
+    let text_input_nodes = crate::builders::text_input::gallery_demo();
+    let select_nodes = crate::builders::select::gallery_demo();
+
+    let (fs_root, fs_desc) = FieldSet::new()
+        .id("demo-field-set-root")
+        .legend("Contact Info")
+        .description("Grouped form fields demonstrating FieldSet layout.")
+        .children(vec![
+            text_input_nodes[0].clone(),
+            select_nodes[0].clone(),
+        ])
+        .build_tree();
+
+    let mut all = vec![fs_root];
+    all.extend(text_input_nodes.into_iter().skip(1));
+    all.extend(select_nodes.into_iter().skip(1));
+    all.extend(fs_desc);
+    all
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

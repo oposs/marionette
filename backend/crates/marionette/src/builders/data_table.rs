@@ -222,6 +222,33 @@ impl DataTableBuilder {
     }
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01 composite) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "data-table")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    // DataTable demo: 4 columns + source "demo-rows" (gallery-demo's
+    // fetch-rows handler seeds synthetic rows per CONTEXT.md §D-D1).
+    let columns = vec![
+        TableColumn::new("id", "ID"),
+        TableColumn::new("name", "Name"),
+        TableColumn::new("email", "Email"),
+        TableColumn::new("created", "Created").kind(ColumnKind::Date),
+    ];
+
+    let (id, component) = DataTable::new(columns)
+        .id("demo-data-table-root")
+        .source("demo-rows")
+        .row_id_key("id")
+        .page_size(10u32)
+        .build();
+
+    // DataTable is a single Component with columns encoded in props —
+    // no descendants.
+    vec![(id, component)]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
