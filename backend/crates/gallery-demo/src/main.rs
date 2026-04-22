@@ -48,12 +48,11 @@ async fn main() {
 
     // Static file serving with SPA fallback (tower-http::ServeDir).
     // Path is relative to the binary's runtime cwd — `cargo run -p gallery-demo`
-    // executed from `backend/crates/gallery-demo/` resolves to the repo's
-    // `frontend/build/` directory. Integration tests use
-    // `env!("CARGO_MANIFEST_DIR")` + the same three-`..` suffix so both
-    // entry points converge on the same target directory.
-    let serve_dir = ServeDir::new("../../../frontend/build")
-        .fallback(ServeFile::new("../../../frontend/build/index.html"));
+    // invoked from `backend/` (per the `gallery-dev` Makefile target) resolves
+    // `../frontend/build/` to the repo's `frontend/build/` directory, matching
+    // the CRM demo's pattern (crm-demo/src/main.rs).
+    let serve_dir = ServeDir::new("../frontend/build")
+        .fallback(ServeFile::new("../frontend/build/index.html"));
 
     let app = Router::new()
         .route("/ws", axum::routing::any(ws_handler))
