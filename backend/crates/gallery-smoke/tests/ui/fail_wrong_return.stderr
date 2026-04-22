@@ -1,4 +1,4 @@
-error: #[gallery_demo] fn must return `Node` (an alias for `(String, marionette_protocol::Component)`)
+error: #[gallery_demo] fn must return `Vec<Node>` (an alias for `Vec<(String, marionette_protocol::Component)>`) — index 0 is the root, remaining entries are descendants
  --> tests/ui/fail_wrong_return.rs:4:26
   |
 4 | pub fn wrong_return() -> Vec<u32> {
