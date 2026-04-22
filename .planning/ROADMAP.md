@@ -194,12 +194,15 @@ Plans:
   3. Every currently-registered built-in component (Button, TextInput, SelectInput, Checkbox, Textarea, RadioGroup, Switch, DataTable, AppShell, NavItem, Sidebar pieces, ModalSurface, ConfirmDialog, ToastSurface, FieldSet, FieldSeparator, Container, Heading, plus any others) has a `pub fn gallery_demo() -> Node` sibling annotated with `#[gallery_demo]`
   4. `GALLERY-DEMOS.md` (under `backend/crates/marionette/` or equivalent) documents the pure-fn contract: no external state, no I/O, no fixtures; composite demos are nested `gallery_demo()` calls; stateful fixtures live in gallery handlers
   5. Each built-in demo renders without panicking when visited in the running gallery; clicking every nav entry produces a screen, not an error surface
-**Plans**: 4 plans
+**Plans**: 7 plans (4 original + 3 gap-closure after UAT)
 Plans:
 - [ ] 17-01-PLAN.md — Phase 16.5 micro-refactor: DemoEntry.render signature flip to fn() -> Vec<Node> + macro validator + gallery-smoke + trybuild fixture update
 - [ ] 17-02-PLAN.md — Per-component file refactor of builders/standard.rs into 25 per-component files with `pub use` shim preserving `builders::standard::*` imports
 - [ ] 17-03-PLAN.md — gallery-demo binary crate: 6th workspace member, AppShell nav from registered_demos(), Home page, 11 action handlers, integration tests, Makefile target
 - [ ] 17-04-PLAN.md — 19-demo sweep + GALLERY-DEMOS.md author contract + builtin_coverage_tests + REQUIREMENTS.md CRATE-01 reconciliation + Chrome MCP UAT checkpoint
+- [ ] 17-05-PLAN.md — Gap closure (handlers): Modal recursion fix + ConfirmDialog close semantics + DataTable rows patch + Home footer Text + modal sub-surface seed (G-01/03/04/06/07)
+- [ ] 17-06-PLAN.md — Gap closure (demo bodies): AppShell nested-sidebar fix + 5 empty demos investigation & repair (G-02/05)
+- [ ] 17-07-PLAN.md — Gap closure (re-UAT + phase close): Full 20-demo Chrome MCP walk + VERIFICATION.md status=verified + ROADMAP/STATE updates
 **UI hint**: yes
 
 ### Phase 18: Catalog Screens
