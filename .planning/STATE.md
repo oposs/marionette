@@ -4,14 +4,14 @@ milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-04-22T08:22:23.340Z"
-last_activity: 2026-04-21 -- Phase 16 execution started
+last_updated: "2026-04-22T13:37:09.786Z"
+last_activity: 2026-04-22 -- Phase 17 execution started
 progress:
   total_phases: 11
   completed_phases: 1
-  total_plans: 8
-  completed_plans: 4
-  percent: 50
+  total_plans: 11
+  completed_plans: 8
+  percent: 73
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 16 — Framework Hooks
+**Current focus:** Phase 17 — Gallery Crate Skeleton + Colocated Built-in Demos
 
 ## Current Position
 
-Phase: 16 (Framework Hooks) — EXECUTING
+Phase: 17 (Gallery Crate Skeleton + Colocated Built-in Demos) — EXECUTING
 Plan: 1 of 4
-Status: Executing Phase 16
-Last activity: 2026-04-21 -- Phase 16 execution started
+Status: Executing Phase 17
+Last activity: 2026-04-22 -- Phase 17 execution started
 
 Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_demo]` proc macro, registry iteration API, and `gallery` cargo feature gate — the rails everything else rides on.
 
@@ -96,4 +96,4 @@ Last session: --stopped-at
 Stopped at: Phase 17 context gathered
 Resume: run `/gsd-verify-work 16` to validate Phase 16 success criteria, then `/gsd-plan-phase 17` to start the gallery-crate skeleton + colocated built-in demos
 
-**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos) — 4 plans — 2026-04-22T08:22:23.332Z
+**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 7 plans — 2026-04-22T13:37:09.769Z
