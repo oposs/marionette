@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
-stopped_at: Plan 17-06 complete (G-02 + G-05 closed via Chrome MCP UAT; all 7 original Phase 17 gaps now fixed; 17-07 + 17-08 pending)
-last_updated: "2026-04-22T19:30:00.000Z"
-last_activity: 2026-04-22 -- Plan 17-06 complete (G-02 AppShell nested-sidebar + G-05 5 empty demo bodies closed via Chrome MCP UAT)
+stopped_at: Plan 17-08 complete (G-08 stranded Modal builder cleanup; modal nav entry preserved; GALLERY-DEMOS.md §Popup composition added; 7/8 Phase 17 plans complete; 17-07 full re-UAT remains pending)
+last_updated: "2026-04-22T20:51:00.299Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 11
   completed_phases: 1
-  total_plans: 15
-  completed_plans: 10
-  percent: 67
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17 (gallery-crate-skeleton-colocated-built-in-demos) — EXECUTING
-Plan: 6 of 8 complete (17-07 + 17-08 pending; 17-06 closed G-02 + G-05, all 7 original gaps now fixed)
-Status: Executing Phase 17
-Last activity: 2026-04-22 -- Plan 17-06 complete (Chrome MCP UAT confirmed G-02 AppShell rewrite + G-05 deterministic fixes; radio-group + field-set rendered without further intervention)
+Plan: 7 of 8 complete (only 17-07 pending; 17-08 just closed G-08 stranded Modal builder cleanup)
+Status: Ready to execute
+Last activity: 2026-04-22
 
-Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_demo]` proc macro, registry iteration API, and `gallery` cargo feature gate — the rails everything else rides on.
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -53,6 +53,12 @@ Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_
 | 14 | 8 | FormScreen primitives |
 | 15 | 7 | CRM migration + validation |
 
+**v1.2 Phase 17 plan-level metrics (in-progress):**
+
+| Plan | Duration | Tasks | Files | Outcome |
+|------|----------|-------|-------|---------|
+| 17-08 | 3h 15min | 6 | 5 | G-08 stranded Modal builder cleanup; struct deleted, demo preserved; GALLERY-DEMOS.md §Popup composition added |
+
 ## Accumulated Context
 
 ### Decisions
@@ -72,6 +78,7 @@ Recent decisions affecting v1.2:
 - [v1.2 Phase 17-05]: Modal sub-surface "closed" state is an empty Container (id="modal-empty"). `ModalSurface.isOpen` returns false when the tree root is a Container with no children; backend handlers use this sentinel to close modals.
 - [v1.2 Phase 17-06]: AppShell demos use the structural-preview pattern, NOT nested AppShell invocation. When a frontend component relies on a viewport-anchored context provider (e.g. shadcn `<Sidebar.Provider>`), its `gallery_demo()` renders a static representation built from plain Container + Heading + Text — nesting a second AppShell inside the outer gallery causes Sidebar.Provider context collision (G-02, confirmed 2026-04-22). Phase 19 EXER-01 is the designated surface for true nested-shell composition.
 - [v1.2 Phase 17-06]: Demo bind-path alignment is a hard contract. Every `/demo/<key>/<slot>` path a demo binds MUST have a matching `seed_for_key` arm writing the same path; a mismatch falls through as unseeded data (empty string / undefined / empty array) and the frontend's guards (`{#if errors.length > 0}`, `checked=false`, etc.) silently hide the component. Surfaced in G-05 via 3 of 5 demos (error-display, switch, textarea); radio-group + field-set seeds were already correctly aligned.
+- [v1.2 Phase 17-08]: Stranded Modal builder primitive deleted (G-08 closure). The Modal struct is gone but the modal gallery_demo() sibling is preserved as a doc-stub host so the modal nav entry still renders. Popups are officially compositional — handler authors emit any SDUI tree into the modal sub-surface; ModalSurface.svelte (layout-root singleton, Plan 17-05) wraps in Dialog.Root automatically. ConfirmDialog remains as the structured accept-cancel variant. GALLERY-DEMOS.md gained a §Popup composition section with the canonical form-in-popup recipe.
 
 ### Phase 17 hand-off (from Phase 16)
 
@@ -94,14 +101,14 @@ None carried over from v1.1.
 - **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision (tracked in v1.3+ as GALLERY-LINT).
 - **Phase 20 scope risk** — THEME-01 is explicitly scope-flexible per seed `gallery-live-token-editor`; if Phases 16–19 overrun, Phase 20 is the natural deferral target.
 - Pre-existing concerns carried from v1.1: ~97 clippy pedantic warnings in crm-demo from toolchain drift (documented in Phase 17 deferred-items.md); ~68 pre-existing frontend ESLint baseline (stash-revert-confirmed 2026-04-22). Popup browser-test failures incidentally auto-fixed by 17-05 commit `7c2f29f` (ConfirmDialog browser tests rewritten around current markup: now 5/5 passing).
-- **G-08 stranded Modal builder primitive** — Created by 17-05's architectural popup-global fix (`a55f055`). `marionette::builders::Modal` struct + `gallery_demo()` sibling are now dead code. Scheduled for cleanup in `17-08-PLAN.md` (wave 2, autonomous).
+- ✅ **G-08 stranded Modal builder primitive (resolved 2026-04-22 via Plan 17-08)** — `marionette::builders::Modal` struct deleted; modal `gallery_demo()` sibling preserved as the doc-stub host so the modal nav entry still renders; `pub use modal::*;` removed from mod.rs + standard.rs; smoke test renamed `all_19_standard_types` → `all_18_standard_types` with the `"modal"` row + expected entry both removed; GALLERY-DEMOS.md gained a `## Popup composition` section with the canonical form-in-popup recipe; `handle_modal_open` comment refreshed (no more stale `Modal::new` antipattern callout). See `17-08-SUMMARY.md`.
 - **Toast global-overlay refactor deferred** — User noted "same for toasts I guess" during 17-05 architectural escalation. Not in 17-05 scope; inline-in-AppShell toasts still work. Candidate for Phase 19 EXER-01 or a v1.3+ popup-unification plan.
 - **W-06 ErrorDisplay `message` field dead-state (new 2026-04-22 via Plan 17-06)** — The Rust `ErrorDisplay` builder has a `message` positional arg (`new(message)`) but the frontend `ErrorDisplay.svelte` reads errors ONLY from `bind`. Phase 18 CAT-04 polish should either remove the field or wire it as a bind-fallback when `getData(surface, bind)` is empty.
 
 ## Session Continuity
 
-Last session: 2026-04-22T19:30:00.000Z
-Stopped at: Plan 17-06 complete (G-02 + G-05 closed via Chrome MCP UAT; all 7 original Phase 17 gaps now fixed; 17-07 + 17-08 pending)
-Resume: execute `17-08-PLAN.md` (wave 2 autonomous — G-08 stranded Modal builder cleanup) in any order, then `17-07-PLAN.md` (full 20-demo Chrome MCP re-UAT + phase close)
+Last session: 2026-04-22T20:51:00.291Z
+Stopped at: Plan 17-08 complete (G-08 stranded Modal builder cleanup; modal nav entry preserved; GALLERY-DEMOS.md §Popup composition added; 7/8 Phase 17 plans complete; 17-07 full re-UAT remains pending)
+Resume: execute `17-07-PLAN.md` (full 20-demo Chrome MCP re-UAT + phase close — the only remaining Phase 17 plan)
 
-**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 8 plans — 6 complete, 2 pending (17-07, 17-08)
+**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 8 plans — 7 complete, 1 pending (17-07)
