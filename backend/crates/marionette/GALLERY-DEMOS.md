@@ -197,4 +197,120 @@ touching the gallery-demo binary.
 
 ---
 
-*Last updated: Phase 17 (2026-04).*
+## Popup composition
+
+The popup toolbox is **compositional, not primitive-based**. Phase 17 moved
+`ModalSurface.svelte` to a layout-root singleton mount (Plan 17-05) — it is
+always live, reads the `modal` sub-surface tree, and wraps whatever you
+render there in a shadcn `<Dialog.Root>` / `<Dialog.Content>` overlay.
+
+**To open a popup with arbitrary content**, render any SDUI tree (Container,
+Form, TextInput, Button, Heading, Text, …) to the `modal` sub-surface. The
+`<Dialog.Root>` open/close state is driven by ModalSurface's `isOpen`
+derivation: an empty `Container` root = closed; any non-empty tree = open.
+
+**To close a popup**, render an empty `Container` (id convention:
+`modal-empty`) into the `modal` sub-surface — ModalSurface observes the
+empty tree and dismisses the dialog. The frontend also dispatches a
+`close-modal` action when the user clicks the X button or backdrop; the
+gallery-demo's `handle_modal_close` handler implements that by rendering
+`modal-empty`.
+
+There is **no `Modal::new(...)` wrapper** — the old `Modal` builder was
+removed in Phase 17 Plan 17-08 after the popups-global refactor made it
+dead code. Handler authors compose the popup body directly.
+
+**Canonical "form in popup" recipe:**
+
+```rust
+pub async fn open_contact_form(ctx: HandlerContext) -> ActionResult {
+    use marionette::builders::{Button, Container, Form, Heading, TextInput};
+    use marionette_protocol::{Component, ComponentAction};
+    use marionette_protocol::messages::RenderMessage;
+
+    let name = TextInput::new("Name")
+        .id("contact-name")
+        .bind("/contact/name")
+        .build();
+    let email = TextInput::new("Email")
+        .id("contact-email")
+        .bind("/contact/email")
+        .build();
+    let form = Form::new()
+        .id("contact-form")
+        .children(vec![name, email])
+        .build();
+
+    let cancel = Button::new("Cancel")
+        .id("contact-cancel")
+        .variant("outline")
+        .action(ComponentAction::click("close-modal"))
+        .build();
+    let save = Button::new("Save")
+        .id("contact-save")
+        .action(ComponentAction::click("save-contact"))
+        .build();
+    let button_row = Container::new()
+        .id("contact-button-row")
+        .children(vec![cancel, save])
+        .build();
+
+    let heading = Heading::new("New contact")
+        .id("contact-heading")
+        .build();
+    let dialog_nodes = Container::new()
+        .id("contact-popup-root")
+        .children(vec![heading, form, button_row])
+        .build_with_children();
+
+    let mut nodes: std::collections::HashMap<String, Component> =
+        std::collections::HashMap::new();
+    for (id, c) in dialog_nodes {
+        nodes.insert(id, c);
+    }
+
+    Ok(vec![marionette_protocol::ProtocolMessage::Render(RenderMessage {
+        id: ctx.action.id.clone(),
+        surface: "modal".into(),
+        root: "contact-popup-root".into(),
+        nodes,
+        data: serde_json::json!({}),
+    })])
+}
+```
+
+The Save handler does its side-effects (DB write, toast enqueue, etc.) and
+also renders `modal-empty` into the `modal` sub-surface to dismiss the
+dialog.
+
+**Note on builder APIs used above:**
+
+- `TextInput::new(label)` takes the label as its positional argument;
+  there is no separate `.label(...)` method. See
+  `backend/crates/marionette/src/builders/text_input.rs`.
+- `Button::new(label)` takes the label positional; variant defaults to
+  shadcn's "default" when `.variant(...)` is omitted.
+- `Container::new()` is argument-free; use `.children(vec![...])` to
+  populate children and `.build_with_children()` to return the full
+  adjacency-list vec.
+- `Form::new()` is argument-free; the Submit label is optional via
+  `.submit_label(...)`.
+
+**When to use `ConfirmDialog` instead:** if the popup is a simple two-
+choice accept/cancel prompt (title + message + two buttons), reach for the
+`ConfirmDialog` primitive — it encodes that shape directly via the
+structured `confirm_label` / `cancel_label` / `cancel_action` /
+`destructive` contract (Plan 17-05). For anything more complex (form,
+multi-step, custom layout), compose from raw nodes as above.
+
+See also:
+- `backend/crates/gallery-demo/src/handlers/modal.rs` — working example of
+  `handle_modal_open` / `handle_modal_close` using this pattern.
+- `backend/crates/marionette/src/builders/confirm_dialog.rs` — structured
+  ConfirmDialog primitive (remains after G-08 cleanup).
+- `frontend/src/lib/components/popup/ModalSurface.svelte` — the
+  layout-root singleton that drives the Dialog overlay.
+
+---
+
+*Last updated: Phase 17 Plan 17-08 (2026-04) — G-08 popup-composition section added after Modal builder deletion.*
