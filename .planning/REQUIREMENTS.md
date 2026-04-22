@@ -24,6 +24,15 @@ Prior requirements (v1.0, v1.1) are archived in `.planning/milestones/v1.0-REQUI
 - [ ] **DEMO-01**: Every existing built-in component in `backend/crates/marionette/src/builders/` ships a sibling `pub fn gallery_demo() -> Node` annotated with `#[gallery_demo]`, covering all currently-registered SDUI components (Button, TextInput, SelectInput, Checkbox, Textarea, RadioGroup, Switch, DataTable, AppShell, NavItem, Sidebar pieces, ModalSurface, ConfirmDialog, ToastSurface, FieldSet, FieldSeparator, Container, Heading, plus any others in the current registry).
 - [ ] **DEMO-02**: Demo contract is enforced by convention (and documented in a short `GALLERY-DEMOS.md` under `backend/crates/marionette/` or equivalent): pure `fn() -> Node`, no external state, no I/O, no fixtures. Composite demos are built by calling other `gallery_demo()` functions directly — `FormScreen::gallery_demo()` invokes `TextInput::gallery_demo()`, `SelectInput::gallery_demo()`, etc.
 
+### Phase 17 UAT gap-closure success criteria (post-hoc)
+
+Defined 2026-04-22 during Phase 17 UAT after `DEMO-01`/`DEMO-02`/`CRATE-01`/`CRATE-02` ran — these gate Phase 17 closure alongside the original four.
+
+- [x] **SC-17-05**: Gap closure for G-01 (Modal lockup) / G-03 (DataTable empty) / G-04 (ConfirmDialog dismiss) / G-06 (Home footer oversized) / G-07 (Modal sub-surface unseeded). Chrome MCP UAT on 2026-04-22 confirms: Modal opens as true Dialog overlay (no tab hang, clean X-close); DataTable renders 5 synthetic rows; ConfirmDialog shows Accept/Reject labels and both flows close dialog + emit matching toast; Home footer renders as `text-xs text-muted-foreground`; no grey LoadingSkeleton bars below footer. Validated 2026-04-22 — see [17-05-SUMMARY.md](phases/17-gallery-crate-skeleton-colocated-built-in-demos/17-05-SUMMARY.md).
+- [ ] **SC-17-06**: Gap closure for G-02 (AppShell nested-sidebar hijack) / G-05 (5 empty demo bodies — error-display, field-set, radio-group, switch, textarea). Pending Plan 17-06 execution.
+- [ ] **SC-17-07**: Full 20-demo Chrome MCP re-UAT passes, `17-VERIFICATION.md` flips `status: verified`, ROADMAP/STATE reflect Phase 17 complete. Pending Plan 17-07 execution.
+- [ ] **SC-17-08**: G-08 stranded `Modal` builder primitive removed. `marionette::builders::Modal` struct + `gallery_demo()` sibling deleted; re-exports cleaned up; `GALLERY-DEMOS.md` gains a popup-composition recipe. Pending Plan 17-08 execution.
+
 ### Catalog screens (clean showcases)
 
 - [ ] **CAT-01**: Gallery includes a Buttons & Actions screen showing every Button variant × size × state (default / destructive / outline / ghost / link × sm/md/lg × normal/disabled/loading/icon-only).
@@ -65,30 +74,36 @@ Deferred to a future milestone — tracked for context, not in v1.2 scope.
 
 Populated by `/gsd-plan-phase` runs as phases are defined.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| FRAME-01 | Phase 16 | Pending |
-| FRAME-02 | Phase 16 | Pending |
-| FRAME-03 | Phase 16 | Pending |
-| CRATE-01 | Phase 17 | Pending |
-| CRATE-02 | Phase 17 | Pending |
-| DEMO-01  | Phase 17 | Pending |
-| DEMO-02  | Phase 17 | Pending |
-| CAT-01   | Phase 18 | Pending |
-| CAT-02   | Phase 18 | Pending |
-| CAT-03   | Phase 18 | Pending |
-| CAT-04   | Phase 18 | Pending |
-| CAT-05   | Phase 18 | Pending |
-| EXER-01  | Phase 19 | Pending |
-| EXER-02  | Phase 19 | Pending |
-| EXER-03  | Phase 19 | Pending |
-| THEME-01 | Phase 20 | Pending |
+| Requirement | Phase | Plan | Status |
+|-------------|-------|------|--------|
+| FRAME-01 | Phase 16 | 16-02 | Pending |
+| FRAME-02 | Phase 16 | 16-01 | Pending |
+| FRAME-03 | Phase 16 | 16-01, 16-03 | Pending |
+| CRATE-01 | Phase 17 | 17-03 | Pending |
+| CRATE-02 | Phase 17 | 17-03 | Pending |
+| DEMO-01  | Phase 17 | 17-04 | Pending |
+| DEMO-02  | Phase 17 | 17-04 | Pending |
+| SC-17-05 | Phase 17 | 17-05 | ✅ Validated 2026-04-22 ([17-05-SUMMARY.md](phases/17-gallery-crate-skeleton-colocated-built-in-demos/17-05-SUMMARY.md)) |
+| SC-17-06 | Phase 17 | 17-06 | Pending |
+| SC-17-07 | Phase 17 | 17-07 | Pending |
+| SC-17-08 | Phase 17 | 17-08 | Pending |
+| CAT-01   | Phase 18 | — | Pending |
+| CAT-02   | Phase 18 | — | Pending |
+| CAT-03   | Phase 18 | — | Pending |
+| CAT-04   | Phase 18 | — | Pending |
+| CAT-05   | Phase 18 | — | Pending |
+| EXER-01  | Phase 19 | — | Pending |
+| EXER-02  | Phase 19 | — | Pending |
+| EXER-03  | Phase 19 | — | Pending |
+| THEME-01 | Phase 20 | — | Pending |
 
 **Coverage:**
-- v1.2 requirements: 16 total
-- Mapped to phases: 16 (Phases 16–20)
+- v1.2 requirements: 20 total (16 original + 4 Phase 17 UAT gap-closure SCs added 2026-04-22)
+- Mapped to phases: 20 (Phases 16–20)
+- Validated: 1 (SC-17-05)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21 via /gsd-new-milestone*
 *Traceability populated: 2026-04-21 via /gsd-roadmap (v1.2 Phases 16–20)*
+*Updated: 2026-04-22 — Phase 17 UAT gap-closure SCs added (SC-17-05/06/07/08); SC-17-05 validated via Chrome MCP UAT*

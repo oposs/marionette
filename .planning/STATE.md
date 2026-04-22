@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-04-22T13:37:09.786Z"
-last_activity: 2026-04-22 -- Phase 17 execution started
+stopped_at: Plan 17-05 complete (5 of 7 Phase 17 gaps closed; 17-06/17-07/17-08 pending)
+last_updated: "2026-04-22T19:00:00.000Z"
+last_activity: 2026-04-22 -- Plan 17-05 complete (G-01/G-03/G-04/G-06/G-07 closed via Chrome MCP UAT)
 progress:
   total_phases: 11
   completed_phases: 1
-  total_plans: 11
-  completed_plans: 8
-  percent: 73
+  total_plans: 15
+  completed_plans: 9
+  percent: 60
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 17 — Gallery Crate Skeleton + Colocated Built-in Demos
+**Current focus:** Phase 17 — gallery-crate-skeleton-colocated-built-in-demos
 
 ## Current Position
 
-Phase: 17 (Gallery Crate Skeleton + Colocated Built-in Demos) — EXECUTING
-Plan: 1 of 4
+Phase: 17 (gallery-crate-skeleton-colocated-built-in-demos) — EXECUTING
+Plan: 5 of 7 complete (17-06 / 17-07 / 17-08 pending; 17-05 closed G-01/G-03/G-04/G-06/G-07)
 Status: Executing Phase 17
-Last activity: 2026-04-22 -- Phase 17 execution started
+Last activity: 2026-04-22 -- Plan 17-05 complete (Chrome MCP UAT passed 5 targeted gaps + 5 regression spot-checks)
 
 Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_demo]` proc macro, registry iteration API, and `gallery` cargo feature gate — the rails everything else rides on.
 
@@ -67,6 +67,9 @@ Recent decisions affecting v1.2:
 - [v1.2]: Nested AppShell is an intentional capability exerciser, not a stunt — exposes whether shadcn Sidebar provider-context and mobile-sheet behaviour compose under nesting
 - [v1.2]: Phase 17 bundles gallery-crate skeleton (CRATE-01/02) with colocated built-in demos (DEMO-01/02) because CRATE-02's auto-nav is only verifiable once DEMO-01's sweep has landed
 - [v1.2 Phase 16]: `linkme` chosen over `inventory` as the gallery-demo registry backbone — type-safe `#[distributed_slice]`, zero runtime cost, explicit mental model. Stable iteration order owned by marionette (sort at iteration time), not delegated to linkme. Logged in PROJECT.md Key Decisions.
+- [v1.2 Phase 17-05]: Popups are layout-root singletons. `ModalSurface.svelte` is mounted in `frontend/src/routes/+layout.svelte` as a sibling of the main Surface, independent of AppShell. Registry entry `'modal': ModalSurface` retired. User instruction (verbatim, 2026-04-22): "By default popups should work independent of any other component being displayed (AppShell included). If we ever need area-constrained popups, that would be a separate extension."
+- [v1.2 Phase 17-05]: ConfirmDialog contract is structured (confirm_label / cancel_label / cancel_action / destructive), not child-based. `ConfirmDialog.svelte` renders its own shadcn Buttons; handlers emit a single structured node instead of orphan Accept/Reject children.
+- [v1.2 Phase 17-05]: Modal sub-surface "closed" state is an empty Container (id="modal-empty"). `ModalSurface.isOpen` returns false when the tree root is a Container with no children; backend handlers use this sentinel to close modals.
 
 ### Phase 17 hand-off (from Phase 16)
 
@@ -88,12 +91,14 @@ None carried over from v1.1.
 - ✅ **Registration library selection (resolved 2026-04-21):** `linkme` chosen over `inventory` per Phase 16 CONTEXT.md D-A1 — type-safe `#[distributed_slice]`, zero runtime cost, explicit mental model. Logged in PROJECT.md Key Decisions. Implementation: `.planning/phases/16-framework-hooks/16-01-PLAN.md`; stable iteration order is owned by `marionette::gallery::registered_demos()` via sort-at-iteration-time, not delegated to linkme.
 - **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision (tracked in v1.3+ as GALLERY-LINT).
 - **Phase 20 scope risk** — THEME-01 is explicitly scope-flexible per seed `gallery-live-token-editor`; if Phases 16–19 overrun, Phase 20 is the natural deferral target.
-- Pre-existing concerns carried from v1.1 (unchanged): 5 popup browser-test failures, some clippy pedantic warnings in crm-demo from toolchain drift.
+- Pre-existing concerns carried from v1.1: ~97 clippy pedantic warnings in crm-demo from toolchain drift (documented in Phase 17 deferred-items.md); ~68 pre-existing frontend ESLint baseline (stash-revert-confirmed 2026-04-22). Popup browser-test failures incidentally auto-fixed by 17-05 commit `7c2f29f` (ConfirmDialog browser tests rewritten around current markup: now 5/5 passing).
+- **G-08 stranded Modal builder primitive** — Created by 17-05's architectural popup-global fix (`a55f055`). `marionette::builders::Modal` struct + `gallery_demo()` sibling are now dead code. Scheduled for cleanup in `17-08-PLAN.md` (wave 2, autonomous).
+- **Toast global-overlay refactor deferred** — User noted "same for toasts I guess" during 17-05 architectural escalation. Not in 17-05 scope; inline-in-AppShell toasts still work. Candidate for Phase 19 EXER-01 or a v1.3+ popup-unification plan.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 17 context gathered
-Resume: run `/gsd-verify-work 16` to validate Phase 16 success criteria, then `/gsd-plan-phase 17` to start the gallery-crate skeleton + colocated built-in demos
+Last session: 2026-04-22T19:00:00.000Z
+Stopped at: Plan 17-05 complete (5 of 7 Phase 17 gaps closed; 17-06/17-07/17-08 pending)
+Resume: execute `17-06-PLAN.md` (wave 1 sibling — G-02 AppShell nested-sidebar fix + G-05 5 empty demo bodies), then `17-08-PLAN.md` (wave 2 autonomous — G-08 stranded Modal builder cleanup), then `17-07-PLAN.md` (full 20-demo Chrome MCP re-UAT + phase close)
 
-**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 7 plans — 2026-04-22T13:37:09.769Z
+**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 7 plans — 5 complete, 3 pending (17-06, 17-07, 17-08)
