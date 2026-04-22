@@ -66,11 +66,19 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
         .children(vec![footer_version, footer_status])
         .build_tree();
 
-    // -- Three sub-surface mounts (D-B8) --
+    // -- Sub-surface mounts (D-B8) --
+    //
+    // NOTE (Plan 17-05 Task 6c — G-01 architectural fix): the `modal`
+    // sub-surface is no longer mounted inside the AppShell. `ModalSurface`
+    // is now mounted globally at the layout root (see
+    // `frontend/src/routes/+layout.svelte`) so popups render as true
+    // overlays independent of the shell. The `modal-empty` Render seed
+    // below is still emitted because ModalSurface.svelte reads
+    // `getSurfaceTree('modal')` for its isOpen check and needs the
+    // close-sentinel on first paint.
     let content_mount = SurfaceMount::new("content")
         .id("shell-content-mount")
         .build();
-    let modal_mount = SurfaceMount::new("modal").id("shell-modal-mount").build();
     let toasts_mount = SurfaceMount::new("toasts")
         .id("shell-toasts-mount")
         .build();
@@ -87,7 +95,6 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
         .header(header_root)
         .footer(footer_root)
         .main(content_mount)
-        .popups(modal_mount)
         .toasts(toasts_mount)
         .with_descendants(descendants)
         .build_with_children();
