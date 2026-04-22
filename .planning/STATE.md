@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
-stopped_at: Phase 16 complete — framework hooks verified
-last_updated: "2026-04-21T21:07:13.742Z"
+stopped_at: Phase 17 context gathered
+last_updated: "2026-04-22T07:10:34.078Z"
 last_activity: 2026-04-21 -- Phase 16 execution started
 progress:
   total_phases: 11
@@ -92,6 +92,6 @@ None carried over from v1.1.
 
 ## Session Continuity
 
-Last session: 2026-04-21T21:07:13.737Z
-Stopped at: Phase 16 complete — framework hooks verified
+Last session: --stopped-at
+Stopped at: Phase 17 context gathered
 Resume: run `/gsd-verify-work 16` to validate Phase 16 success criteria, then `/gsd-plan-phase 17` to start the gallery-crate skeleton + colocated built-in demos
