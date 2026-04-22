@@ -84,6 +84,24 @@ verified_at: 2026-04-22
 - **Fix:** Add two initial Render messages to `handle_navigate` — one for `modal` with an empty Container root, one for `toasts` with an empty Container root. Matches CRM's pattern.
 - **Note:** The in-flow rendering (Symptom 2) may be a separate frontend concern. Phase 17 fix addresses Symptom 1 (skeletons gone); if Symptom 2 persists after seeding, record as a Phase 19 EXER-01 exerciser concern.
 
+### MEDIUM gaps (architectural hygiene)
+
+#### G-08 — Stranded `Modal` builder after popups-global architectural fix
+- **Symptom:** `backend/crates/marionette/src/builders/modal.rs` defines `#[derive(ComponentBuilder)] pub struct Modal { title, size }` with `#[component(type = "modal")]`, plus a `gallery_demo()` sibling. Plan 17-05's architectural fix (2026-04-22) mounted `ModalSurface` as a layout-root singleton in `+layout.svelte` and removed `'modal': ModalSurface` from `frontend/src/lib/registry/defaults.ts`. After that change, any node of type `"modal"` emitted into the SDUI tree falls through to the unknown-type fallback — the `Modal` builder now produces dead nodes.
+- **Surfaced by:** Chrome MCP UAT walk of the Plan 17-05 architectural fix, 2026-04-22.
+- **Demo key impact:** The `modal` demo page itself still renders (its `gallery_demo()` builds only `Button` + `Text` children in a `Container`; it never calls `Modal::new(...)`). The stranded primitive is the `Modal` builder struct, not the demo page's body.
+- **Files implicated:**
+  - `backend/crates/marionette/src/builders/modal.rs` — struct `Modal` + `gallery_demo()` sibling
+  - `backend/crates/marionette/src/builders/mod.rs:23, 54` — `pub mod modal; pub use modal::*;`
+  - `backend/crates/marionette/src/builders/standard.rs` — compatibility re-export
+  - `backend/crates/marionette/src/builders/mod.rs:94` — test callsite `Modal::new("x").build()`
+  - `backend/crates/marionette/GALLERY-DEMOS.md` — any mention of `Modal::new`
+  - `backend/crates/gallery-demo/src/handlers/modal.rs` — comment references `(not Modal::new)` pattern
+- **Root cause:** The `Modal` component type was ModalSurface's SDUI-dispatch key. Plan 17-05's move of ModalSurface to a layout-root static mount dropped that dispatch registration but left the producer intact.
+- **User-architectural decision (2026-04-22):** Popups must work independent of any other component (AppShell included). The popup toolbox stays compositional — authors emit any SDUI tree (`Container` with `Form`, `TextInput`, `Button`, …) into the `modal` sub-surface and `ModalSurface.svelte` (layout-root) wraps it in `<Dialog.Root>`/`<Dialog.Content>` automatically. No dedicated `Modal` wrapper primitive is needed. `ConfirmDialog` remains as the canonical structured-accept-cancel variant.
+- **Fix scope:** Delete the `Modal` struct + `gallery_demo()` sibling. Remove the `modal` module publish from `mod.rs` (and the `Modal::new("x")` test expectation — update to use a different component-type smoke or delete). Remove the `standard.rs` re-export line. Update `GALLERY-DEMOS.md` with a short "popup composition" recipe + the canonical "form in popup" example (Container → Heading + Form(TextInput + TextInput) + Container(Button(cancel) + Button(save))). Update `handlers/modal.rs` comment that currently reads "(not Modal::new)" to explain the compositional pattern instead.
+- **Classification:** MEDIUM. Compiles today; primitive is dead and misleading to handler authors. Not an SC #5 failure (no demo breaks), but a documented-toolbox integrity issue surfaced by 17-05's architectural fix.
+
 ---
 
 ## Behavior audit — passing demos (for regression guard)
