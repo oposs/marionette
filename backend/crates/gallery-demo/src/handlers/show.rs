@@ -58,9 +58,40 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         "text-input" => serde_json::json!({ "demo": { "text-input": { "value": "" } } }),
         "select" => serde_json::json!({ "demo": { "select":     { "value": "" } } }),
         "checkbox" => serde_json::json!({ "demo": { "checkbox":   { "checked": false } } }),
-        "switch" => serde_json::json!({ "demo": { "switch":     { "checked": false } } }),
+        // switch demo binds /demo/switch/checked-1 + /demo/switch/checked-2 (see
+        // marionette/src/builders/switch.rs::gallery_demo). Pre-17-06 seed wrote
+        // only `/demo/switch/checked` (G-05 path mismatch). Seed both now, with
+        // Wifi on and Bluetooth off for a visually distinct initial state.
+        "switch" => serde_json::json!({
+            "demo": { "switch": { "checked-1": true, "checked-2": false } }
+        }),
         "radio-group" => serde_json::json!({ "demo": { "radio-group":{ "value": "" } } }),
-        "textarea" => serde_json::json!({ "demo": { "textarea":   { "value": "" } } }),
+        // textarea demo binds /demo/textarea/value + /demo/textarea/value-desc
+        // (see marionette/src/builders/textarea.rs::gallery_demo). Pre-17-06
+        // seed only wrote `/demo/textarea/value` (G-05 path mismatch on the
+        // second textarea). Seed both empty so the Field.Label stays bound.
+        "textarea" => serde_json::json!({
+            "demo": { "textarea": { "value": "", "value-desc": "" } }
+        }),
+        // error-display demo binds /demo/error-display/errors-a +
+        // /demo/error-display/errors-b (added in 17-06 to fix G-05: the
+        // pre-17-06 demo omitted .bind(...) entirely, so the frontend's
+        // `{#if errors.length > 0}` guard failed and nothing rendered).
+        // ErrorEntry = { path?: string, message: string } per frontend
+        // ErrorDisplay.svelte:26-41.
+        "error-display" => serde_json::json!({
+            "demo": {
+                "error-display": {
+                    "errors-a": [
+                        { "path": "/contact/email", "message": "Email is required" },
+                        { "path": "/contact/phone", "message": "Phone number is invalid" },
+                    ],
+                    "errors-b": [
+                        { "message": "A system-level error (no path)" },
+                    ],
+                }
+            }
+        }),
         "form" => serde_json::json!({ "demo": { "form":       { "email": "", "name": "" } } }),
         "field-set" => serde_json::json!({ "demo": { "field-set":  { "a": "", "b": "" } } }),
         "data-table" => serde_json::json!({ "demo": { "data-table": { "rows": seed_table_rows() } } }),
