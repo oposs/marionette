@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
-stopped_at: Plan 17-05 complete (5 of 7 Phase 17 gaps closed; 17-06/17-07/17-08 pending)
-last_updated: "2026-04-22T19:00:00.000Z"
-last_activity: 2026-04-22 -- Plan 17-05 complete (G-01/G-03/G-04/G-06/G-07 closed via Chrome MCP UAT)
+stopped_at: Plan 17-06 complete (G-02 + G-05 closed via Chrome MCP UAT; all 7 original Phase 17 gaps now fixed; 17-07 + 17-08 pending)
+last_updated: "2026-04-22T19:30:00.000Z"
+last_activity: 2026-04-22 -- Plan 17-06 complete (G-02 AppShell nested-sidebar + G-05 5 empty demo bodies closed via Chrome MCP UAT)
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 15
-  completed_plans: 9
-  percent: 60
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 17 (gallery-crate-skeleton-colocated-built-in-demos) — EXECUTING
-Plan: 5 of 7 complete (17-06 / 17-07 / 17-08 pending; 17-05 closed G-01/G-03/G-04/G-06/G-07)
+Plan: 6 of 8 complete (17-07 + 17-08 pending; 17-06 closed G-02 + G-05, all 7 original gaps now fixed)
 Status: Executing Phase 17
-Last activity: 2026-04-22 -- Plan 17-05 complete (Chrome MCP UAT passed 5 targeted gaps + 5 regression spot-checks)
+Last activity: 2026-04-22 -- Plan 17-06 complete (Chrome MCP UAT confirmed G-02 AppShell rewrite + G-05 deterministic fixes; radio-group + field-set rendered without further intervention)
 
 Progress: v1.2 scoped into 5 phases (16–20). Phase 16 delivers the `#[gallery_demo]` proc macro, registry iteration API, and `gallery` cargo feature gate — the rails everything else rides on.
 
@@ -70,6 +70,8 @@ Recent decisions affecting v1.2:
 - [v1.2 Phase 17-05]: Popups are layout-root singletons. `ModalSurface.svelte` is mounted in `frontend/src/routes/+layout.svelte` as a sibling of the main Surface, independent of AppShell. Registry entry `'modal': ModalSurface` retired. User instruction (verbatim, 2026-04-22): "By default popups should work independent of any other component being displayed (AppShell included). If we ever need area-constrained popups, that would be a separate extension."
 - [v1.2 Phase 17-05]: ConfirmDialog contract is structured (confirm_label / cancel_label / cancel_action / destructive), not child-based. `ConfirmDialog.svelte` renders its own shadcn Buttons; handlers emit a single structured node instead of orphan Accept/Reject children.
 - [v1.2 Phase 17-05]: Modal sub-surface "closed" state is an empty Container (id="modal-empty"). `ModalSurface.isOpen` returns false when the tree root is a Container with no children; backend handlers use this sentinel to close modals.
+- [v1.2 Phase 17-06]: AppShell demos use the structural-preview pattern, NOT nested AppShell invocation. When a frontend component relies on a viewport-anchored context provider (e.g. shadcn `<Sidebar.Provider>`), its `gallery_demo()` renders a static representation built from plain Container + Heading + Text — nesting a second AppShell inside the outer gallery causes Sidebar.Provider context collision (G-02, confirmed 2026-04-22). Phase 19 EXER-01 is the designated surface for true nested-shell composition.
+- [v1.2 Phase 17-06]: Demo bind-path alignment is a hard contract. Every `/demo/<key>/<slot>` path a demo binds MUST have a matching `seed_for_key` arm writing the same path; a mismatch falls through as unseeded data (empty string / undefined / empty array) and the frontend's guards (`{#if errors.length > 0}`, `checked=false`, etc.) silently hide the component. Surfaced in G-05 via 3 of 5 demos (error-display, switch, textarea); radio-group + field-set seeds were already correctly aligned.
 
 ### Phase 17 hand-off (from Phase 16)
 
@@ -87,18 +89,19 @@ None carried over from v1.1.
 
 ### Blockers/Concerns
 
-- **AppShell nestability unknown** — Phase 12's AppShell uses shadcn SidebarProvider context, `--sidebar-*` CSS tokens, mobile sheet behaviour, and a keyboard shortcut. These may or may not compose cleanly when an outer shell hosts an inner shell. Phase 19 (exerciser, EXER-01) is the place this will surface; may require non-trivial fixes or a deferred-item note.
+- **AppShell nestability unknown (partial confirmation 2026-04-22)** — Phase 12's AppShell uses shadcn SidebarProvider context, `--sidebar-*` CSS tokens, mobile sheet behaviour, and a keyboard shortcut. Phase 17-06 G-02 confirmed the Sidebar.Provider context collides under nesting (the inner Sidebar.Root renders at the same viewport position as the outer, visually replacing the outer nav). Plan 17-06 worked around this by rewriting `AppShell::gallery_demo()` as a structural-preview (no nested AppShell builder). Full diagnosis + fix/defer decision for true nested shells remains Phase 19 EXER-01's scope.
 - ✅ **Registration library selection (resolved 2026-04-21):** `linkme` chosen over `inventory` per Phase 16 CONTEXT.md D-A1 — type-safe `#[distributed_slice]`, zero runtime cost, explicit mental model. Logged in PROJECT.md Key Decisions. Implementation: `.planning/phases/16-framework-hooks/16-01-PLAN.md`; stable iteration order is owned by `marionette::gallery::registered_demos()` via sort-at-iteration-time, not delegated to linkme.
 - **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision (tracked in v1.3+ as GALLERY-LINT).
 - **Phase 20 scope risk** — THEME-01 is explicitly scope-flexible per seed `gallery-live-token-editor`; if Phases 16–19 overrun, Phase 20 is the natural deferral target.
 - Pre-existing concerns carried from v1.1: ~97 clippy pedantic warnings in crm-demo from toolchain drift (documented in Phase 17 deferred-items.md); ~68 pre-existing frontend ESLint baseline (stash-revert-confirmed 2026-04-22). Popup browser-test failures incidentally auto-fixed by 17-05 commit `7c2f29f` (ConfirmDialog browser tests rewritten around current markup: now 5/5 passing).
 - **G-08 stranded Modal builder primitive** — Created by 17-05's architectural popup-global fix (`a55f055`). `marionette::builders::Modal` struct + `gallery_demo()` sibling are now dead code. Scheduled for cleanup in `17-08-PLAN.md` (wave 2, autonomous).
 - **Toast global-overlay refactor deferred** — User noted "same for toasts I guess" during 17-05 architectural escalation. Not in 17-05 scope; inline-in-AppShell toasts still work. Candidate for Phase 19 EXER-01 or a v1.3+ popup-unification plan.
+- **W-06 ErrorDisplay `message` field dead-state (new 2026-04-22 via Plan 17-06)** — The Rust `ErrorDisplay` builder has a `message` positional arg (`new(message)`) but the frontend `ErrorDisplay.svelte` reads errors ONLY from `bind`. Phase 18 CAT-04 polish should either remove the field or wire it as a bind-fallback when `getData(surface, bind)` is empty.
 
 ## Session Continuity
 
-Last session: 2026-04-22T19:00:00.000Z
-Stopped at: Plan 17-05 complete (5 of 7 Phase 17 gaps closed; 17-06/17-07/17-08 pending)
-Resume: execute `17-06-PLAN.md` (wave 1 sibling — G-02 AppShell nested-sidebar fix + G-05 5 empty demo bodies), then `17-08-PLAN.md` (wave 2 autonomous — G-08 stranded Modal builder cleanup), then `17-07-PLAN.md` (full 20-demo Chrome MCP re-UAT + phase close)
+Last session: 2026-04-22T19:30:00.000Z
+Stopped at: Plan 17-06 complete (G-02 + G-05 closed via Chrome MCP UAT; all 7 original Phase 17 gaps now fixed; 17-07 + 17-08 pending)
+Resume: execute `17-08-PLAN.md` (wave 2 autonomous — G-08 stranded Modal builder cleanup) in any order, then `17-07-PLAN.md` (full 20-demo Chrome MCP re-UAT + phase close)
 
-**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 7 plans — 5 complete, 3 pending (17-06, 17-07, 17-08)
+**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos (gap closure)) — 8 plans — 6 complete, 2 pending (17-07, 17-08)
