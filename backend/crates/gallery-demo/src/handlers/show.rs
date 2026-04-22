@@ -69,14 +69,18 @@ fn seed_for_key(key: &str) -> serde_json::Value {
 }
 
 fn seed_table_rows() -> serde_json::Value {
-    // 5-10 synthetic rows per CONTEXT.md §D-D1 (Phase 18 CAT-03 takes this to ≥500).
-    serde_json::json!([
-        {"id": 1, "name": "Alice Baker", "email": "alice@example.com", "created": "2026-01-05"},
-        {"id": 2, "name": "Bob Chen",    "email": "bob@example.com",   "created": "2026-01-08"},
-        {"id": 3, "name": "Carol Davis", "email": "carol@example.com", "created": "2026-01-12"},
-        {"id": 4, "name": "Dan Evans",   "email": "dan@example.com",   "created": "2026-01-15"},
-        {"id": 5, "name": "Eva Frost",   "email": "eva@example.com",   "created": "2026-01-20"},
-    ])
+    // Object-map keyed by stringified id — matches the frontend contract in
+    // DataTable.svelte:113-119 (`Object.entries(rawData)` iteration) AND the
+    // CRM per-row Set pattern in crm-demo/src/handlers/fetch_rows.rs:136-149.
+    // (G-03 fix, Phase 17 Plan 17-05 Task 3.) Phase 18 CAT-03 will extract a
+    // shared generator (≥500 rows); Phase 19 EXER-03 pushes to ≥10 000.
+    serde_json::json!({
+        "1": {"id": 1, "name": "Alice Baker", "email": "alice@example.com", "created": "2026-01-05"},
+        "2": {"id": 2, "name": "Bob Chen",    "email": "bob@example.com",   "created": "2026-01-08"},
+        "3": {"id": 3, "name": "Carol Davis", "email": "carol@example.com", "created": "2026-01-12"},
+        "4": {"id": 4, "name": "Dan Evans",   "email": "dan@example.com",   "created": "2026-01-15"},
+        "5": {"id": 5, "name": "Eva Frost",   "email": "eva@example.com",   "created": "2026-01-20"},
+    })
 }
 
 #[cfg(test)]
@@ -98,6 +102,10 @@ mod tests {
     #[test]
     fn seed_table_rows_has_five_rows() {
         let rows = seed_table_rows();
-        assert_eq!(rows.as_array().unwrap().len(), 5);
+        // Object-map keyed by stringified id (matches frontend Object.entries
+        // contract in DataTable.svelte:113). See seed_table_rows comment.
+        assert_eq!(rows.as_object().unwrap().len(), 5);
+        assert_eq!(rows["1"]["name"], "Alice Baker");
+        assert_eq!(rows["5"]["name"], "Eva Frost");
     }
 }

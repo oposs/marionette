@@ -237,9 +237,14 @@ pub fn gallery_demo() -> Vec<crate::gallery::Node> {
         TableColumn::new("created", "Created").kind(ColumnKind::Date),
     ];
 
+    // `.bind("/demo/data-table/rows")` is required — DataTable.svelte reads rows
+    // via `getData(surface, bind)` at runtime (frontend: DataTable.svelte:113-119).
+    // Without it, `rawData` is always `{}` and the table renders 0 rows regardless
+    // of seeded state or fetch-rows patches. (G-03 fix, Phase 17 Plan 17-05 Task 3.)
     let (id, component) = DataTable::new(columns)
         .id("demo-data-table-root")
         .source("demo-rows")
+        .bind("/demo/data-table/rows")
         .row_id_key("id")
         .page_size(10u32)
         .build();
