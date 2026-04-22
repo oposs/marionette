@@ -194,7 +194,12 @@ Plans:
   3. Every currently-registered built-in component (Button, TextInput, SelectInput, Checkbox, Textarea, RadioGroup, Switch, DataTable, AppShell, NavItem, Sidebar pieces, ModalSurface, ConfirmDialog, ToastSurface, FieldSet, FieldSeparator, Container, Heading, plus any others) has a `pub fn gallery_demo() -> Node` sibling annotated with `#[gallery_demo]`
   4. `GALLERY-DEMOS.md` (under `backend/crates/marionette/` or equivalent) documents the pure-fn contract: no external state, no I/O, no fixtures; composite demos are nested `gallery_demo()` calls; stateful fixtures live in gallery handlers
   5. Each built-in demo renders without panicking when visited in the running gallery; clicking every nav entry produces a screen, not an error surface
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 17-01-PLAN.md — Phase 16.5 micro-refactor: DemoEntry.render signature flip to fn() -> Vec<Node> + macro validator + gallery-smoke + trybuild fixture update
+- [ ] 17-02-PLAN.md — Per-component file refactor of builders/standard.rs into 25 per-component files with `pub use` shim preserving `builders::standard::*` imports
+- [ ] 17-03-PLAN.md — gallery-demo binary crate: 6th workspace member, AppShell nav from registered_demos(), Home page, 11 action handlers, integration tests, Makefile target
+- [ ] 17-04-PLAN.md — 19-demo sweep + GALLERY-DEMOS.md author contract + builtin_coverage_tests + REQUIREMENTS.md CRATE-01 reconciliation + Chrome MCP UAT checkpoint
 **UI hint**: yes
 
 ### Phase 18: Catalog Screens
