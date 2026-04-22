@@ -21,6 +21,11 @@ pub mod toast;
 /// RESEARCH.md §Pitfall 3.
 #[must_use]
 pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
+    // Force-link external demo crates (currently just gallery-smoke) so the
+    // linkme-backed DEMOS slice is populated. Without this, integration tests
+    // and the production binary would see an empty registry despite the
+    // Cargo.toml dep on gallery-smoke. See `lib.rs::__force_link_gallery_smoke`.
+    crate::ensure_demos_linked();
     router
         .action("navigate", box_handler(navigate::handle_navigate), AuthRequirement::None)
         .action("gallery-show", box_handler(show::handle_gallery_show), AuthRequirement::None)

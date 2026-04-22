@@ -1,10 +1,16 @@
-.PHONY: dev build test lint lint-spec clean format e2e
+.PHONY: dev build test lint lint-spec clean format e2e gallery-dev
 
 dev:
 	@echo "Starting development servers..."
 	@trap 'kill 0' EXIT; \
 	cd backend && cargo run -p crm-demo & \
 	cd frontend && npm run dev & \
+	wait
+
+gallery-dev:
+	@echo "Starting gallery-demo on :3002..."
+	@trap 'kill 0' EXIT; \
+	cd backend && cargo run -p gallery-demo & \
 	wait
 
 build:

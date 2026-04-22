@@ -9,6 +9,12 @@ publish = false
 marionette = { path = "../marionette", features = ["gallery"] }
 marionette-protocol = { path = "../marionette-protocol" }
 marionette-macros = { path = "../marionette-macros" }
+# gallery-smoke is a permanent fixture crate (CONTEXT.md §D-D3) that registers
+# the "smoke" demo. Linking it here ensures `registered_demos()` returns at
+# least one entry even before Plan 17-04's in-marionette siblings land.
+# Rule 3 deviation (blocking issue): without this dep, the nav_auto_discovery
+# integration test's "at least one key registered" assertion fails.
+gallery-smoke = { path = "../gallery-smoke" }
 axum.workspace = true
 tokio.workspace = true
 tower-http.workspace = true

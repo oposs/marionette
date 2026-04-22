@@ -25,3 +25,25 @@
 pub mod handlers;
 pub mod home;
 pub mod state;
+
+/// Force-link gallery-smoke's `smoke` demo so the linkme `DEMOS` slice is
+/// populated at runtime (and in integration tests).
+///
+/// Without an explicit reference, the linker dead-strips `gallery_smoke`'s
+/// object file because nothing in gallery-demo calls it directly — the
+/// `#[gallery_demo]`-emitted `static` registration is link-time side-effect
+/// only. The same belt-and-suspenders pattern lives in
+/// `gallery-smoke/tests/registry_roundtrip.rs::force_link_smoke_demo`.
+///
+/// Plan 17-04 will add 19 more `#[gallery_demo]` fns inside the `marionette`
+/// crate — gallery-demo already depends on `marionette`, so those don't need
+/// a force-link here. This one is specific to gallery-smoke, the external
+/// fixture crate.
+pub fn ensure_demos_linked() {
+    // `black_box` takes the fn pointer and makes the compiler treat it as a
+    // live observation that cannot be optimized away, which in turn forces
+    // the linker to keep `gallery_smoke`'s object file and its
+    // `#[gallery_demo]`-emitted static registration.
+    let smoke_ref: fn() -> Vec<marionette::gallery::Node> = gallery_smoke::smoke;
+    std::hint::black_box(smoke_ref);
+}
