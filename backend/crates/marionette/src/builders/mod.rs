@@ -1,3 +1,10 @@
+// Every in-scope builder module defines a `gallery_demo` fn (Phase 17 DEMO-01),
+// so `pub use <module>::*` creates ambiguous glob re-exports on `gallery_demo`.
+// Callers access these fns via their explicit path
+// (`crate::builders::<module>::gallery_demo`) — the parent `builders` namespace
+// intentionally does not resolve `gallery_demo`. Silence rustc's default warn.
+#![allow(ambiguous_glob_reexports)]
+
 pub mod node;
 pub mod app_shell;
 

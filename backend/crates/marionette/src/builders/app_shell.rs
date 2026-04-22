@@ -238,6 +238,64 @@ impl AppShellBuilder {
     }
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01 composite, D-A2 hand-designed) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "app-shell")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    // D-A2: AppShell demo is hand-designed, not auto-nested. Renders inside
+    // the gallery's `content` sub-surface as a curated "this is how you'd
+    // really build it" showcase. Phase 19 EXER-01 tests outer+inner nesting
+    // explicitly — this demo is content-surface-only.
+    use crate::builders::container::Container;
+    use crate::builders::heading::Heading;
+    use crate::builders::nav_item::NavItem;
+    use crate::builders::side_nav::SideNav;
+    use crate::builders::text::Text;
+
+    let nav_a = NavItem::new("Dashboard", "/demo/app-shell/dashboard")
+        .id("demo-app-shell-nav-a")
+        .build();
+    let nav_b = NavItem::new("Reports", "/demo/app-shell/reports")
+        .id("demo-app-shell-nav-b")
+        .build();
+    let nav_c = NavItem::new("Settings", "/demo/app-shell/settings")
+        .id("demo-app-shell-nav-c")
+        .build();
+    let (sidebar_root, sidebar_desc) = SideNav::new()
+        .id("demo-app-shell-sidebar")
+        .children(vec![nav_a, nav_b, nav_c])
+        .build_tree();
+
+    let header = Heading::new("Demo App")
+        .id("demo-app-shell-header-title")
+        .build();
+
+    let main_text = Text::new(
+        "This AppShell demo is hand-designed per D-A2 — Phase 19 \
+         EXER-01 exercises nested AppShell composition explicitly.",
+    )
+    .id("demo-app-shell-main-text")
+    .build();
+    let (main_root, main_desc) = Container::new()
+        .id("demo-app-shell-main")
+        .children(vec![main_text])
+        .build_tree();
+
+    let mut descendants: Vec<crate::gallery::Node> = Vec::new();
+    descendants.extend(sidebar_desc);
+    descendants.extend(main_desc);
+
+    AppShell::new()
+        .id("demo-app-shell-root")
+        .sidebar(sidebar_root)
+        .header(header)
+        .main(main_root)
+        .with_descendants(descendants)
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

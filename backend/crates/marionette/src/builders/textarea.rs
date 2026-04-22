@@ -36,6 +36,24 @@ pub struct Textarea {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "textarea")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let a = Textarea::new("Notes").bind("/demo/textarea/value").build();
+    let b = Textarea::new("With description")
+        .description("Multi-line text input with a helper line below.")
+        .bind("/demo/textarea/value-desc")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-textarea-root")
+        .children(vec![a, b])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

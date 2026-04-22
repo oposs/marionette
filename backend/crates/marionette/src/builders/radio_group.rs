@@ -46,6 +46,39 @@ pub struct RadioGroup {
     pub full_width: Option<bool>,
 }
 
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
+
+#[cfg(feature = "gallery")]
+#[marionette_macros::gallery_demo(key = "radio-group")]
+#[must_use]
+pub fn gallery_demo() -> Vec<crate::gallery::Node> {
+    let options = vec![
+        RadioOption {
+            value: "alpha".into(),
+            label: "Alpha".into(),
+            description: None,
+        },
+        RadioOption {
+            value: "beta".into(),
+            label: "Beta".into(),
+            description: Some("Second option with a description line.".into()),
+        },
+        RadioOption {
+            value: "gamma".into(),
+            label: "Gamma".into(),
+            description: None,
+        },
+    ];
+    let group = RadioGroup::new("Pick one", options)
+        .bind("/demo/radio-group/value")
+        .build();
+
+    crate::builders::container::Container::new()
+        .id("demo-radio-group-root")
+        .children(vec![group])
+        .build_with_children()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

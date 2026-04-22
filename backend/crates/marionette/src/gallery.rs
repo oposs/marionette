@@ -173,3 +173,105 @@ mod tests {
         assert_eq!(first, second);
     }
 }
+
+#[cfg(all(test, feature = "gallery"))]
+mod builtin_coverage_tests {
+    //! DEMO-01 coverage test (Phase 17 Plan 04). Every in-scope built-in
+    //! builder MUST register a `gallery_demo()` sibling. Skipped builders
+    //! (CONTEXT.md §D-B2) MUST NOT.
+    //!
+    //! This test guards against two failure modes:
+    //! 1. A future contributor adds a new ComponentBuilder without a
+    //!    `gallery_demo()` sibling (missing from registered_demos()).
+    //! 2. A future contributor accidentally annotates a skip-list builder
+    //!    with `#[gallery_demo]` (Container, SideNav, NavItem, NavGroup,
+    //!    SurfaceMount, FieldSeparator).
+
+    use super::registered_demos;
+    use std::collections::HashSet;
+
+    /// Keys that MUST appear in `registered_demos()` when the `gallery`
+    /// feature is on. Matches the 19-entry sweep (CONTEXT.md §D-B2).
+    const IN_SCOPE_KEYS: &[&str] = &[
+        "button",
+        "text-input",
+        "select",
+        "checkbox",
+        "grid",
+        "heading",
+        "text",
+        "form",
+        "textarea",
+        "radio-group",
+        "switch",
+        "field-set",
+        "data-table",
+        "modal",
+        "toast",
+        "confirm-dialog",
+        "spinner",
+        "error-display",
+        "app-shell",
+    ];
+
+    /// Keys that MUST NOT appear per CONTEXT.md §D-B2 skip list.
+    /// These builders are demoed transitively via parent composites.
+    const SKIPPED_KEYS: &[&str] = &[
+        "container",
+        "side-nav",
+        "nav-item",
+        "nav-group",
+        "surface-mount",
+        "field-separator",
+    ];
+
+    #[test]
+    fn all_in_scope_keys_present() {
+        // Force-link every builder module so linkme's distributed slice is
+        // populated. Without these references, the test binary may
+        // dead-code-eliminate builder modules that aren't otherwise
+        // referenced inside this test file.
+        let _button = crate::builders::button::gallery_demo;
+        let _text_input = crate::builders::text_input::gallery_demo;
+        let _select = crate::builders::select::gallery_demo;
+        let _checkbox = crate::builders::checkbox::gallery_demo;
+        let _grid = crate::builders::grid::gallery_demo;
+        let _heading = crate::builders::heading::gallery_demo;
+        let _text = crate::builders::text::gallery_demo;
+        let _form = crate::builders::form::gallery_demo;
+        let _textarea = crate::builders::textarea::gallery_demo;
+        let _radio_group = crate::builders::radio_group::gallery_demo;
+        let _switch = crate::builders::switch::gallery_demo;
+        let _field_set = crate::builders::field_set::gallery_demo;
+        let _data_table = crate::builders::data_table::gallery_demo;
+        let _modal = crate::builders::modal::gallery_demo;
+        let _toast = crate::builders::toast::gallery_demo;
+        let _confirm_dialog = crate::builders::confirm_dialog::gallery_demo;
+        let _spinner = crate::builders::spinner::gallery_demo;
+        let _error_display = crate::builders::error_display::gallery_demo;
+        let _app_shell = crate::builders::app_shell::gallery_demo;
+
+        let registered: HashSet<&'static str> = registered_demos().map(|e| e.key).collect();
+
+        for &key in IN_SCOPE_KEYS {
+            assert!(
+                registered.contains(key),
+                "DEMO-01 coverage: missing gallery_demo() for in-scope key '{key}'. \
+                 registered keys: {registered:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn skipped_keys_not_present() {
+        let registered: HashSet<&'static str> = registered_demos().map(|e| e.key).collect();
+
+        for &key in SKIPPED_KEYS {
+            assert!(
+                !registered.contains(key),
+                "CONTEXT.md §D-B2 skip list violated: '{key}' should NOT have a \
+                 gallery_demo() sibling (it's demoed transitively via a parent composite)",
+            );
+        }
+    }
+}

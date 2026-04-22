@@ -16,7 +16,7 @@ Prior requirements (v1.0, v1.1) are archived in `.planning/milestones/v1.0-REQUI
 
 ### Gallery crate skeleton
 
-- [ ] **CRATE-01**: New `backend/crates/gallery-demo/` workspace member exists as the 5th Cargo workspace entry, with thin backend scaffolding: no auth, no database, no migrations — in-memory `Arc<RwLock<_>>` state only. `cargo run -p gallery-demo` starts the app on its own port against the shared frontend.
+- [ ] **CRATE-01**: New `backend/crates/gallery-demo/` workspace member exists as the 6th Cargo workspace entry (the 5th slot is occupied by `gallery-smoke`, a permanent test-fixture crate landed in Phase 16), with thin backend scaffolding: no auth, no database, no migrations — in-memory `Arc<RwLock<_>>` state only. `cargo run -p gallery-demo` starts the app on its own port against the shared frontend.
 - [ ] **CRATE-02**: Gallery `main.rs` builds its AppShell navigation by iterating the auto-discovered demo registry — no hand-maintained menu list. Adding a new `#[gallery_demo]` fn anywhere in the workspace causes the gallery to automatically surface it on next build.
 
 ### Built-in demos (colocated, pure-fn)
