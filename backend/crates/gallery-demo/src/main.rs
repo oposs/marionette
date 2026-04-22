@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
+#![allow(clippy::doc_markdown)]
 
 //! Gallery-demo binary entry point.
 //!
