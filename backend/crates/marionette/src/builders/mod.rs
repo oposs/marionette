@@ -28,6 +28,10 @@ pub mod switch;
 pub mod field_set;
 pub mod field_separator;
 pub mod data_table;
+// `modal` module hosts ONLY the `gallery_demo()` sibling (Phase 17 Plan 17-08
+// deleted the `Modal` struct after the popups-global architectural refactor).
+// No `pub use modal::*;` re-export since there are no public types.
+pub mod modal;
 pub mod toast;
 pub mod confirm_dialog;
 pub mod spinner;
