@@ -26,10 +26,11 @@ pub struct DemoEntry {
     /// Stable identifier used as the sort key. Derived from the annotated fn
     /// ident by default; overridable via `#[gallery_demo(key = "...")]`.
     pub key: &'static str,
-    /// Entry-point fn. Takes no arguments; returns a `(String, Component)`
-    /// node tuple. Per the pure-fn contract (Phase 17's `GALLERY-DEMOS.md`),
-    /// implementations MUST NOT perform I/O or touch external state.
-    pub render: fn() -> Node,
+    /// Entry-point fn. Takes no arguments; returns a flat `Vec<Node>` where
+    /// index 0 is the root and remaining elements are descendants. Per the
+    /// pure-fn contract (Phase 17's `GALLERY-DEMOS.md`), implementations MUST
+    /// NOT perform I/O or touch external state.
+    pub render: fn() -> Vec<Node>,
     /// Navigation-facing label. Title-cased from `key` by default; overridable
     /// via `#[gallery_demo(name = "...")]`.
     pub display_name: &'static str,
@@ -108,12 +109,12 @@ mod tests {
     use super::{sort_entries, DemoEntry, Node};
     use marionette_protocol::Component;
 
-    /// Harmless Node value for test stubs. `render` is `fn() -> Node` per
-    /// D-C2; the tests inspect only `key` / `display_name`, never the output
-    /// of `render`. The literal matches the actual `Component` struct
+    /// Harmless Node value for test stubs. `render` is `fn() -> Vec<Node>`
+    /// per D-Z1; the tests inspect only `key` / `display_name`, never the
+    /// output of `render`. The literal matches the actual `Component` struct
     /// (see marionette-protocol/src/component.rs lines 1-29).
-    fn minimal_node() -> Node {
-        (
+    fn minimal_nodes() -> Vec<Node> {
+        vec![(
             String::new(),
             Component {
                 r#type: "text".into(),
@@ -123,11 +124,11 @@ mod tests {
                 action: None,
                 visible: None,
             },
-        )
+        )]
     }
 
     fn leak_entry(key: &'static str, display_name: &'static str) -> &'static DemoEntry {
-        Box::leak(Box::new(DemoEntry { key, render: minimal_node, display_name }))
+        Box::leak(Box::new(DemoEntry { key, render: minimal_nodes, display_name }))
     }
 
     #[test]

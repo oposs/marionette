@@ -130,35 +130,40 @@ fn validate_item(func: &ItemFn) -> Result<(), syn::Error> {
         ));
     }
 
-    // Return type must end in `Node`.
+    // Return type must be `Vec<Node>`.
     match &func.sig.output {
         syn::ReturnType::Default => Err(syn::Error::new_spanned(
             &func.sig,
-            "#[gallery_demo] fn must return `Node` (found unit return type)",
+            "#[gallery_demo] fn must return `Vec<Node>` (found unit return type)",
         )),
         syn::ReturnType::Type(_, ty) => {
-            if return_type_is_node(ty) {
+            if return_type_is_vec_node(ty) {
                 Ok(())
             } else {
                 Err(syn::Error::new_spanned(
                     ty,
-                    "#[gallery_demo] fn must return `Node` (an alias for \
-                     `(String, marionette_protocol::Component)`)",
+                    "#[gallery_demo] fn must return `Vec<Node>` (an alias for \
+                     `Vec<(String, marionette_protocol::Component)>`) — index 0 is the root, \
+                     remaining entries are descendants",
                 ))
             }
         }
     }
 }
 
-/// True if `ty` is a path whose last segment ident equals `Node`.
-/// Accepts `Node`, `marionette::gallery::Node`, `crate::Node`, etc.
-fn return_type_is_node(ty: &syn::Type) -> bool {
-    if let syn::Type::Path(p) = ty
-        && let Some(last) = p.path.segments.last()
-    {
-        return last.ident == "Node";
+/// True if `ty` is a path whose last segment is `Vec<Node>` (the single
+/// generic argument must be a path whose last segment ident equals `Node`).
+/// Accepts `Vec<Node>`, `std::vec::Vec<Node>`, `::alloc::vec::Vec<crate::gallery::Node>`, etc.
+fn return_type_is_vec_node(ty: &syn::Type) -> bool {
+    let syn::Type::Path(p) = ty else { return false };
+    let Some(last) = p.path.segments.last() else { return false };
+    if last.ident != "Vec" {
+        return false;
     }
-    false
+    let syn::PathArguments::AngleBracketed(args) = &last.arguments else { return false };
+    let Some(syn::GenericArgument::Type(inner)) = args.args.first() else { return false };
+    let syn::Type::Path(inner_p) = inner else { return false };
+    inner_p.path.segments.last().is_some_and(|s| s.ident == "Node")
 }
 
 /// ASCII title-casing for default `display_name`.

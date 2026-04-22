@@ -22,6 +22,6 @@ use marionette_macros::gallery_demo;
 /// when `registered_demos()` is invoked.
 #[gallery_demo(key = "smoke", name = "Smoke Check")]
 #[must_use]
-pub fn smoke() -> Node {
-    Text::new("gallery-smoke").build()
+pub fn smoke() -> Vec<Node> {
+    vec![Text::new("gallery-smoke").build()]
 }

@@ -19,7 +19,7 @@ fn force_link_smoke_demo() {
     // Reference the fn so the linker keeps gallery_smoke's object file,
     // which in turn drags in the `__GALLERY_DEMO_smoke` static that
     // linkme uses to populate `DEMOS`.
-    let _render: fn() -> marionette::gallery::Node = smoke;
+    let _render: fn() -> Vec<marionette::gallery::Node> = smoke;
 }
 
 #[test]
