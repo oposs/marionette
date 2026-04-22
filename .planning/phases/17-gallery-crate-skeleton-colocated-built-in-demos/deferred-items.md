@@ -26,6 +26,23 @@ issues DIRECTLY caused by the current task's changes."
   cannot pass until those unrelated pedantic issues are addressed; per-plan
   clippy on the touched crates does pass.
 
+### Pre-existing frontend ESLint errors (67 errors, 1 warning)
+
+- **Symptom:** `cd frontend && npm run lint` reports 68 problems (67
+  errors, 1 warning) across `frontend/src/**/*` and
+  `frontend/tests/e2e/**`.
+- **Source:** Pre-existing. Confirmed baseline (stash-revert + lint) on
+  2026-04-22 during Plan 17-05 Task 6d: identical 68 problems on a tree
+  with no Plan 17-05 changes applied. None of the lint errors touch
+  files this plan modified (`+layout.svelte`, `defaults.ts`,
+  `ModalSurface.svelte`, `navigate.rs`, `modal.rs`, `show.rs`,
+  `data_table.rs`).
+- **Scope boundary:** Plan 17-05's own files are lint-clean. The
+  workspace-wide lint run is dominated by pre-existing issues
+  (unused eslint-disable directives, `no-useless-assignment`, etc.).
+- **Resolution path:** Dedicated lint-cleanup plan (v1.3+) or paired
+  with the clippy toolchain-drift cleanup above.
+
 ### Pre-existing ConfirmDialog browser-test failures (4 tests)
 
 - **Symptom:** `npx vitest run --config vitest-browser.config.ts
