@@ -1,8 +1,16 @@
 //! ConfirmDialog demo handlers — `gallery-demo/confirm-{open,accept,reject}`.
 //!
-//! Open: render ConfirmDialog into `modal` sub-surface with accept/reject
-//! buttons carrying the matching `confirm-accept`/`confirm-reject` actions.
+//! Open: render a single structured ConfirmDialog node into the `modal`
+//! sub-surface. Labels ("Accept" / "Reject") and the cancel-action name
+//! (`gallery-demo/confirm-reject`) are surfaced as props on the dialog
+//! itself — NOT as orphan children. The top-level `action` fires the
+//! accept handler; the cancel_action prop fires the reject handler.
 //! Accept/Reject: clear modal sub-surface + enqueue a toast naming the choice.
+//!
+//! See Phase 17 Plan 17-05 Task 9 for the G-04 corrective pass that
+//! replaced the previous orphan-children shape (which ConfirmDialog.svelte
+//! silently ignored, resulting in Confirm=no-op + Cancel=no-toast) with
+//! the current prop-driven shape.
 
 use std::collections::HashMap;
 
@@ -16,27 +24,22 @@ use marionette_protocol::{Component, ComponentAction, ProtocolMessage};
 #[allow(clippy::unused_async)]
 pub async fn handle_confirm_open(ctx: HandlerContext) -> ActionResult {
     let dialog_root_id = "demo-confirm-root".to_string();
-    // ConfirmDialog::new(title, message) — two positional args per
-    // backend/crates/marionette/src/builders/confirm_dialog.rs.
-    let accept_btn = Button::new("Accept")
-        .id("demo-confirm-accept-btn")
-        .variant("default")
+    // Phase 17 Plan 17-05 Task 9 (G-04 corrective pass):
+    // Emit a single ConfirmDialog node whose props carry the Accept/Reject
+    // labels + the cancel_action wiring. The frontend ConfirmDialog.svelte
+    // reads these props directly; Accept click dispatches the top-level
+    // .action(...) (→ gallery-demo/confirm-accept); Cancel click dispatches
+    // props.cancel_action (→ gallery-demo/confirm-reject).
+    let (_id, dialog) = ConfirmDialog::new("Demo confirm", "Choose an option.")
+        .id(&dialog_root_id)
+        .confirm_label("Accept")
+        .cancel_label("Reject")
+        .cancel_action("gallery-demo/confirm-reject")
         .action(ComponentAction::click("gallery-demo/confirm-accept"))
         .build();
-    let reject_btn = Button::new("Reject")
-        .id("demo-confirm-reject-btn")
-        .variant("outline")
-        .action(ComponentAction::click("gallery-demo/confirm-reject"))
-        .build();
-    let dialog_nodes = ConfirmDialog::new("Demo confirm", "Choose an option.")
-        .id(&dialog_root_id)
-        .children(vec![accept_btn, reject_btn])
-        .build_with_children();
 
     let mut map: HashMap<String, Component> = HashMap::new();
-    for (id, c) in dialog_nodes {
-        map.insert(id, c);
-    }
+    map.insert(dialog_root_id.clone(), dialog);
 
     Ok(vec![ProtocolMessage::Render(RenderMessage {
         id: ctx.action.id.clone(),
