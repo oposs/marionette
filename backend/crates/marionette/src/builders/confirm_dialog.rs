@@ -3,11 +3,11 @@
 //! Split from `standard.rs` in Phase 17 D-B3. Phase 17 Plan 17-05 Task 8
 //! extended the struct with `confirm_label` / `cancel_label` /
 //! `cancel_action` / `destructive` so the backend can drive the frontend
-//! ConfirmDialog.svelte end-to-end (G-04 corrective pass). Field names
-//! stay snake_case to match the ComponentBuilder derive macro's
-//! identifier-to-key convention, consistent with DataTable's `page_size`
-//! precedent. The frontend (ConfirmDialog.svelte) reads snake_case first
-//! and falls back to camelCase for legacy call sites.
+//! `ConfirmDialog.svelte` end-to-end (G-04 corrective pass). Field names
+//! stay `snake_case` to match the `ComponentBuilder` derive macro's
+//! identifier-to-key convention, consistent with `DataTable`'s `page_size`
+//! precedent. The frontend (`ConfirmDialog.svelte`) reads `snake_case`
+//! first and falls back to `camelCase` for legacy call sites.
 
 use marionette_macros::ComponentBuilder;
 
