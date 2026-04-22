@@ -42,7 +42,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Milestone Goal:** Ship a dedicated gallery app that serves as both a visual-iteration harness and an SDUI-frontend exerciser, backed by a first-class auto-discoverable demo mechanism colocated with every marionette built-in — so design iteration stops being blocked by the opinionated CRM surface and new components automatically surface in the gallery.
 
 - [ ] **Phase 16: Framework Hooks** — `#[gallery_demo]` proc macro + `inventory`/`linkme` registration backbone + `gallery` cargo feature gate on the `marionette` crate
-- [ ] **Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos** — new `gallery-demo` workspace member with auto-discovered AppShell nav; `gallery_demo()` siblings for every existing built-in component
+- [x] **Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos** — new `gallery-demo` workspace member with auto-discovered AppShell nav; `gallery_demo()` siblings for every existing built-in component (completed 2026-04-22)
 - [ ] **Phase 18: Catalog Screens** — Buttons & Actions, Forms, DataTable, Feedback, Typography & tokens
 - [ ] **Phase 19: Exerciser Screens** — Nested AppShell, Rapid Patching, Pathological Scale
 - [ ] **Phase 20: Live Token Editor** — CSS-token editor screen with live apply + exportable `@theme` block (scope-flexible)
@@ -202,7 +202,7 @@ Plans:
 - [x] 17-04-PLAN.md — 19-demo sweep + GALLERY-DEMOS.md author contract + builtin_coverage_tests + REQUIREMENTS.md CRATE-01 reconciliation + Chrome MCP UAT checkpoint
 - [x] 17-05-PLAN.md — Gap closure (handlers): Modal recursion fix + ConfirmDialog close semantics + DataTable rows patch + Home footer Text + modal sub-surface seed (G-01/03/04/06/07) — **complete 2026-04-22 via Chrome MCP UAT**
 - [x] 17-06-PLAN.md — Gap closure (demo bodies): AppShell structural-preview rewrite (G-02) + error-display bind + switch/textarea seed alignment (G-05) — **complete 2026-04-22 via Chrome MCP UAT**
-- [ ] 17-07-PLAN.md — Gap closure (re-UAT + phase close): Full 20-demo Chrome MCP walk + VERIFICATION.md status=verified + ROADMAP/STATE updates
+- [x] 17-07-PLAN.md — Gap closure (re-UAT + phase close): Full 20-demo Chrome MCP walk + VERIFICATION.md status=verified + ROADMAP/STATE updates — **complete 2026-04-22 (Phase 17 closed; all 8 surfaced gaps verified resolved)**
 - [x] 17-08-PLAN.md — Gap closure (architectural debt): Stranded Modal builder cleanup (G-08) after 17-05's popups-global layout-root refactor — **complete 2026-04-22 (cargo gates green; modal nav entry preserved via doc-stub host)**
 **UI hint**: yes
 
@@ -269,7 +269,7 @@ Plans:
 | 14. FormScreen Enhancements | v1.1 | 8/8 | Complete | 2026-04-18 |
 | 15. CRM Migration & Validation | v1.1 | 7/7 | Complete | 2026-04-18 |
 | 16. Framework Hooks | v1.2 | 4/4 | Complete | 2026-04-22 |
-| 17. Gallery Crate Skeleton + Colocated Built-in Demos | v1.2 | 7/8 | Executing | — |
+| 17. Gallery Crate Skeleton + Colocated Built-in Demos | v1.2 | 8/8 | Complete | 2026-04-22 |
 | 18. Catalog Screens | v1.2 | 0/? | Pending | — |
 | 19. Exerciser Screens | v1.2 | 0/? | Pending | — |
 | 20. Live Token Editor | v1.2 | 0/? | Pending | — |
@@ -280,3 +280,4 @@ Plans:
 *Updated: 2026-04-22 — Phase 17 Plan 17-05 complete (G-01/G-03/G-04/G-06/G-07 closed via Chrome MCP UAT); Phase 17 plan count grew to 8 with 17-08 added for G-08 architectural cleanup*
 *Updated: 2026-04-22 — Phase 17 Plan 17-06 complete (G-02 AppShell structural-preview rewrite + G-05 deterministic fixes via Chrome MCP UAT); 6/8 plans complete; 17-07 (full re-UAT + phase close) and 17-08 (G-08 Modal builder cleanup) remain pending*
 *Updated: 2026-04-22 — Phase 17 Plan 17-08 complete (G-08 stranded Modal builder cleanup; struct deleted, modal gallery_demo() preserved as doc-stub host so the modal nav entry still renders, GALLERY-DEMOS.md gained §Popup composition recipe; cargo gates all green); 7/8 plans complete; 17-07 (full re-UAT + phase close) remains pending*
+*Updated: 2026-04-22 — **Phase 17 COMPLETE** (Plan 17-07 finalized; full 20-nav-entry Chrome MCP re-UAT confirms 20/20 demos render, all 7 original gaps closed, G-08 architectural debt resolved; VERIFICATION.md status: verified; v1.2 progress now 2/5 phases — Phases 16 + 17 done; Phase 18 (Catalog) is unblocked)*
