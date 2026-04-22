@@ -18,8 +18,12 @@ pub struct Grid {
 #[cfg(feature = "gallery")]
 #[marionette_macros::gallery_demo(key = "grid")]
 #[must_use]
+#[allow(clippy::many_single_char_names)]
 pub fn gallery_demo() -> Vec<crate::gallery::Node> {
     // 2x3 Grid of Heading placeholders showing the grid layout shape.
+    // Single-char names mirror spreadsheet-cell style (A/B/C/D/E/F) for
+    // readability; clippy's many_single_char_names lint is silenced
+    // locally because the names intentionally reflect the rendered labels.
     let a = crate::builders::heading::Heading::new("A")
         .id("demo-grid-a")
         .build();
