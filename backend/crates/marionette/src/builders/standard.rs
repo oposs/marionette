@@ -16,7 +16,7 @@ pub use super::{
     side_nav::*, nav_item::*, nav_group::*, surface_mount::*,
     form::*, textarea::*, radio_group::*, switch::*,
     field_set::*, field_separator::*, data_table::*,
-    modal::*, toast::*, confirm_dialog::*,
+    toast::*, confirm_dialog::*,
     spinner::*, error_display::*,
     composites::*,
 };
