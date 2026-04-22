@@ -6,6 +6,7 @@ members = [
     "crates/marionette",
     "crates/crm-demo",
     "crates/gallery-smoke",
+    "crates/gallery-demo",
 ]
 
 [workspace.package]
