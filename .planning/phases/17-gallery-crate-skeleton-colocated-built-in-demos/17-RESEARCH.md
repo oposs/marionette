@@ -1109,9 +1109,11 @@ fn flatten_root(nodes: Vec<(String, marionette_protocol::Component)>)
 | Path traversal via `../frontend/build` ServeDir | Info Disclosure | `tower-http::ServeDir` normalizes paths; traversal to sibling paths is blocked. Verified by CRM's identical usage. |
 | Concurrent write to `Arc<RwLock<_>>` state (race) | DoS | `tokio::sync::RwLock` serializes writers; concurrent readers are safe. Pattern-standard. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 ### Open Question #1 — Composite `gallery_demo()` return shape [HIGH priority]
+
+**RESOLVED in Plan 01 (D-Z1):** `DemoEntry.render` signature is changed to `fn() -> Vec<Node>` (the flat-tree form). Composite `gallery_demo()` bodies return the full flat tree; `gallery-show` handler (Plan 03 `handle_gallery_show`) invokes `(entry.render)()`, packs the returned `Vec<Node>` into a `HashMap<String, Component>`, and emits a single Render. Both leaf and composite demos work under one uniform contract.
 
 **What we know:** The `Node` type alias is `(String, Component)` — a single tuple. `build_with_children()` returns `Vec<(String, Component)>`. The `#[gallery_demo]` macro enforces `fn() -> Node` return type (macro `return_type_is_node` at `gallery_demo.rs:155`).
 
@@ -1147,6 +1149,8 @@ This has one big issue: the macro-emitted `DemoEntry::render: fn() -> Node` fiel
 
 ### Open Question #2 — Modal close semantics [MEDIUM priority]
 
+**RESOLVED in Plan 03 (`handle_modal_close`):** Close renders an empty `Container` with `id="modal-empty"` into the `modal` sub-surface. The same idiom is reused by `handle_confirm_accept` / `handle_confirm_reject`. Chrome MCP UAT in Plan 04 is the final edge-case check (residual open-state from rapid re-open/close cycles).
+
 **What we know:** `ModalSurface.svelte:8` reads `isOpen = tree !== undefined`. Clearing the tree requires either (a) a Render with an empty tree (ambiguous — does Frontend treat `root: "some-id"` with one empty Component as "open" or "closed"?) or (b) a new `ClearSurface` wire op that doesn't exist.
 
 **What's unclear:** Does rendering a Container with no children at a "closed" root make `isOpen` false, or does any Render keep the tree defined and thus `isOpen` true?
@@ -1155,6 +1159,8 @@ This has one big issue: the macro-emitted `DemoEntry::render: fn() -> Node` fiel
 
 ### Open Question #3 — DataTable rows via bind-path [MEDIUM priority]
 
+**RESOLVED in Plan 03 (`handle_demo_fetch_rows` + Plan 03 `show.rs::seed_table_rows`):** Row delivery uses Pattern 5 option 2 — gallery-demo registers a `fetch-rows` handler responding to `source: "demo-rows"` with 5 synthetic rows written as `PatchOperation::Set` ops on `/demo/data-table/rows/{id}`. The DataTable demo sets `.source("demo-rows")`. Inline-rows fallback was not needed.
+
 **What we know:** `DataTable`'s frontend uses `source: string` + dispatches `fetch-rows` actions for data. The demo path option (Pattern 5 option 2) requires registering a `fetch-rows` handler.
 
 **What's unclear:** Does the frontend's DataTable also accept inline `rows: []` in its Component props as a fallback, allowing pure-fn demos?
@@ -1162,6 +1168,8 @@ This has one big issue: the macro-emitted `DemoEntry::render: fn() -> Node` fiel
 **Recommendation:** Inspect `frontend/src/lib/components/table/DataTable.svelte` early in Phase 17 Wave 0. If inline rows are supported (even experimentally), demos can embed fixture rows in the Component props directly. Otherwise, gallery-demo ships a `fetch-rows` handler for source `"demo-rows"` returning the seeded row set.
 
 ### Open Question #4 — REQUIREMENTS.md §CRATE-01 wording reconciliation [LOW priority, cosmetic]
+
+**RESOLVED in Plan 04 (Task 4):** REQUIREMENTS.md line 19 is updated from `"5th Cargo workspace entry"` to `"6th Cargo workspace entry (the 5th is gallery-smoke, a permanent test-fixture crate)"`.
 
 **What we know:** REQUIREMENTS.md §CRATE-01 says "5th Cargo workspace entry"; Phase 16's `gallery-smoke` took slot 5; gallery-demo is the 6th.
 
@@ -1257,7 +1265,7 @@ Every claim in this research is [VERIFIED] against the codebase or [CITED] from 
 | DataTable demo | MEDIUM | Need 1 of 3 row-delivery paths (Open Q #3); each is viable |
 | Validation & tests | HIGH | Test shapes mirror Phase 16 `gallery-smoke/tests/` pattern |
 
-### Open Questions (blocking or near-blocking)
+### Open Questions (all resolved — see §Open Questions above)
 
 1. **Composite demo return shape** (`fn() -> Node` vs flat tree) — planner MUST resolve before implementing Form / FieldSet / DataTable / Modal / Toast / ConfirmDialog / AppShell demos. Leaves are safe. Recommendations in Open Q #1 offer three viable paths including a framework-stable fallback (reduced composite density).
 2. **Modal close tree semantics** — early test in Wave 0 clarifies; workaround (invisible Container) always works.
