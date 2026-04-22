@@ -4,14 +4,14 @@ milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-04-22T07:10:34.078Z"
+last_updated: "2026-04-22T08:22:23.340Z"
 last_activity: 2026-04-21 -- Phase 16 execution started
 progress:
   total_phases: 11
   completed_phases: 1
-  total_plans: 4
+  total_plans: 8
   completed_plans: 4
-  percent: 100
+  percent: 50
 ---
 
 # Project State
@@ -95,3 +95,5 @@ None carried over from v1.1.
 Last session: --stopped-at
 Stopped at: Phase 17 context gathered
 Resume: run `/gsd-verify-work 16` to validate Phase 16 success criteria, then `/gsd-plan-phase 17` to start the gallery-crate skeleton + colocated built-in demos
+
+**Planned Phase:** 17 (Gallery Crate Skeleton + Colocated Built-in Demos) — 4 plans — 2026-04-22T08:22:23.332Z
