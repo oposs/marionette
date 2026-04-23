@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
-status: Phase 18 planning complete; ready to execute
+status: executing
 stopped_at: Phase 18 planning complete
-last_updated: "2026-04-23T15:53:18.177Z"
-last_activity: 2026-04-23 — Phase 18 planning complete (8 plans in 6 waves, plan-checker iteration 2 PASSED)
+last_updated: "2026-04-23T18:40:00.000Z"
+last_activity: 2026-04-23 -- Phase 18 Wave 1 complete (18-01 + 18-02 + 18-03 merged; framework polish + synthetic rows shipped)
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 20
-  completed_plans: 12
-  percent: 60
+  completed_plans: 15
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Clean, well-specified SDUI protocol enabling rapid business app development where backend developers control UI
-**Current focus:** Phase 18 (Catalog Screens) — Phase 17 just shipped 2026-04-22
+**Current focus:** Phase 18 — catalog-screens
 
 ## Current Position
 
-Phase: 18 (Catalog Screens — CAT-01 through CAT-05) — planning complete, ready to execute
-Plan: 8 of 8 written (0 executed)
-Status: Phase 18 planning complete; ready to execute
-Last activity: 2026-04-23 — Phase 18 planning complete (8 plans in 6 waves, plan-checker iteration 2 PASSED)
+Phase: 18 (catalog-screens) — EXECUTING
+Plan: 4 of 8 (Wave 2 starting — 18-04 CAT-01 Buttons)
+Status: Wave 1 complete (18-01, 18-02, 18-03) — framework polish + synthetic rows shipped
+Last activity: 2026-04-23 -- Phase 18 Wave 1 complete
 
-Progress: [░░░░░░░░░░] 0% (within Phase 18; v1.2 milestone has Phases 18/19/20 still ahead)
+Progress: [███░░░░░░░] 38% (within Phase 18; 3/8 plans done; v1.2 milestone has Phases 18/19/20 still ahead)
 
 ## Performance Metrics
 
