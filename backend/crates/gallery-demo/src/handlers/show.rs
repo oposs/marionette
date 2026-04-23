@@ -54,6 +54,11 @@ pub async fn handle_gallery_show(ctx: HandlerContext) -> ActionResult {
 /// demo's Component tree resolve to sensible initial values. Unknown keys
 /// yield an empty seed — fine for pure-visual leaves (Heading, Text, Spinner).
 fn seed_for_key(key: &str) -> serde_json::Value {
+    // Explicit `catalog-*` arms that return empty JSON are deliberate
+    // documentation — the wildcard also returns empty, but naming the
+    // known zero-state catalog keys prevents accidental seed drift as
+    // future catalog plans land (18-05..18-08). Allow the lint locally.
+    #[allow(clippy::match_same_arms)]
     match key {
         "text-input" => serde_json::json!({ "demo": { "text-input": { "value": "" } } }),
         "select" => serde_json::json!({ "demo": { "select":     { "value": "" } } }),
