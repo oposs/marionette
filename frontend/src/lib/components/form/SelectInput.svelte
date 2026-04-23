@@ -62,7 +62,29 @@
 			// Pair mark/clear with open/close (mirrors focus/blur in TextInput)
 			// so that dismissing the dropdown without a selection still clears
 			// the dirty flag and does not strand pending optimistic state.
+			// handleBlur handles both the clearDirty and the optional blur
+			// action dispatch (Phase 18 Plan 02 — Framework Gap 2).
+			handleBlur();
+		}
+	}
+
+	// Phase 18 Plan 02 — Framework Gap 2: blur-action dispatch.
+	// Mirrors TextInput.svelte lines 45-56. For a Select, the logical "blur"
+	// moment is the popover close, not a focus-leave on the trigger (the
+	// trigger briefly loses focus when the items portal opens, so focus-leave
+	// would fire during interaction). handleOpenChange(false) is the correct
+	// hook; this function is invoked from there and mirrors the dispatch
+	// shape used by TextInput / Textarea.
+	function handleBlur() {
+		if (bind) {
 			clearDirty(bind, (op) => setData(surface, op.path, op.value));
+			if (action?.type === 'blur') {
+				sendAction(
+					action.name ?? action.type,
+					{ value: getData(surface, bind!) },
+					action.target
+				);
+			}
 		}
 	}
 </script>
