@@ -3,8 +3,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Safelist dynamic grid-cols classes used by Grid.svelte */
-@source inline("grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 grid-cols-5 grid-cols-6 md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6");
+/* Safelist dynamic grid-cols classes used by Grid.svelte + Phase 18 catalog
+   screen responsive inner-grids (sm:/lg: breakpoints). The grid classes are
+   emitted from Rust-built Container.class strings at runtime, so Tailwind v4
+   JIT cannot discover them from static source scanning alone — they must be
+   explicitly safelisted here. See .planning/phases/18-catalog-screens/
+   18-RESEARCH.md Pattern 4 and 18-UI-SPEC.md §Responsive Breakpoints. */
+@source inline("grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 grid-cols-5 grid-cols-6 grid-cols-7 grid-cols-8 md:grid-cols-1 md:grid-cols-2 md:grid-cols-3 md:grid-cols-4 md:grid-cols-5 md:grid-cols-6 sm:grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 sm:grid-cols-4 sm:grid-cols-5 sm:grid-cols-6 lg:grid-cols-1 lg:grid-cols-2 lg:grid-cols-3 lg:grid-cols-4 lg:grid-cols-5 lg:grid-cols-6 lg:grid-cols-7 lg:grid-cols-8");
 
 :root {
   --radius: 0.25rem;

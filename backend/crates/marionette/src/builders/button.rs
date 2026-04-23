@@ -16,6 +16,12 @@ pub struct Button {
     pub size: Option<String>,
     #[builder(optional)]
     pub disabled: Option<bool>,
+    #[builder(optional)]
+    pub loading: Option<bool>,
+    #[builder(optional)]
+    pub icon: Option<String>,
+    #[builder(optional)]
+    pub aria_label: Option<String>,
 }
 
 // ---- gallery_demo sibling (Phase 17 DEMO-01) ----
@@ -80,5 +86,29 @@ mod tests {
             component.visible.as_deref(),
             Some("/permissions/canDelete")
         );
+    }
+
+    #[test]
+    fn button_loading_field_serializes() {
+        let (_id, comp) = Button::new("Save").loading(true).build();
+        let v = serde_json::to_value(&comp).expect("serialize");
+        assert_eq!(v["props"]["loading"], serde_json::Value::Bool(true));
+    }
+
+    #[test]
+    fn button_icon_field_serializes_as_kebab_string() {
+        let (_id, comp) = Button::new("").icon("plus").build();
+        let v = serde_json::to_value(&comp).expect("serialize");
+        assert_eq!(v["props"]["icon"], serde_json::Value::String("plus".into()));
+    }
+
+    #[test]
+    fn button_aria_label_uses_snake_case_key() {
+        let (_id, comp) = Button::new("").aria_label("Close").build();
+        let v = serde_json::to_value(&comp).expect("serialize");
+        // IMPORTANT: the key must be snake_case ("aria_label"), not camelCase
+        // ("ariaLabel"). Svelte side reads props.aria_label per UI-SPEC / RESEARCH.
+        assert_eq!(v["props"]["aria_label"], serde_json::Value::String("Close".into()));
+        assert!(v["props"].get("ariaLabel").is_none(), "must NOT emit camelCase key");
     }
 }
