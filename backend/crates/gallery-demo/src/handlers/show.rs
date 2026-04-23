@@ -54,6 +54,11 @@ pub async fn handle_gallery_show(ctx: HandlerContext) -> ActionResult {
 /// demo's Component tree resolve to sensible initial values. Unknown keys
 /// yield an empty seed — fine for pure-visual leaves (Heading, Text, Spinner).
 fn seed_for_key(key: &str) -> serde_json::Value {
+    // Explicit `catalog-*` arms that return empty JSON are deliberate
+    // documentation — the wildcard also returns empty, but naming the
+    // known zero-state catalog keys prevents accidental seed drift as
+    // future catalog plans land (18-05..18-08). Allow the lint locally.
+    #[allow(clippy::match_same_arms)]
     match key {
         "text-input" => serde_json::json!({ "demo": { "text-input": { "value": "" } } }),
         "select" => serde_json::json!({ "demo": { "select":     { "value": "" } } }),
@@ -95,6 +100,10 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         "form" => serde_json::json!({ "demo": { "form":       { "email": "", "name": "" } } }),
         "field-set" => serde_json::json!({ "demo": { "field-set":  { "a": "", "b": "" } } }),
         "data-table" => serde_json::json!({ "demo": { "data-table": { "rows": seed_table_rows() } } }),
+        // Phase 18 Plan 04 (CAT-01): pure-visual screen; no bind paths are read
+        // by catalog/buttons.rs (the matrix fires `gallery-demo/noop` on click
+        // but reads no surface data). Empty seed is the correct zero-state.
+        "catalog-buttons" => serde_json::json!({}),
         _ => serde_json::json!({}),
     }
 }

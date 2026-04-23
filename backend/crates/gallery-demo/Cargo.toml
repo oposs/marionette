@@ -26,6 +26,14 @@ serde_json.workspace = true
 sea-orm.workspace = true
 uuid.workspace = true
 
+[features]
+# The `#[gallery_demo]` proc macro emits its fn + linkme static gated on
+# `#[cfg(feature = "gallery")]`. Consumer crates that use the macro must
+# define a `gallery` feature so the cfg resolves. gallery-demo's entire
+# reason for existence is the gallery registry, so default it on.
+default = ["gallery"]
+gallery = ["marionette/gallery"]
+
 [dev-dependencies]
 tokio-tungstenite.workspace = true
 futures.workspace = true
