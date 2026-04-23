@@ -4,14 +4,14 @@ milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: Phase 17 shipped; ready to start Phase 18
 stopped_at: Phase 18 UI-SPEC approved
-last_updated: "2026-04-23T12:48:12.757Z"
+last_updated: "2026-04-23T13:49:12.415Z"
 last_activity: 2026-04-22 — Phase 17 UAT gap closure complete (20/20 nav entries render; all 8 surfaced gaps closed)
 progress:
   total_phases: 11
   completed_phases: 2
-  total_plans: 12
+  total_plans: 20
   completed_plans: 12
-  percent: 100
+  percent: 60
 ---
 
 # Project State
@@ -143,4 +143,4 @@ Last session: --stopped-at
 Stopped at: Phase 18 UI-SPEC approved
 Resume: `/gsd-discuss-phase 18` or `/gsd-plan-phase 18` (Phase 18 — Catalog Screens — CAT-01 through CAT-05; depends on Phase 17 which is now complete)
 
-**Planned Phase:** 18 (Catalog Screens) — TBD plans — pending plan creation
+**Planned Phase:** 18 (Catalog Screens) — 8 plans — 2026-04-23T13:49:12.395Z
