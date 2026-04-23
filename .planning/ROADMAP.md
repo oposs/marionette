@@ -224,7 +224,7 @@ Plans:
 - [x] 18-04-PLAN.md — CAT-01 Buttons & Actions catalog screen (60-cell variant × size × state matrix) — Wave 2
 - [x] 18-05-PLAN.md — CAT-02 Forms catalog screen + 6 blur-validate handlers (Phase 12 node-tree ops) — Wave 3
 - [x] 18-06-PLAN.md — CAT-03 Data Table catalog screen (500 rows, virtualized pagination, column visibility) — Wave 4
-- [ ] 18-07-PLAN.md — CAT-04 Feedback catalog screen (toast/modal/confirm triggers + placeholders) — Wave 5
+- [x] 18-07-PLAN.md — CAT-04 Feedback catalog screen (toast/modal/confirm triggers + placeholders) — Wave 5
 - [ ] 18-08-PLAN.md — CAT-05 Typography & Tokens catalog + GALLERY-DEMOS.md update + Chrome MCP UAT — Wave 6
 **UI hint**: yes
 
