@@ -7,6 +7,7 @@
 use marionette::router::{ActionRouter, box_handler};
 use marionette_protocol::common::AuthRequirement;
 
+pub mod catalog_forms;
 pub mod confirm;
 pub mod fetch_rows;
 pub mod modal;
@@ -38,4 +39,37 @@ pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
         .action("gallery-demo/toast-fire", box_handler(toast::handle_toast_fire), AuthRequirement::None)
         .action("dismiss-toast", box_handler(toast::handle_dismiss_toast), AuthRequirement::None)
         .action("fetch-rows", box_handler(fetch_rows::handle_demo_fetch_rows), AuthRequirement::None)
+        // --- CAT-02 blur-validate handlers (Phase 18 Plan 18-05) ---
+        // Six validators demonstrate Phase 12 node-tree ops (set-node /
+        // set-children / delete-node) rotated across every input type.
+        .action(
+            "gallery-demo/catalog-forms/validate-text-input",
+            box_handler(catalog_forms::validate_text_input),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/catalog-forms/validate-select",
+            box_handler(catalog_forms::validate_select),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/catalog-forms/validate-checkbox",
+            box_handler(catalog_forms::validate_checkbox),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/catalog-forms/validate-switch",
+            box_handler(catalog_forms::validate_switch),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/catalog-forms/validate-radio",
+            box_handler(catalog_forms::validate_radio),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/catalog-forms/validate-textarea",
+            box_handler(catalog_forms::validate_textarea),
+            AuthRequirement::None,
+        )
 }
