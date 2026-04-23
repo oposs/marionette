@@ -95,6 +95,10 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         "form" => serde_json::json!({ "demo": { "form":       { "email": "", "name": "" } } }),
         "field-set" => serde_json::json!({ "demo": { "field-set":  { "a": "", "b": "" } } }),
         "data-table" => serde_json::json!({ "demo": { "data-table": { "rows": seed_table_rows() } } }),
+        // Phase 18 Plan 04 (CAT-01): pure-visual screen; no bind paths are read
+        // by catalog/buttons.rs (the matrix fires `gallery-demo/noop` on click
+        // but reads no surface data). Empty seed is the correct zero-state.
+        "catalog-buttons" => serde_json::json!({}),
         _ => serde_json::json!({}),
     }
 }
