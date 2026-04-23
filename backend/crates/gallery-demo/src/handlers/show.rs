@@ -112,6 +112,19 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         // entry in the `demo.catalog-forms` object below; the integration
         // test `catalog_forms_seed_covers_every_bind_path_in_the_demo`
         // asserts this at build time.
+        // Phase 18 Plan 06 (CAT-03): seed the first 50 rows of the shared
+        // synthetic generator under `/demo/catalog-data-table/rows` as an
+        // object-map keyed by stringified id (the frontend DataTable.svelte
+        // contract — `Object.entries(rawData)`; array shape silently renders
+        // zero rows). Actions array is injected per-row to mirror the
+        // fetch-rows handler (Plan 18-03) so initial render and paginated
+        // pages share the identical shape — no visual seam at the 50-row
+        // boundary when scroll triggers fetch-rows for rows 51-500.
+        "catalog-data-table" => serde_json::json!({
+            "demo": { "catalog-data-table": {
+                "rows": catalog_rows_initial_object_map(),
+            }},
+        }),
         "catalog-forms" => serde_json::json!({
             "demo": { "catalog-forms": {
                 // TextInput Card
@@ -170,6 +183,41 @@ fn seed_for_key(key: &str) -> serde_json::Value {
     }
 }
 
+/// Initial 50-row object-map for the CAT-03 Data Table catalog screen.
+///
+/// Returns a `serde_json::Value::Object` keyed by stringified row id
+/// (`"1"` through `"50"`) so the frontend `DataTable.svelte`'s
+/// `Object.entries(rawData)` iteration (DataTable.svelte:113-119) lights up
+/// on first paint without waiting for a fetch-rows round-trip.
+///
+/// Each row mirrors the shape emitted by `handlers::fetch_rows.rs`'s
+/// `catalog-synthetic-rows` arm (Plan 18-03): the `Row` struct serialized
+/// via serde, with an `actions` array (Edit / Delete / Duplicate, each
+/// firing `gallery-demo/noop`) injected so the initial 50 rows and the
+/// paginated rows 51-500 use the identical column-kind `Actions`
+/// rendering without a visual seam at the page boundary.
+///
+/// Do NOT unify with [`seed_table_rows`] (D-4-C locks that helper untouched
+/// — the `data-table` leaf demo in Phase 17 depends on its exact 5-row
+/// fixture at `/demo/data-table/rows`).
+fn catalog_rows_initial_object_map() -> serde_json::Value {
+    let rows = crate::fixtures::synthetic_rows(50);
+    let mut map = serde_json::Map::new();
+    for row in rows {
+        let id_key = row.id.to_string();
+        let mut v = serde_json::to_value(&row).expect("Row serializes");
+        // Mirror actions injection from fetch_rows.rs so initial render
+        // shows the Actions column exactly as subsequent pages will.
+        v["actions"] = serde_json::json!([
+            { "label": "Edit",      "action": { "type": "click", "name": "gallery-demo/noop" } },
+            { "label": "Delete",    "action": { "type": "click", "name": "gallery-demo/noop" } },
+            { "label": "Duplicate", "action": { "type": "click", "name": "gallery-demo/noop" } },
+        ]);
+        map.insert(id_key, v);
+    }
+    serde_json::Value::Object(map)
+}
+
 fn seed_table_rows() -> serde_json::Value {
     // Object-map keyed by stringified id — matches the frontend contract in
     // DataTable.svelte:113-119 (`Object.entries(rawData)` iteration) AND the
@@ -209,6 +257,76 @@ mod tests {
         assert_eq!(rows.as_object().unwrap().len(), 5);
         assert_eq!(rows["1"]["name"], "Alice Baker");
         assert_eq!(rows["5"]["name"], "Eva Frost");
+    }
+
+    #[test]
+    fn catalog_data_table_seed_matches_row_shape_and_action_injection() {
+        let seed = seed_for_key("catalog-data-table");
+        let rows = seed["demo"]["catalog-data-table"]["rows"]
+            .as_object()
+            .expect("rows is object-map keyed by stringified id");
+        assert_eq!(rows.len(), 50, "first page seeds exactly 50 rows");
+        let r1 = rows.get("1").expect("row id=1 must be seeded");
+        assert_eq!(r1["id"], 1);
+        assert!(r1["name"].is_string());
+        assert!(r1["email"].is_string());
+        assert!(r1["status"].is_string());
+        assert!(r1["score"].is_number());
+        assert!(
+            r1["joined_at"].is_string(),
+            "joined_at serializes as ISO YYYY-MM-DD string"
+        );
+        let actions = r1["actions"]
+            .as_array()
+            .expect("actions present on every seeded row");
+        assert_eq!(actions.len(), 3);
+        assert_eq!(actions[0]["label"], "Edit");
+        assert_eq!(actions[1]["label"], "Delete");
+        assert_eq!(actions[2]["label"], "Duplicate");
+        // Every action fires the gallery-demo/noop click handler — same as
+        // handlers::fetch_rows.rs's catalog-synthetic-rows arm.
+        assert_eq!(actions[0]["action"]["type"], "click");
+        assert_eq!(actions[0]["action"]["name"], "gallery-demo/noop");
+    }
+
+    #[test]
+    fn catalog_data_table_seed_aligns_with_generator() {
+        // The seeded row id=1 must share its fields with the first row of
+        // `fixtures::synthetic_rows(n)` for any n — proving the seed is
+        // backed by the same deterministic generator that fetch_rows will
+        // slice for rows 51-500. Generator is deterministic (LCG seeded at
+        // 0x1234_5678_9ABC_DEF0) — same n → same Row.
+        let seed = seed_for_key("catalog-data-table");
+        let r1 = &seed["demo"]["catalog-data-table"]["rows"]["1"];
+        let gen_row = &crate::fixtures::synthetic_rows(1)[0];
+        assert_eq!(r1["id"], gen_row.id);
+        assert_eq!(r1["name"], gen_row.name);
+        assert_eq!(r1["email"], gen_row.email);
+        // score + joined_at also match bit-for-bit
+        assert_eq!(r1["score"], gen_row.score);
+    }
+
+    #[test]
+    fn catalog_data_table_seed_spans_full_first_page() {
+        // Boundaries: ids "1" and "50" both present; "51" absent (paginated).
+        let seed = seed_for_key("catalog-data-table");
+        let rows = seed["demo"]["catalog-data-table"]["rows"]
+            .as_object()
+            .expect("rows is object-map");
+        assert!(rows.contains_key("1"));
+        assert!(rows.contains_key("50"));
+        assert!(
+            !rows.contains_key("51"),
+            "row 51 is paginated via fetch-rows, not seeded"
+        );
+        // Every seeded row carries a non-empty actions array (actions
+        // injection runs unconditionally inside catalog_rows_initial_object_map).
+        for (_id, row) in rows {
+            let actions = row["actions"]
+                .as_array()
+                .expect("every row has actions array");
+            assert_eq!(actions.len(), 3);
+        }
     }
 
     #[test]
