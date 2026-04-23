@@ -16,12 +16,21 @@
  *   </Field.Field>
  */
 import { render } from 'vitest-browser-svelte';
-import { expect, test, beforeEach } from 'vitest';
+import { expect, test, vi, beforeEach } from 'vitest';
+
+// Phase 18 Plan 02 — blur-action dispatch tests need a sendAction mock.
+// Mirrors Checkbox/Switch/SelectInput browser-test pattern.
+vi.mock('$lib/transport/dispatcher', () => ({
+	sendAction: vi.fn(),
+}));
+
 import RadioGroup from './RadioGroup.svelte';
-import { setData, resetStore } from '$lib/store/data.svelte';
+import { setData, resetStore, setFullState, getData } from '$lib/store/data.svelte';
+import { sendAction } from '$lib/transport/dispatcher';
 
 beforeEach(() => {
 	resetStore('test');
+	vi.clearAllMocks();
 });
 
 const fruitOptions = [
@@ -101,4 +110,137 @@ test('renders per-option description text adjacent to option label', async () =>
 	});
 
 	await expect.element(screen.getByText('red fruit')).toBeVisible();
+});
+
+// -----------------------------------------------------------------------------
+// Phase 18 Plan 02 — Framework Gap 2: blur-action dispatch.
+//
+// RadioGroup's bound value is a string (selected option's value, or "" if
+// nothing selected). We wrap in a <div onfocusout> so focus-leave from any
+// radio child bubbles to the wrapper and fires handleBlur().
+// -----------------------------------------------------------------------------
+
+test('blur dispatch: fires sendAction with string value on focusout when action.type === "blur"', async () => {
+	const surface = 'test-blur-rg-' + crypto.randomUUID();
+	setFullState(surface, { choice: 'b' });
+	const screen = await render(RadioGroup, {
+		props: {
+			props: { label: 'Pick one', options: fruitOptions },
+			bind: '/choice',
+			action: { type: 'blur', name: 'validate-radio' },
+			surface,
+		},
+	});
+
+	const wrapper = screen.baseElement.querySelector(
+		'[data-slot="field"]'
+	) as HTMLElement;
+	expect(wrapper).toBeTruthy();
+	const rootWrapper = wrapper.parentElement as HTMLElement;
+	expect(rootWrapper).toBeTruthy();
+	rootWrapper.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+	await new Promise((r) => setTimeout(r, 20));
+
+	expect(sendAction).toHaveBeenCalled();
+	const calls = (sendAction as ReturnType<typeof vi.fn>).mock.calls;
+	const blurCall = calls.find((c) => c[0] === 'validate-radio');
+	expect(blurCall).toBeTruthy();
+	// String payload — the selected option's value.
+	expect(blurCall![1]).toEqual({ value: 'b' });
+	expect(typeof (blurCall![1] as { value: unknown }).value).toBe('string');
+	expect(blurCall![2]).toBeUndefined();
+});
+
+test('blur dispatch: emits empty-string when no option is selected', async () => {
+	const surface = 'test-blur-rg-empty-' + crypto.randomUUID();
+	setFullState(surface, { choice: '' });
+	const screen = await render(RadioGroup, {
+		props: {
+			props: { label: 'Pick one', options: fruitOptions },
+			bind: '/choice',
+			action: { type: 'blur', name: 'validate-radio' },
+			surface,
+		},
+	});
+	const wrapper = screen.baseElement.querySelector(
+		'[data-slot="field"]'
+	) as HTMLElement;
+	(wrapper.parentElement as HTMLElement).dispatchEvent(
+		new FocusEvent('focusout', { bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 20));
+
+	const blurCall = (sendAction as ReturnType<typeof vi.fn>).mock.calls.find(
+		(c) => c[0] === 'validate-radio'
+	);
+	expect(blurCall).toBeTruthy();
+	expect(blurCall![1]).toEqual({ value: '' });
+});
+
+test('blur dispatch: does NOT fire when no action is configured', async () => {
+	const surface = 'test-noaction-rg-' + crypto.randomUUID();
+	setFullState(surface, { choice: 'a' });
+	const screen = await render(RadioGroup, {
+		props: {
+			props: { label: 'Pick one', options: fruitOptions },
+			bind: '/choice',
+			surface,
+		},
+	});
+	const wrapper = screen.baseElement.querySelector(
+		'[data-slot="field"]'
+	) as HTMLElement;
+	(wrapper.parentElement as HTMLElement).dispatchEvent(
+		new FocusEvent('focusout', { bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 20));
+
+	expect(sendAction).not.toHaveBeenCalled();
+});
+
+test('blur dispatch: does NOT fire when action.type !== "blur"', async () => {
+	const surface = 'test-notblur-rg-' + crypto.randomUUID();
+	setFullState(surface, { choice: 'a' });
+	const screen = await render(RadioGroup, {
+		props: {
+			props: { label: 'Pick one', options: fruitOptions },
+			bind: '/choice',
+			action: { type: 'change', name: 'other-action' },
+			surface,
+		},
+	});
+	const wrapper = screen.baseElement.querySelector(
+		'[data-slot="field"]'
+	) as HTMLElement;
+	(wrapper.parentElement as HTMLElement).dispatchEvent(
+		new FocusEvent('focusout', { bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 20));
+
+	expect(sendAction).not.toHaveBeenCalledWith(
+		'other-action',
+		expect.anything(),
+		expect.anything()
+	);
+});
+
+test('bind value is preserved through focusout (getData reads current string)', async () => {
+	const surface = 'test-rg-pres-' + crypto.randomUUID();
+	setFullState(surface, { choice: 'a' });
+	const screen = await render(RadioGroup, {
+		props: {
+			props: { label: 'Pick one', options: fruitOptions },
+			bind: '/choice',
+			action: { type: 'blur', name: 'validate-radio' },
+			surface,
+		},
+	});
+	const wrapper = screen.baseElement.querySelector(
+		'[data-slot="field"]'
+	) as HTMLElement;
+	(wrapper.parentElement as HTMLElement).dispatchEvent(
+		new FocusEvent('focusout', { bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 20));
+	expect(getData(surface, '/choice')).toBe('a');
 });

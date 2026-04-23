@@ -320,3 +320,179 @@ test('change-action dispatch fires with merged payload on value change (Phase 12
 		contactForm: { name: 'Alice', country: 'CH' },
 	});
 });
+
+// -----------------------------------------------------------------------------
+// Phase 18 Plan 02 — Framework Gap 2: blur-action dispatch.
+//
+// SelectInput currently dispatches actions on the `change` path (see test
+// above). CAT-02 Forms (Plan 18-05) needs a second dispatch flavor: fire an
+// action when the popover closes (logical "blur" for a select). The handler
+// contract mirrors TextInput.svelte: when `action.type === 'blur'`, the
+// handleOpenChange(false) branch calls `sendAction(name, { value }, target)`
+// with the currently bound value.
+//
+// These tests exercise two branches:
+//   1. Close with action.type === 'blur' → sendAction fires exactly once.
+//   2. Close with no action (or non-blur action.type) → no blur dispatch.
+// -----------------------------------------------------------------------------
+
+test('blur dispatch: fires sendAction when action.type === "blur" and popover closes', async () => {
+	const surface = 'test-blur-' + crypto.randomUUID();
+	setFullState(surface, {
+		form: { country: 'CH' },
+	});
+	const screen = await render(SelectInput, {
+		props: {
+			props: {
+				label: 'Country',
+				options: [
+					{ value: 'CH', label: 'Switzerland' },
+					{ value: 'US', label: 'United States' },
+				],
+			},
+			bind: '/form/country',
+			action: { type: 'blur', name: 'validate-select' },
+			surface,
+		},
+	});
+
+	// Open the dropdown via the bits-ui pointer sequence (same pattern as the
+	// change-action test above), then close it by pressing Escape. The close
+	// must trigger handleOpenChange(false) → handleBlur() → sendAction.
+	const trigger = screen.baseElement.querySelector(
+		'[data-slot="select-trigger"]'
+	) as HTMLButtonElement;
+	expect(trigger).toBeTruthy();
+	trigger.dispatchEvent(
+		new PointerEvent('pointerdown', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.dispatchEvent(
+		new PointerEvent('pointerup', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.click();
+
+	// Give bits-ui a tick to register the open state.
+	await new Promise((r) => setTimeout(r, 50));
+
+	// Close via Escape — bits-ui Select responds to this and invokes
+	// onOpenChange(false).
+	document.dispatchEvent(
+		new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 50));
+
+	// sendAction should have fired at least once with the blur payload shape.
+	// (It may fire multiple times if the open-then-close sequence straddles
+	// additional state changes; the contract is that when action.type is
+	// 'blur', every close-transition emits the { value } shape. We assert on
+	// the last call so additional implementation-internal calls are tolerated.)
+	expect(sendAction).toHaveBeenCalled();
+	const calls = (sendAction as ReturnType<typeof vi.fn>).mock.calls;
+	const blurCall = calls.find((c) => c[0] === 'validate-select');
+	expect(blurCall).toBeTruthy();
+	expect(blurCall![1]).toEqual({ value: 'CH' });
+	expect(blurCall![2]).toBeUndefined();
+});
+
+test('blur dispatch: does NOT fire when action.type !== "blur" on popover close', async () => {
+	const surface = 'test-noblur-' + crypto.randomUUID();
+	setFullState(surface, {
+		form: { country: 'CH' },
+	});
+	const screen = await render(SelectInput, {
+		props: {
+			props: {
+				label: 'Country',
+				options: [{ value: 'CH', label: 'Switzerland' }],
+			},
+			bind: '/form/country',
+			// change-action wiring — blur close MUST NOT fire the change action.
+			action: { type: 'change', name: 'other-action' },
+			surface,
+		},
+	});
+
+	const trigger = screen.baseElement.querySelector(
+		'[data-slot="select-trigger"]'
+	) as HTMLButtonElement;
+	trigger.dispatchEvent(
+		new PointerEvent('pointerdown', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.dispatchEvent(
+		new PointerEvent('pointerup', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.click();
+	await new Promise((r) => setTimeout(r, 50));
+	document.dispatchEvent(
+		new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 50));
+
+	// The change-action must not fire on a close (no value selected).
+	const calls = (sendAction as ReturnType<typeof vi.fn>).mock.calls;
+	expect(calls.find((c) => c[0] === 'other-action')).toBeUndefined();
+});
+
+test('blur dispatch: does NOT fire when no action is configured', async () => {
+	const surface = 'test-noaction-' + crypto.randomUUID();
+	setFullState(surface, { form: { country: '' } });
+	const screen = await render(SelectInput, {
+		props: {
+			props: {
+				label: 'Country',
+				options: [{ value: 'CH', label: 'Switzerland' }],
+			},
+			bind: '/form/country',
+			// no action
+			surface,
+		},
+	});
+
+	const trigger = screen.baseElement.querySelector(
+		'[data-slot="select-trigger"]'
+	) as HTMLButtonElement;
+	trigger.dispatchEvent(
+		new PointerEvent('pointerdown', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.dispatchEvent(
+		new PointerEvent('pointerup', {
+			bubbles: true,
+			cancelable: true,
+			pointerType: 'mouse',
+			button: 0,
+		})
+	);
+	trigger.click();
+	await new Promise((r) => setTimeout(r, 50));
+	document.dispatchEvent(
+		new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+	);
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(sendAction).not.toHaveBeenCalled();
+});
