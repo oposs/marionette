@@ -4,14 +4,14 @@ milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
 stopped_at: Phase 18 planning complete
-last_updated: "2026-04-23T18:40:00.000Z"
-last_activity: 2026-04-23 -- Phase 18 Wave 1 complete (18-01 + 18-02 + 18-03 merged; framework polish + synthetic rows shipped)
+last_updated: "2026-04-23T19:10:00.000Z"
+last_activity: 2026-04-23 -- Phase 18 Wave 2 complete (18-04 CAT-01 Buttons 60-cell matrix merged)
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 20
-  completed_plans: 15
-  percent: 75
+  completed_plans: 16
+  percent: 80
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 ## Current Position
 
 Phase: 18 (catalog-screens) — EXECUTING
-Plan: 4 of 8 (Wave 2 starting — 18-04 CAT-01 Buttons)
-Status: Wave 1 complete (18-01, 18-02, 18-03) — framework polish + synthetic rows shipped
-Last activity: 2026-04-23 -- Phase 18 Wave 1 complete
+Plan: 5 of 8 (Wave 3 starting — 18-05 CAT-02 Forms)
+Status: Wave 2 complete — 18-04 CAT-01 Buttons 60-cell matrix shipped
+Last activity: 2026-04-23 -- Phase 18 Wave 2 complete
 
-Progress: [███░░░░░░░] 38% (within Phase 18; 3/8 plans done; v1.2 milestone has Phases 18/19/20 still ahead)
+Progress: [█████░░░░░] 50% (within Phase 18; 4/8 plans done; v1.2 milestone has Phases 18/19/20 still ahead)
 
 ## Performance Metrics
 
