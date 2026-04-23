@@ -35,11 +35,11 @@ Defined 2026-04-22 during Phase 17 UAT after `DEMO-01`/`DEMO-02`/`CRATE-01`/`CRA
 
 ### Catalog screens (clean showcases)
 
-- [ ] **CAT-01**: Gallery includes a Buttons & Actions screen showing every Button variant × size × state (default / destructive / outline / ghost / link × sm/md/lg × normal/disabled/loading/icon-only).
-- [ ] **CAT-02**: Gallery includes a Forms screen rendering every input type (text / select / checkbox / switch / radio / textarea) across every visual state (normal / disabled / error / focused / with-description), grouped with `FieldSet` and `FieldSeparator`, including a live validation patch-demo that exercises error-clearing on correction.
-- [ ] **CAT-03**: Gallery includes a DataTable screen with filter bar, virtualized infinite scroll, column visibility toggle, and per-`ColumnKind` rendering, seeded with enough synthetic rows to exercise virtualization (≥500 rows).
-- [ ] **CAT-04**: Gallery includes a Feedback screen showing toast dispatch, confirm dialog flow, modal surface, and empty / loading / error placeholder states side-by-side.
-- [ ] **CAT-05**: Gallery includes a Typography & tokens screen rendering the text scale, the lucide-svelte icon catalog (searchable or grid), and OKLCH swatches for every semantic token in `app.css`.
+- [x] **CAT-01**: Gallery includes a Buttons & Actions screen showing every Button variant × size × state (default / destructive / outline / ghost / link × sm/md/lg × normal/disabled/loading/icon-only). Validated 2026-04-23 — see [18-04-SUMMARY.md](phases/18-catalog-screens/18-04-SUMMARY.md).
+- [x] **CAT-02**: Gallery includes a Forms screen rendering every input type (text / select / checkbox / switch / radio / textarea) across every visual state (normal / disabled / error / focused / with-description), grouped with `FieldSet` and `FieldSeparator`, including a live validation patch-demo that exercises error-clearing on correction. Validated 2026-04-23 — see [18-05-SUMMARY.md](phases/18-catalog-screens/18-05-SUMMARY.md). *Naming note:* shipped implementation uses shadcn Cards + `FieldSeparator` instead of `FieldSet`; user-observable grouping goal met — naming choice, not feature gap.
+- [x] **CAT-03**: Gallery includes a DataTable screen with filter bar, virtualized infinite scroll, column visibility toggle, and per-`ColumnKind` rendering, seeded with enough synthetic rows to exercise virtualization (≥500 rows). Validated 2026-04-23 — see [18-06-SUMMARY.md](phases/18-catalog-screens/18-06-SUMMARY.md).
+- [x] **CAT-04**: Gallery includes a Feedback screen showing toast dispatch, confirm dialog flow, modal surface, and empty / loading / error placeholder states side-by-side. Validated 2026-04-23 — see [18-07-SUMMARY.md](phases/18-catalog-screens/18-07-SUMMARY.md).
+- [x] **CAT-05**: Gallery includes a Typography & tokens screen rendering the text scale, the lucide-svelte icon catalog (searchable or grid), and OKLCH swatches for every semantic token in `app.css`. Validated 2026-04-23 — see [18-08-SUMMARY.md](phases/18-catalog-screens/18-08-SUMMARY.md).
 
 ### Exerciser screens (frontend robustness)
 
@@ -87,11 +87,11 @@ Populated by `/gsd-plan-phase` runs as phases are defined.
 | SC-17-06 | Phase 17 | 17-06 | ✅ Validated 2026-04-22 ([17-06-SUMMARY.md](phases/17-gallery-crate-skeleton-colocated-built-in-demos/17-06-SUMMARY.md)) |
 | SC-17-07 | Phase 17 | 17-07 | ✅ Validated 2026-04-22 ([17-07-SUMMARY.md](phases/17-gallery-crate-skeleton-colocated-built-in-demos/17-07-SUMMARY.md)) |
 | SC-17-08 | Phase 17 | 17-08 | ✅ Validated 2026-04-22 ([17-08-SUMMARY.md](phases/17-gallery-crate-skeleton-colocated-built-in-demos/17-08-SUMMARY.md)) |
-| CAT-01   | Phase 18 | — | Pending |
-| CAT-02   | Phase 18 | — | Pending |
-| CAT-03   | Phase 18 | — | Pending |
-| CAT-04   | Phase 18 | — | Pending |
-| CAT-05   | Phase 18 | — | Pending |
+| CAT-01   | Phase 18 | 18-01, 18-04 | ✅ Validated 2026-04-23 ([18-04-SUMMARY.md](phases/18-catalog-screens/18-04-SUMMARY.md)) |
+| CAT-02   | Phase 18 | 18-02, 18-05 | ✅ Validated 2026-04-23 ([18-05-SUMMARY.md](phases/18-catalog-screens/18-05-SUMMARY.md)) |
+| CAT-03   | Phase 18 | 18-03, 18-06 | ✅ Validated 2026-04-23 ([18-06-SUMMARY.md](phases/18-catalog-screens/18-06-SUMMARY.md)) |
+| CAT-04   | Phase 18 | 18-07 | ✅ Validated 2026-04-23 ([18-07-SUMMARY.md](phases/18-catalog-screens/18-07-SUMMARY.md)) |
+| CAT-05   | Phase 18 | 18-08 | ✅ Validated 2026-04-23 ([18-08-SUMMARY.md](phases/18-catalog-screens/18-08-SUMMARY.md)) |
 | EXER-01  | Phase 19 | — | Pending |
 | EXER-02  | Phase 19 | — | Pending |
 | EXER-03  | Phase 19 | — | Pending |
