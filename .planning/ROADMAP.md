@@ -216,7 +216,16 @@ Plans:
   3. DataTable screen shows the filter bar, virtualized infinite scroll, column visibility toggle, and per-`ColumnKind` rendering seeded with ≥500 synthetic rows so virtualization actually engages
   4. Feedback screen shows toast dispatch, confirm dialog flow, modal surface, and empty / loading / error placeholder states side-by-side and individually triggerable
   5. Typography & tokens screen renders the full text scale, the lucide-svelte icon catalog (searchable or in a grid), and OKLCH swatches for every semantic token defined in `app.css`
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 18-01-PLAN.md — Button framework polish (variant/size/loading/icon/aria_label wiring + Tailwind safelist extension) — Wave 1
+- [ ] 18-02-PLAN.md — Blur-action wiring on SelectInput/Checkbox/Switch/RadioGroup Svelte components — Wave 1
+- [ ] 18-03-PLAN.md — Shared fixtures.rs (synthetic_rows generator) + fetch_rows source-dispatch — Wave 1
+- [ ] 18-04-PLAN.md — CAT-01 Buttons & Actions catalog screen (60-cell variant × size × state matrix) — Wave 2
+- [ ] 18-05-PLAN.md — CAT-02 Forms catalog screen + 6 blur-validate handlers (Phase 12 node-tree ops) — Wave 3
+- [ ] 18-06-PLAN.md — CAT-03 Data Table catalog screen (500 rows, virtualized pagination, column visibility) — Wave 4
+- [ ] 18-07-PLAN.md — CAT-04 Feedback catalog screen (toast/modal/confirm triggers + placeholders) — Wave 5
+- [ ] 18-08-PLAN.md — CAT-05 Typography & Tokens catalog + GALLERY-DEMOS.md update + Chrome MCP UAT — Wave 6
 **UI hint**: yes
 
 ### Phase 19: Exerciser Screens
@@ -270,7 +279,7 @@ Plans:
 | 15. CRM Migration & Validation | v1.1 | 7/7 | Complete | 2026-04-18 |
 | 16. Framework Hooks | v1.2 | 4/4 | Complete | 2026-04-22 |
 | 17. Gallery Crate Skeleton + Colocated Built-in Demos | v1.2 | 8/8 | Complete | 2026-04-22 |
-| 18. Catalog Screens | v1.2 | 0/? | Pending | — |
+| 18. Catalog Screens | v1.2 | 0/8 | Pending | — |
 | 19. Exerciser Screens | v1.2 | 0/? | Pending | — |
 | 20. Live Token Editor | v1.2 | 0/? | Pending | — |
 
