@@ -104,6 +104,68 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         // by catalog/buttons.rs (the matrix fires `gallery-demo/noop` on click
         // but reads no surface data). Empty seed is the correct zero-state.
         "catalog-buttons" => serde_json::json!({}),
+        // Phase 18 Plan 05 (CAT-02): seed table locked in UI-SPEC §CAT-02
+        // lines 384-429. 36 value paths under /demo/catalog-forms/ + 6
+        // pre-seeded errors under /_errors/demo/catalog-forms/ for the
+        // "With error" state-demo fields. Hard contract per G-05 lesson:
+        // every .bind(...) path in catalog/forms.rs MUST have a matching
+        // entry in the `demo.catalog-forms` object below; the integration
+        // test `catalog_forms_seed_covers_every_bind_path_in_the_demo`
+        // asserts this at build time.
+        "catalog-forms" => serde_json::json!({
+            "demo": { "catalog-forms": {
+                // TextInput Card
+                "text-normal": "",
+                "text-disabled": "Cannot edit",
+                "text-with-error": "bad-input",
+                "text-focused": "",
+                "text-desc": "",
+                "text-value": "",
+                // Select Card
+                "select-normal": "",
+                "select-disabled": "USA",
+                "select-with-error": "",
+                "select-focused": "",
+                "select-desc": "",
+                "select-value": "",
+                // Checkbox Card
+                "checkbox-normal": false,
+                "checkbox-checked": true,
+                "checkbox-disabled": false,
+                "checkbox-with-error": false,
+                "checkbox-desc": false,
+                "checkbox-value": false,
+                // Switch Card
+                "switch-off": false,
+                "switch-on": true,
+                "switch-disabled": false,
+                "switch-with-error": false,
+                "switch-desc": false,
+                "switch-value": false,
+                // Radio Card
+                "radio-normal": "",
+                "radio-selected": "pro",
+                "radio-disabled": "",
+                "radio-with-error": "",
+                "radio-desc": "",
+                "radio-value": "",
+                // Textarea Card
+                "textarea-normal": "",
+                "textarea-disabled": "Cannot edit content.",
+                "textarea-with-error": "too short",
+                "textarea-focused": "",
+                "textarea-desc": "",
+                "textarea-value": "",
+            }},
+            "_errors": { "demo": { "catalog-forms": {
+                "text-with-error": "Enter a valid email address.",
+                "select-with-error": "Please make a selection.",
+                "checkbox-with-error": "You must agree to continue.",
+                "switch-with-error": "Notifications must be enabled.",
+                "radio-with-error": "Please pick one option.",
+                "textarea-with-error": "Bio must be at least 20 characters.",
+            }}},
+        }),
         _ => serde_json::json!({}),
     }
 }
@@ -147,5 +209,75 @@ mod tests {
         assert_eq!(rows.as_object().unwrap().len(), 5);
         assert_eq!(rows["1"]["name"], "Alice Baker");
         assert_eq!(rows["5"]["name"], "Eva Frost");
+    }
+
+    #[test]
+    fn catalog_forms_seed_covers_every_bind_path_in_the_demo() {
+        // Hard contract (Phase 17 G-05 lesson): every `.bind(...)` path used
+        // by `catalog::forms::gallery_demo()` MUST have a matching key in
+        // `seed_for_key("catalog-forms")` so the frontend's `getData()`
+        // returns a seeded value on first visit. Missing entries would
+        // render silently empty — the pre-17-06 bug class this test guards
+        // against.
+        use marionette::gallery::registered_demos;
+
+        let forms_entry = registered_demos()
+            .find(|e| e.key == "catalog-forms")
+            .expect("catalog-forms demo must be registered");
+        let tree = (forms_entry.render)();
+
+        // Collect every unique /demo/catalog-forms/<suffix> bind path used
+        // in the tree, stripped to its suffix so we can match against the
+        // seed's demo.catalog-forms object keys.
+        let binds: std::collections::HashSet<String> = tree
+            .iter()
+            .filter_map(|(_id, c)| {
+                let v = serde_json::to_value(c).ok()?;
+                v["bind"]
+                    .as_str()?
+                    .strip_prefix("/demo/catalog-forms/")
+                    .map(str::to_string)
+            })
+            .collect();
+
+        assert!(
+            binds.len() >= 30,
+            "expected >=30 bind paths on catalog-forms tree, got {}",
+            binds.len()
+        );
+
+        let seed = seed_for_key("catalog-forms");
+        let seeded_paths: std::collections::HashSet<String> = seed["demo"]["catalog-forms"]
+            .as_object()
+            .expect("seed.demo.catalog-forms must be an object")
+            .keys()
+            .cloned()
+            .collect();
+
+        for b in &binds {
+            assert!(
+                seeded_paths.contains(b),
+                "bind path /demo/catalog-forms/{b} has no matching seed entry \
+                 — add it to the `catalog-forms` arm of seed_for_key"
+            );
+        }
+    }
+
+    #[test]
+    fn catalog_forms_seed_preseeds_error_messages_for_with_error_demo_fields() {
+        // The six "With error" demo fields show a red-border state on first
+        // render. Achieved by pre-seeding the /_errors/demo/catalog-forms/<...>
+        // sub-tree at the same bind suffix as the value field. UI-SPEC
+        // §CAT-02 lines 384-429 locks the messages.
+        let seed = seed_for_key("catalog-forms");
+        let errs = seed["_errors"]["demo"]["catalog-forms"]
+            .as_object()
+            .expect("_errors.demo.catalog-forms must be an object");
+        assert_eq!(errs["text-with-error"], "Enter a valid email address.");
+        assert_eq!(errs["select-with-error"], "Please make a selection.");
+        assert_eq!(errs["checkbox-with-error"], "You must agree to continue.");
+        assert_eq!(errs["switch-with-error"], "Notifications must be enabled.");
+        assert_eq!(errs["radio-with-error"], "Please pick one option.");
+        assert_eq!(errs["textarea-with-error"], "Bio must be at least 20 characters.");
     }
 }
