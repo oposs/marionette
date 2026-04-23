@@ -22,6 +22,7 @@
 // clarity. This is opt-out for the gallery-demo prose layer only.
 #![allow(clippy::doc_markdown)]
 
+pub mod fixtures;
 pub mod handlers;
 pub mod home;
 pub mod state;
