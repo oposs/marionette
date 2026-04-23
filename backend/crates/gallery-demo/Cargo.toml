@@ -16,6 +16,7 @@ marionette-macros = { path = "../marionette-macros" }
 # integration test's "at least one key registered" assertion fails.
 gallery-smoke = { path = "../gallery-smoke" }
 axum.workspace = true
+chrono.workspace = true
 tokio.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
