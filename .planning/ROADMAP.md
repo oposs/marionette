@@ -43,7 +43,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [ ] **Phase 16: Framework Hooks** — `#[gallery_demo]` proc macro + `inventory`/`linkme` registration backbone + `gallery` cargo feature gate on the `marionette` crate
 - [x] **Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos** — new `gallery-demo` workspace member with auto-discovered AppShell nav; `gallery_demo()` siblings for every existing built-in component (completed 2026-04-22)
-- [ ] **Phase 18: Catalog Screens** — Buttons & Actions, Forms, DataTable, Feedback, Typography & tokens
+- [x] **Phase 18: Catalog Screens** — Buttons & Actions, Forms, DataTable, Feedback, Typography & tokens (completed 2026-04-23)
 - [ ] **Phase 19: Exerciser Screens** — Nested AppShell, Rapid Patching, Pathological Scale
 - [ ] **Phase 20: Live Token Editor** — CSS-token editor screen with live apply + exportable `@theme` block (scope-flexible)
 
@@ -225,7 +225,7 @@ Plans:
 - [x] 18-05-PLAN.md — CAT-02 Forms catalog screen + 6 blur-validate handlers (Phase 12 node-tree ops) — Wave 3
 - [x] 18-06-PLAN.md — CAT-03 Data Table catalog screen (500 rows, virtualized pagination, column visibility) — Wave 4
 - [x] 18-07-PLAN.md — CAT-04 Feedback catalog screen (toast/modal/confirm triggers + placeholders) — Wave 5
-- [ ] 18-08-PLAN.md — CAT-05 Typography & Tokens catalog + GALLERY-DEMOS.md update + Chrome MCP UAT — Wave 6
+- [x] 18-08-PLAN.md — CAT-05 Typography & Tokens catalog + GALLERY-DEMOS.md update + Chrome MCP UAT — Wave 6
 **UI hint**: yes
 
 ### Phase 19: Exerciser Screens
