@@ -16,6 +16,12 @@ pub struct Button {
     pub size: Option<String>,
     #[builder(optional)]
     pub disabled: Option<bool>,
+    #[builder(optional)]
+    pub loading: Option<bool>,
+    #[builder(optional)]
+    pub icon: Option<String>,
+    #[builder(optional)]
+    pub aria_label: Option<String>,
 }
 
 // ---- gallery_demo sibling (Phase 17 DEMO-01) ----
