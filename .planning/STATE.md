@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
-status: executing
-stopped_at: Phase 17 COMPLETE (8/8 plans; full Chrome MCP re-UAT confirmed 20/20 nav entries render, all 8 surfaced gaps closed; ready for Phase 18 Catalog Screens hand-off)
-last_updated: "2026-04-22T21:00:40Z"
-last_activity: 2026-04-22 -- Phase 17 complete (all 4 requirement IDs validated; re-UAT confirmed all 20 nav entries render)
+status: Phase 17 shipped; ready to start Phase 18
+stopped_at: Phase 18 context gathered
+last_updated: "2026-04-23T12:09:40.628Z"
+last_activity: 2026-04-22 — Phase 17 UAT gap closure complete (20/20 nav entries render; all 8 surfaced gaps closed)
 progress:
   total_phases: 11
   completed_phases: 2
@@ -105,6 +105,7 @@ Recent decisions affecting v1.2:
 Phase 18 (Catalog Screens — CAT-01 through CAT-05) can start. Depends on Phase 17. See ROADMAP.md §Phase 18 for goals. No blockers carried forward from Phase 17.
 
 **Deferred work explicitly NOT a Phase 17 blocker (carry into v1.3+ or Phase 19):**
+
 - Toast global-overlay refactor (toasts render inline in AppShell today; user's "same for toasts I guess" architectural hint captured for a future popup-unification plan).
 - Pre-existing crm-demo clippy::pedantic drift from toolchain drift (documented in `deferred-items.md`; out of scope for Phase 17).
 - W-06 ErrorDisplay `message` field dead-state (Phase 18 CAT-04 polish).
@@ -138,8 +139,8 @@ None carried over from v1.1.
 
 ## Session Continuity
 
-Last session: 2026-04-22T21:00:40Z
-Stopped at: Phase 17 COMPLETE (8/8 plans; full Chrome MCP re-UAT confirmed 20/20 nav entries render, all 8 surfaced gaps closed; ready for Phase 18 Catalog Screens hand-off)
+Last session: --stopped-at
+Stopped at: Phase 18 context gathered
 Resume: `/gsd-discuss-phase 18` or `/gsd-plan-phase 18` (Phase 18 — Catalog Screens — CAT-01 through CAT-05; depends on Phase 17 which is now complete)
 
 **Planned Phase:** 18 (Catalog Screens) — TBD plans — pending plan creation
