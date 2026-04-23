@@ -200,6 +200,12 @@ fn seed_for_key(key: &str) -> serde_json::Value {
                 ],
             }},
         }),
+        // Phase 18 Plan 08 (CAT-05): pure static typography + icon + swatch
+        // catalog screen. No bind paths; the demo tree is purely visual.
+        // Empty seed is correct — named explicitly (rather than falling through
+        // the wildcard) to prevent accidental seed drift if CAT-05 ever gains
+        // bindable state in a later plan.
+        "catalog-typography" => serde_json::json!({}),
         _ => serde_json::json!({}),
     }
 }
