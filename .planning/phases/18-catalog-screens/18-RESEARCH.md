@@ -577,7 +577,7 @@ Phase 18 is **purely additive** (no rename, no refactor). No stored data, live s
 
 **Missing dependencies with fallback:** `chrono` is redundant if we serialize dates as ISO strings directly — but it's already in the workspace, so no reason to avoid it.
 
-## Open Questions (Answered)
+## Open Questions (RESOLVED)
 
 ### Q1 — Blur-action wiring (D-3-B)
 
