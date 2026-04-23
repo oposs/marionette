@@ -11,6 +11,13 @@ use marionette_macros::ComponentBuilder;
 pub struct Container {
     #[builder(optional)]
     pub class: Option<String>,
+    /// Optional kebab-case Lucide icon name (display-only).
+    ///
+    /// When set, the Svelte `Container` component renders the icon (via
+    /// `getIcon`) before any children. Paired with a sibling text label
+    /// in CAT-05 catalog cells — the icon itself is `aria-hidden`.
+    #[builder(optional)]
+    pub icon: Option<String>,
 }
 
 #[cfg(test)]
@@ -19,6 +26,23 @@ mod tests {
     use super::super::heading::Heading;
     use super::super::button::Button;
     use super::super::text_input::TextInput;
+
+    #[test]
+    fn container_icon_prop_serialised() {
+        let (_id, comp) = Container::new().icon("plus").build();
+        let v = serde_json::to_value(&comp).unwrap();
+        assert_eq!(v["props"]["icon"], "plus");
+    }
+
+    #[test]
+    fn container_icon_absent_when_not_set() {
+        let (_id, comp) = Container::new().build();
+        let v = serde_json::to_value(&comp).unwrap();
+        // Either `icon` is missing from the props object or serialised as null.
+        // Both shapes satisfy "not set" for the frontend's `{#if props.icon}` guard.
+        let icon = &v["props"]["icon"];
+        assert!(icon.is_null() || v["props"].as_object().is_none_or(|o| !o.contains_key("icon")));
+    }
 
     #[test]
     fn container_builder_with_children() {
