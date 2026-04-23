@@ -179,6 +179,27 @@ fn seed_for_key(key: &str) -> serde_json::Value {
                 "textarea-with-error": "Bio must be at least 20 characters.",
             }}},
         }),
+        // Phase 18 Plan 07 (CAT-04): Feedback catalog screen's error-state
+        // placeholder mini-Card renders via an `ErrorDisplay` bound to
+        // `/demo/catalog-feedback/errors`. Pre-seed a single synthetic entry
+        // so the component lights up on first paint without requiring a
+        // round-trip. ErrorEntry = { path?: string, message: string } per
+        // frontend `ErrorDisplay.svelte:26-41` (same contract Phase 17 G-05
+        // canonicalized; a path of `null` is omitted on the frontend).
+        //
+        // Bind-alignment contract (G-05 regression guard): the sibling test
+        // `catalog_feedback_error_bind_aligns_with_demo_tree` asserts the
+        // demo tree's ErrorDisplay node binds to this same path.
+        "catalog-feedback" => serde_json::json!({
+            "demo": { "catalog-feedback": {
+                "errors": [
+                    {
+                        "message": "Sample error: failed to load resource. Retry or check your connection.",
+                        "path": null,
+                    },
+                ],
+            }},
+        }),
         _ => serde_json::json!({}),
     }
 }
@@ -397,5 +418,60 @@ mod tests {
         assert_eq!(errs["switch-with-error"], "Notifications must be enabled.");
         assert_eq!(errs["radio-with-error"], "Please pick one option.");
         assert_eq!(errs["textarea-with-error"], "Bio must be at least 20 characters.");
+    }
+
+    #[test]
+    fn catalog_feedback_seed_has_one_sample_error() {
+        // Plan 18-07 Task 2: single synthetic entry so the CAT-04 error-state
+        // placeholder mini-Card renders on first paint. Locked copy from
+        // UI-SPEC §Copywriting Contract §CAT-04 "Sample error:" prefix.
+        let seed = seed_for_key("catalog-feedback");
+        let errs = seed["demo"]["catalog-feedback"]["errors"]
+            .as_array()
+            .expect("errors is array");
+        assert_eq!(errs.len(), 1, "exactly one sample error is seeded");
+        let m = errs[0]["message"].as_str().expect("message is string");
+        assert!(
+            m.contains("Sample error"),
+            "message copy drifted: {m}"
+        );
+        assert!(errs[0]["path"].is_null(), "path is null for system-level sample error");
+    }
+
+    #[test]
+    fn catalog_feedback_error_bind_aligns_with_demo_tree() {
+        // Hard contract (Phase 17 G-05 regression guard): the CAT-04 demo
+        // tree's ErrorDisplay node MUST bind to the same path that the
+        // catalog-feedback arm of seed_for_key writes. A drift between these
+        // two sites was the G-05 bug class (bind paths silently mismatched
+        // seed paths, causing the frontend's `{#if errors.length > 0}` guard
+        // to hide the component without error). Covering it here means any
+        // future refactor of either side triggers a red test.
+        use marionette::gallery::registered_demos;
+        let entry = registered_demos()
+            .find(|e| e.key == "catalog-feedback")
+            .expect("catalog-feedback must be registered");
+        let tree = (entry.render)();
+        let error_bind = tree
+            .iter()
+            .find_map(|(id, c)| {
+                if id == "catalog-feedback-error" {
+                    let v = serde_json::to_value(c).ok()?;
+                    v["bind"].as_str().map(String::from)
+                } else {
+                    None
+                }
+            })
+            .expect("catalog-feedback-error node with a bind");
+        assert_eq!(error_bind, "/demo/catalog-feedback/errors");
+        // Seed path matches (and is a non-empty array with the sample entry).
+        let seed = seed_for_key("catalog-feedback");
+        let seeded_errors = seed["demo"]["catalog-feedback"]["errors"]
+            .as_array()
+            .expect("seed writes errors as an array at /demo/catalog-feedback/errors");
+        assert!(
+            !seeded_errors.is_empty(),
+            "seed must be non-empty or the placeholder renders silently hidden"
+        );
     }
 }

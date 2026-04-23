@@ -14,4 +14,5 @@
 
 pub mod buttons;
 pub mod data_table;
+pub mod feedback;
 pub mod forms;
