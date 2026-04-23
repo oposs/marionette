@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: Phase 17 shipped; ready to start Phase 18
-stopped_at: Phase 18 context gathered
-last_updated: "2026-04-23T12:09:40.628Z"
+stopped_at: Phase 18 UI-SPEC approved
+last_updated: "2026-04-23T12:48:12.757Z"
 last_activity: 2026-04-22 — Phase 17 UAT gap closure complete (20/20 nav entries render; all 8 surfaced gaps closed)
 progress:
   total_phases: 11
@@ -140,7 +140,7 @@ None carried over from v1.1.
 ## Session Continuity
 
 Last session: --stopped-at
-Stopped at: Phase 18 context gathered
+Stopped at: Phase 18 UI-SPEC approved
 Resume: `/gsd-discuss-phase 18` or `/gsd-plan-phase 18` (Phase 18 — Catalog Screens — CAT-01 through CAT-05; depends on Phase 17 which is now complete)
 
 **Planned Phase:** 18 (Catalog Screens) — TBD plans — pending plan creation
