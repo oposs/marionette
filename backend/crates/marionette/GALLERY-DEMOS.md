@@ -149,6 +149,11 @@ inline content.
 | nav-group        | **skip** | See skip list                                            |
 | surface-mount    | **skip** | See skip list                                            |
 | field-separator  | **skip** | See skip list                                            |
+| catalog-buttons       | Catalog: Buttons       | yes | Plan 18-04 |
+| catalog-forms         | Catalog: Forms         | yes | Plan 18-05 |
+| catalog-data-table    | Catalog: Data Table    | yes | Plan 18-06 |
+| catalog-feedback      | Catalog: Feedback      | yes | Plan 18-07 |
+| catalog-typography    | Catalog: Typography    | yes | Plan 18-08 |
 
 Coverage is documented here, not CI-enforced (CONTEXT.md §D-B4). A
 GALLERY-LINT CI rule is deferred to v1.3+ per REQUIREMENTS.md §v1.3+.
@@ -313,4 +318,38 @@ See also:
 
 ---
 
-*Last updated: Phase 17 Plan 17-08 (2026-04) — G-08 popup-composition section added after Modal builder deletion.*
+## Catalog Screens
+
+Catalog screens are app-level showcases distinct from framework-level leaf demos. They live in
+`backend/crates/gallery-demo/src/catalog/<family>.rs` (not under `marionette/src/builders/`) and
+compose their content by calling builder constructors directly — never by invoking a leaf
+`gallery_demo()` fn (per Phase 18 CONTEXT.md §D-2-B).
+
+**Registration convention:** explicit `key = "catalog-<family>"` + `name = "Catalog: <Family>"` on
+every `#[gallery_demo]` annotation. This keeps catalog entries visually clustered in the alphabetical
+nav and keeps them clearly separable from leaf demos.
+
+**File layout:**
+
+```
+backend/crates/gallery-demo/src/catalog/
+├── mod.rs          -- declares the 5 per-family modules
+├── buttons.rs      -- CAT-01 (every variant × size × state)
+├── forms.rs        -- CAT-02 (every input × state, live validation patch-demo)
+├── data_table.rs   -- CAT-03 (filter bar + virtualized scroll + column visibility)
+├── feedback.rs     -- CAT-04 (toast / modal / confirm triggers + placeholder states)
+└── typography.rs   -- CAT-05 (type scale + icon catalog + OKLCH swatches)
+```
+
+**When to add new catalog screens vs extend a leaf demo:**
+
+- **Leaf demo** (in `marionette/src/builders/*.rs`): 2–3 representative instances of a single component
+  so the gallery proves the builder works at all.
+- **Catalog screen** (in `gallery-demo/src/catalog/*.rs`): exhaustive variant × state matrix of a
+  component family — the "full visual surface" view.
+
+Catalog screens do NOT replace leaf demos; they coexist (Phase 18 §D-2-A).
+
+---
+
+*Last updated: Phase 18 Plan 18-08 (2026-04) — Catalog Screens section added after CAT-05 ships.*
