@@ -110,6 +110,28 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 	// Connect WebSocket and route messages through the dispatcher
 	connect(wsUrl, handleMessage);
 
+	// Phase 19 Plan 19-05 UAT harness: import the exerciser instrumentation
+	// modules so their auto-arm blocks run in the browser. Without these
+	// imports the modules are dead code; Plan 19-02/03/04 shipped them with
+	// auto-arm gated on `typeof window !== 'undefined'` + a one-shot flag,
+	// so importing here is the canonical activation seam. Dynamic import
+	// keeps the modules out of the default bundle when the gallery app is
+	// not the active consumer and lets SSR builds tree-shake them.
+	//
+	// Note (Phase 19-05 UAT finding, deferred to v1.3 seed): EXER-02 autoArm
+	// and EXER-03 perf auto-arm locate their targets via
+	// `document.getElementById('exer-02-focused-input')` / `#exer-03-perf-ttfp`,
+	// but the frontend does not propagate SDUI component ids to DOM element
+	// ids. These modules therefore no-op today. Visual screens still render
+	// correctly and server-side protocol is verified via probe. The v1.3 seed
+	// at .planning/seeds/v1.3-exerciser-instrumentation.md captures the
+	// cleanest fix options (data-attribute propagation vs. Svelte-mount hook).
+	if (typeof window !== 'undefined') {
+		void import('./exer01/observe.svelte');
+		void import('./exer02/invariants.svelte').then((m) => m.autoArm());
+		void import('./exer03/perf.svelte');
+	}
+
 	// E2E / UAT test hooks: expose sendAction + setData on window so Playwright
 	// tests and the Chrome UAT driver can dispatch protocol actions and
 	// synthesize `/_errors/{bind}` patches programmatically.
