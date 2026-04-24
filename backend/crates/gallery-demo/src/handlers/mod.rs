@@ -9,6 +9,9 @@ use marionette_protocol::common::AuthRequirement;
 
 pub mod catalog_forms;
 pub mod confirm;
+pub mod exer01; // Phase 19 Plan 19-01 stub; Plan 19-02 implementation
+pub mod exer02; // Phase 19 Plan 19-01 stub; Plan 19-03 implementation
+pub mod exer03; // Phase 19 Plan 19-01 stub; Plan 19-04 implementation
 pub mod fetch_rows;
 pub mod modal;
 pub mod navigate;
@@ -72,4 +75,154 @@ pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
             box_handler(catalog_forms::validate_textarea),
             AuthRequirement::None,
         )
+        // --- Phase 19 exerciser handlers (stubs in Plan 19-01; real impls in
+        //     Plans 19-02/03/04). All 7 routes registered here so Wave 2 plans
+        //     can drop implementations into place without touching this file
+        //     again. gallery-demo/exer-02/tick is the explicit 19-01 -> 19-03
+        //     handoff contract (router-dispatch reachability verified below). ---
+        .action(
+            "gallery-demo/exer-01/report",
+            box_handler(exer01::handle_exer01_report),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-02/start",
+            box_handler(exer02::handle_exer02_start),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-02/pause",
+            box_handler(exer02::handle_exer02_pause),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-02/reset",
+            box_handler(exer02::handle_exer02_reset),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-02/tick",
+            box_handler(exer02::handle_exer02_tick),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-03/report-perf",
+            box_handler(exer03::handle_exer03_report_perf),
+            AuthRequirement::None,
+        )
+        .action(
+            "gallery-demo/exer-03/remeasure",
+            box_handler(exer03::handle_exer03_remeasure),
+            AuthRequirement::None,
+        )
+}
+
+#[cfg(test)]
+mod router_tests {
+    //! Plan 19-01 -> 19-03 handoff guard (Test 8 per 19-01-PLAN.md).
+    //!
+    //! The `gallery-demo/exer-02/tick` route MUST be reachable through the
+    //! registered router AND return `Ok(vec![])` from the Plan 19-01 stub.
+    //! If someone later renames the route or drops the `.action(...)` call
+    //! for tick, this test fails immediately, surfacing the regression
+    //! before Plan 19-03 tries to build on top.
+    //!
+    //! ActionRouter::dispatch returns `Vec<ProtocolMessage>` (not a Result).
+    //! Unknown routes produce a single `ProtocolMessage::Error`; a successful
+    //! empty-stub dispatch returns an empty Vec (the stub's `Ok(vec![])`
+    //! becomes the handler's `Vec<ProtocolMessage>` wire return).
+    use super::*;
+
+    use std::sync::Arc;
+
+    use marionette::extractors::{HandlerContext, Session};
+    use marionette::router::ActionRouter;
+    use marionette_protocol::ActionMessage;
+    use marionette_protocol::ProtocolMessage;
+    use sea_orm::{DatabaseBackend, MockDatabase};
+
+    fn mock_db() -> Arc<sea_orm::DatabaseConnection> {
+        Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection())
+    }
+
+    fn anonymous_session() -> Session {
+        Session {
+            user_id: None,
+            roles: vec![],
+        }
+    }
+
+    fn ctx_for(action_name: &str) -> HandlerContext {
+        HandlerContext {
+            action: ActionMessage {
+                id: Some("t1".into()),
+                name: action_name.into(),
+                source: None,
+                payload: None,
+                optimistic: None,
+            },
+            db: mock_db(),
+            session: anonymous_session(),
+        }
+    }
+
+    #[tokio::test]
+    async fn exer_02_tick_route_is_reachable_and_returns_empty() {
+        let router = register_gallery_actions(ActionRouter::new());
+        let result = router.dispatch(ctx_for("gallery-demo/exer-02/tick")).await;
+
+        // Reachability: NOT a NotFound Error. The Plan 19-01 stub's `Ok(vec![])`
+        // serialises to an empty Vec<ProtocolMessage> on the wire.
+        assert!(
+            result.is_empty(),
+            "gallery-demo/exer-02/tick must resolve to the Plan 19-01 stub \
+             returning Ok(vec![]); got {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn exer_02_tick_route_is_not_a_not_found_error() {
+        // Belt-and-suspenders: explicitly assert no NotFound-shaped error.
+        // If the route were unregistered, dispatch would return a single
+        // ProtocolMessage::Error whose message contains "Action not found"
+        // (see marionette::router::tests::router_returns_not_found_for_unknown).
+        let router = register_gallery_actions(ActionRouter::new());
+        let result = router.dispatch(ctx_for("gallery-demo/exer-02/tick")).await;
+        for msg in &result {
+            if let ProtocolMessage::Error(err) = msg {
+                for e in &err.errors {
+                    assert!(
+                        !e.message.contains("not found"),
+                        "exer-02/tick should not produce a NotFound error; got: {}",
+                        e.message
+                    );
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn all_seven_phase19_exerciser_routes_are_reachable() {
+        // Each of the 7 registered stubs must dispatch to Ok(vec![]) — no
+        // NotFound error for any of them. This is the broader reachability
+        // guard for Plans 19-02/03/04.
+        let dispatcher = register_gallery_actions(ActionRouter::new());
+        let route_names = [
+            "gallery-demo/exer-01/report",
+            "gallery-demo/exer-02/start",
+            "gallery-demo/exer-02/pause",
+            "gallery-demo/exer-02/reset",
+            "gallery-demo/exer-02/tick",
+            "gallery-demo/exer-03/report-perf",
+            "gallery-demo/exer-03/remeasure",
+        ];
+        for name in route_names {
+            let result = dispatcher.dispatch(ctx_for(name)).await;
+            assert!(
+                result.is_empty(),
+                "route {name} must dispatch to Plan 19-01 stub Ok(vec![]); \
+                 got {result:?}"
+            );
+        }
+    }
 }

@@ -15,6 +15,25 @@ import { setSurfaceTree } from './store/surfaces.svelte';
 import { confirmOptimistic, rollbackOptimistic } from './store/optimistic.svelte';
 import type { RenderMessage, PatchMessage, EventMessage, ErrorMessage } from './transport/messages';
 
+// Phase 19 Plan 19-01: patch-latency instrumentation hook.
+// Consumers: frontend/src/lib/exer02/invariants.svelte.ts (cursor + IME tick
+// coordination — 19-RESEARCH.md §Pitfall 5) and
+// frontend/src/lib/exer03/perf.svelte.ts (patch latency p95 — 19-RESEARCH.md
+// §Pattern 4). The probe is module-local state; installed by calling
+// installPatchProbe(fn) and removed by calling installPatchProbe(null).
+let patchProbe: ((latencyMs: number) => void) | null = null;
+
+/**
+ * Install (or remove) a callback invoked once per patch message with the
+ * elapsed time in milliseconds from just-before applyPatch to just-after.
+ *
+ * Pass `null` to detach. Only one probe is active at a time — re-installing
+ * replaces the previous probe.
+ */
+export function installPatchProbe(fn: ((latencyMs: number) => void) | null): void {
+	patchProbe = fn;
+}
+
 /**
  * Initialize the Marionette runtime.
  *
@@ -43,8 +62,17 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 
 	registerHandler('patch', (raw: unknown) => {
 		const msg = raw as PatchMessage;
+		// Phase 19 Plan 19-01: wrap applyPatch with a performance.now() probe
+		// so EXER-02 invariants + EXER-03 perf modules can instrument per-patch
+		// latency without duplicating patch-handling code. Probe is opt-in via
+		// installPatchProbe(fn); no-op when the probe slot is null (default).
+		const t0 = performance.now();
 		// Route by target surface (D-A3 — fixes the hardcoded-'main' bug).
 		applyPatch(msg.surface, msg.patch);
+		const dt = performance.now() - t0;
+		if (patchProbe) {
+			patchProbe(dt);
+		}
 		// Confirm optimistic update if correlated
 		if (msg.id) {
 			confirmOptimistic(msg.id);
