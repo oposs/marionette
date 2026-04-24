@@ -2,11 +2,11 @@
 //! - `handle_exer01_report` — receives the observation payload from the
 //!   frontend probe and writes Set ops into /demo/exer-01/matrix/{dim} + the
 //!   per-cell /details subpath (the findings-Text bind target).
-//! - `handle_exer01_open_seed` — emits a toast whose text carries the seed
-//!   file path so the user can open `.planning/seeds/v1.3-appshell-nestability.md`
-//!   in their editor of choice. Inline toast-emission (copied verbatim from
-//!   handlers/toast.rs::handle_toast_fire) — Plan 19-02 does not add a
-//!   toast-helper extraction.
+//! - `handle_exer01_open_seed` — dispatches a `toast` event carrying the
+//!   seed file path. The client renders it via svelte-sonner chrome
+//!   (stacking / fade / countdown), not as a persistent SDUI node.
+//!   See CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
+//!   boundary this leans on.
 //!
 //! Threat model (from 19-02-PLAN.md):
 //! - T-19-02-01 (Tampering on ObservationReport): strict serde Deserialize;
@@ -14,14 +14,13 @@
 //!   `state` and `details` are plain `String`s echoed into SDUI Text nodes
 //!   (no HTML interpolation) — no XSS vector.
 //! - T-19-02-02 (Tampering on open-seed path): `path` is plain String echoed
-//!   into a Toast Button label (SDUI renders text verbatim) — no XSS.
+//!   into a toast event hint (client renders as text verbatim) — no XSS.
 
-use marionette::builders::Button;
 use marionette::error::{ActionError, ActionResult};
 use marionette::extractors::HandlerContext;
 use marionette_protocol::data::PatchOperation;
-use marionette_protocol::messages::PatchMessage;
-use marionette_protocol::{ComponentAction, ProtocolMessage};
+use marionette_protocol::messages::{EventMessage, PatchMessage};
+use marionette_protocol::ProtocolMessage;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -95,34 +94,19 @@ pub async fn handle_exer01_open_seed(ctx: HandlerContext) -> ActionResult {
     )
     .map_err(|e| ActionError::BadPayload(format!("open-seed payload invalid: {e}")))?;
 
-    // Two-op sequence copied verbatim from handlers/toast.rs::handle_toast_fire
-    // (lines 11-36) — SetNode for the toast Button, InsertChild into the
-    // "toasts-root" container. Surface is "toasts". Clicking the toast fires
-    // the shared `dismiss-toast` handler (toast.rs:38-60).
-    let toast_id = format!("toast-exer01-open-seed-{}", uuid::Uuid::new_v4());
-    let toast_label = format!("Open seed draft: {}", payload.path);
-
-    let (_, toast_node) = Button::new(&toast_label)
-        .id(&toast_id)
-        .action(ComponentAction::click("dismiss-toast"))
-        .build();
-
-    let ops = vec![
-        PatchOperation::SetNode {
-            id: toast_id.clone(),
-            component: toast_node,
-        },
-        PatchOperation::InsertChild {
-            parent: "toasts-root".into(),
-            index: 0,
-            child_id: toast_id,
-        },
-    ];
-
-    Ok(vec![ProtocolMessage::Patch(PatchMessage {
+    // Dispatch a `toast` event — the client renders via svelte-sonner
+    // (stacking / fade / countdown). Protocol owns the message content and
+    // severity; client owns the overlay mechanics. See CONCEPT.md
+    // §"Where the Client Is Smart".
+    Ok(vec![ProtocolMessage::Event(EventMessage {
         id: ctx.action.id.clone(),
-        surface: "toasts".into(),
-        patch: ops,
+        name: "toast".into(),
+        surface: None,
+        hint: Some(serde_json::json!({
+            "message": format!("Open seed draft: {}", payload.path),
+            "severity": "info",
+            "duration": 4000,
+        })),
     })])
 }
 
@@ -220,41 +204,40 @@ mod tests {
     // ---------- handle_exer01_open_seed ----------
 
     #[tokio::test]
-    async fn open_seed_emits_toast_with_seed_path() {
+    async fn open_seed_emits_toast_event_with_seed_path() {
         let ctx = make_ctx(
             "gallery-demo/exer-01/open-seed",
             serde_json::json!({ "path": ".planning/seeds/v1.3-appshell-nestability.md" }),
         );
         let out = handle_exer01_open_seed(ctx).await.expect("ok");
-        let msg = unwrap_patch(&out);
-        assert_eq!(msg.surface, "toasts");
+        assert_eq!(out.len(), 1, "expected exactly one ProtocolMessage");
 
-        // Expect exactly one SetNode + one InsertChild into "toasts-root".
-        let mut saw_set_node_with_path = false;
-        let mut saw_insert_child_into_toasts_root = false;
-        for op in &msg.patch {
-            match op {
-                PatchOperation::SetNode { component, .. } => {
-                    // Button label holds the seed path (see handler body).
-                    let j = serde_json::to_value(component).expect("serialize");
-                    let label = j["props"]["label"].as_str().unwrap_or_default();
-                    assert!(
-                        label.contains(".planning/seeds/v1.3-appshell-nestability.md"),
-                        "toast label should carry seed path, got: {label}"
-                    );
-                    saw_set_node_with_path = true;
-                }
-                PatchOperation::InsertChild { parent, .. } => {
-                    assert_eq!(parent, "toasts-root");
-                    saw_insert_child_into_toasts_root = true;
-                }
-                _ => {}
-            }
-        }
-        assert!(saw_set_node_with_path, "missing SetNode carrying seed path");
+        // Expect a single Event with name="toast" and a hint carrying the
+        // seed path as its message (svelte-sonner renders the chrome).
+        let event = match &out[0] {
+            ProtocolMessage::Event(e) => e,
+            other => panic!("expected Event, got {other:?}"),
+        };
+        assert_eq!(event.name, "toast");
+        assert!(event.surface.is_none());
+
+        let hint = event.hint.as_ref().expect("hint present");
+        let message = hint
+            .get("message")
+            .and_then(|v| v.as_str())
+            .expect("hint.message is string");
         assert!(
-            saw_insert_child_into_toasts_root,
-            "missing InsertChild into toasts-root"
+            message.contains(".planning/seeds/v1.3-appshell-nestability.md"),
+            "toast hint.message should carry seed path, got: {message}"
+        );
+        assert_eq!(
+            hint.get("severity").and_then(|v| v.as_str()),
+            Some("info"),
+            "hint.severity should be info"
+        );
+        assert!(
+            hint.get("duration").and_then(serde_json::Value::as_u64).is_some(),
+            "hint.duration should be a number"
         );
     }
 

@@ -26,7 +26,6 @@ import FieldSet from '../components/form/FieldSet.svelte';
 import FieldSeparator from '../components/form/FieldSeparator.svelte';
 import MButton from '../components/form/Button.svelte';
 import DataTable from '../components/table/DataTable.svelte';
-import ToastSurface from '../components/popup/ToastSurface.svelte';
 import ConfirmDialog from '../components/popup/ConfirmDialog.svelte';
 import SurfaceMount from '../components/core/SurfaceMount.svelte';
 import AppShell from '../components/shell/AppShell.svelte';
@@ -53,7 +52,6 @@ export function registerDefaults(): void {
 		'field-separator': FieldSeparator,
 		'button': MButton,
 		'data-table': DataTable,
-		'toast': ToastSurface,
 		'confirm-dialog': ConfirmDialog,
 		'surface-mount': SurfaceMount,
 		'app-shell': AppShell,

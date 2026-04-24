@@ -218,6 +218,86 @@ Frontend state:              Backend:
 
 The protocol is the transport. Applications add state as needed.
 
+## Where the Client Is Smart
+
+The protocol is stateless for *application* state — but every real UI has
+*presentation* state that lives in the client by nature. A text input buffers
+keystrokes locally before the committed value reaches the server. A toast
+counts down and fades. A debounced search waits until the user stops typing.
+A spinner animates between render frames. Round-tripping any of these to the
+server every tick would be absurd.
+
+The boundary: **the protocol owns what the application means; the client
+owns how it's presented and when it's collected.**
+
+| Protocol owns | Client owns |
+|---|---|
+| Committed values (`/form/data/email`) | In-progress typing, cursor, selection |
+| Validation results (`/form/errors`) | When to fire the validate action (blur vs change) |
+| Toast message + severity + duration | Countdown, fade, stacking, position |
+| Search results | Debounce window before firing the search action |
+| Authoritative row state | Optimistic overlay + rollback |
+| Which field is under active edit | Skip/queue patches to the dirty field |
+
+Presentation state is **allowed to be smart**, but it MUST respect three
+invariants so the application can't diverge from the server:
+
+1. **Server is authoritative for anything anyone else would care about.**
+   If two users look at the same row, the value they each see comes from
+   the protocol, not from one user's local edit buffer.
+2. **Client timers and animations MUST NOT mutate data bound via `bind`.**
+   They can fade, position, count down, debounce — they can't decide what
+   the user's email address is.
+3. **During active edit, client wins for the dirty path until commit.**
+   After commit, server wins (dirty-field handling — see Production
+   Considerations).
+
+Rule of thumb: if it involves **time** or **pixels**, the client handles
+it. If it involves **meaning**, the protocol does.
+
+### Toasts as the worked example
+
+A toast is not a persistent node — it's an event carrying presentation
+hints the client knows how to render:
+
+```yaml
+type: "event"
+name: "toast"
+hint:
+  message: "User deleted"
+  severity: "success"
+  duration: 6000
+  action:
+    label: "Undo"
+    action: { name: "undo-user-delete", payload: { userId: "usr-3" } }
+```
+
+The client library owns the queue, render, countdown, fade, stacking, and
+the "Undo" button's onClick-dispatch. The protocol owns the message
+content, the severity, the duration, and the meaning of the Undo action.
+The `action.action` nested shape is just a normal SDUI action dispatched
+when the user clicks — same as any Button's `action`.
+
+For richer toasts, the hint can carry an embedded SDUI tree instead of
+plain text — same pattern as modals:
+
+```yaml
+type: "event"
+name: "toast"
+hint:
+  duration: 8000
+  component: { type: "container", children: [...] }
+```
+
+The client renders the tree inside the toast chrome; the protocol owns
+the content, the client owns the overlay mechanics.
+
+The reference frontend ships `svelte-sonner` for the toast chrome. Other
+frontend libraries targeting other platforms may render the same event
+differently — a native snackbar on mobile, a bottom banner on TV — which
+is exactly why the event is named for the *concern* (`toast`) and not
+for the library.
+
 ## What the Protocol Does NOT Define
 
 - **Component schemas** (what props a "text-input" accepts)

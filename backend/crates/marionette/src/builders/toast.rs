@@ -1,20 +1,21 @@
-//! `Toast` component builder.
+//! `Toast` component builder removed — toasts are protocol events, not
+//! persistent nodes.
 //!
-//! Split from `standard.rs` in Phase 17 D-B3.
+//! Toasts are dispatched via `type: "event"` with `name: "toast"` and a
+//! structured hint (message / severity / duration / action / component).
+//! The client (svelte-sonner in the reference frontend) owns the overlay
+//! chrome — stacking, fade, countdown, dismissal. See CONCEPT.md
+//! §"Where the Client Is Smart" for the protocol-vs-client boundary
+//! this reflects.
+//!
+//! This file survives only to host the `gallery_demo()` sibling for the
+//! `toast` nav entry — the demo itself never referenced `Toast::new(...)`;
+//! it builds a trigger Button + label in a Container and dispatches
+//! `gallery-demo/toast-fire`, which the gallery-demo crate's handler
+//! responds to with the `toast` event that the client renders through
+//! sonner.
 
-use marionette_macros::ComponentBuilder;
-
-#[derive(ComponentBuilder)]
-#[component(type = "toast")]
-pub struct Toast {
-    pub message: String,
-    #[builder(optional)]
-    pub variant: Option<String>,
-    #[builder(optional)]
-    pub duration: Option<u32>,
-}
-
-// ---- gallery_demo sibling (Phase 17 DEMO-01 composite) ----
+// ---- gallery_demo sibling (Phase 17 DEMO-01) ----
 
 #[cfg(feature = "gallery")]
 #[marionette_macros::gallery_demo(key = "toast")]

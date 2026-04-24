@@ -13,6 +13,7 @@ import { initRouter, updateUrl, destroyRouter } from './routing/router.svelte';
 import { setFullState, applyPatch, setData } from './store/data.svelte';
 import { setSurfaceTree } from './store/surfaces.svelte';
 import { confirmOptimistic, rollbackOptimistic } from './store/optimistic.svelte';
+import { showToast } from './store/toasts.svelte';
 import type { RenderMessage, PatchMessage, EventMessage, ErrorMessage } from './transport/messages';
 
 // Phase 19 Plan 19-01: patch-latency instrumentation hook.
@@ -81,7 +82,14 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 
 	registerHandler('event', (raw: unknown) => {
 		const msg = raw as EventMessage;
-		// Event bus will be implemented in a later plan; log for now
+		// Protocol-level notifications: route `name: "toast"` through sonner.
+		// Client owns chrome (stacking/fade/countdown); protocol owns content
+		// (message/severity/duration/action). See CONCEPT.md §"Where the
+		// Client Is Smart".
+		if (msg.name === 'toast') {
+			showToast(msg.hint as Record<string, unknown> | undefined);
+			return;
+		}
 		console.debug('[marionette] event:', msg.name, msg.hint);
 	});
 

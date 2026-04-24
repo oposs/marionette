@@ -1,44 +1,111 @@
 /**
- * Toast store — module-level singleton for toast notifications.
+ * Toast store — thin wrapper over svelte-sonner.
  *
- * This must be a standalone `.svelte.ts` module (not an instance export on
- * ToastSurface.svelte) so that dispatcher code and any consumer can reach it
- * via a normal `import { addToast } from '$lib/store/toasts.svelte'` without
- * needing a `bind:this` reference to the mounted component.
+ * The server dispatches `type: "event"` with `name: "toast"` and a hint
+ * payload; the client owns chrome (stacking, fade, position, countdown)
+ * via svelte-sonner while the protocol owns content
+ * (message/severity/duration/action/component).
+ *
+ * Supported hint shapes:
+ *   - { message, severity?, duration? }
+ *   - { message, severity?, duration?, action: { label, action: { name, payload? } } }
+ *   - { root, nodes, duration? }  // embedded SDUI tree via toast.custom()
+ *
+ * See CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
+ * boundary this implements.
  */
+import { toast } from 'svelte-sonner';
+import { sendAction } from '$lib/transport/dispatcher';
+import ToastContent from '$lib/components/popup/ToastContent.svelte';
+import type { ComponentNode } from '$lib/transport/messages';
 
-interface ToastItem {
-	id: string;
-	severity: string;
+type Severity = 'success' | 'error' | 'warning' | 'info';
+
+interface ToastActionHint {
+	label: string;
+	action: { name: string; payload?: Record<string, unknown> };
+}
+
+interface MessageHint {
 	message: string;
-	duration: number;
+	severity?: Severity;
+	duration?: number;
+	action?: ToastActionHint;
 }
 
-let toasts = $state<ToastItem[]>([]);
-
-/** Returns the reactive toasts array (tracked by $state). */
-export function getToasts(): ToastItem[] {
-	return toasts;
+interface ComponentHint {
+	root: string;
+	nodes: Record<string, ComponentNode>;
+	duration?: number;
 }
+
+export type ToastHint = MessageHint | ComponentHint;
+
+function isComponentHint(hint: Record<string, unknown>): boolean {
+	return typeof hint.root === 'string' && typeof hint.nodes === 'object' && hint.nodes !== null;
+}
+
+const DEFAULT_DURATION = 5000;
 
 /**
- * Add a toast from an EventMessage-shaped payload.
+ * Show a toast from a server-sent event hint.
  *
- * Accepts the same `{ name, hint? }` shape used by server-sent events so
- * callers in the dispatcher can forward the event directly.
+ * Idempotent relative to the hint — calling twice with the same hint
+ * displays two toasts (sonner stacks them). Silently returns on a
+ * malformed or missing hint.
  */
-export function addToast(event: { name: string; hint?: Record<string, unknown> }): void {
-	const id = crypto.randomUUID();
-	const severity = (event.hint?.severity as string) ?? 'info';
-	const message = (event.hint?.message as string) ?? event.name;
-	const duration = (event.hint?.duration as number) ?? 5000;
+export function showToast(hint: Record<string, unknown> | undefined | null): void {
+	if (!hint || typeof hint !== 'object') return;
 
-	toasts.push({ id, severity, message, duration });
+	// Embedded-component path: render an SDUI tree inside sonner chrome.
+	if (isComponentHint(hint)) {
+		const { root, nodes, duration } = hint as unknown as ComponentHint;
+		// Bypass toast.custom's componentProps generic — ToastContent's
+		// props come from a runtime hint, not a static binding. Sonner
+		// receives the constructor + componentProps at runtime.
+		(toast.custom as (c: unknown, data: unknown) => string | number)(ToastContent, {
+			componentProps: { root, nodes },
+			duration: duration ?? DEFAULT_DURATION,
+		});
+		return;
+	}
 
-	setTimeout(() => removeToast(id), duration);
-}
+	// Message path (plain text, optional severity + action).
+	const msg = hint as unknown as MessageHint;
+	if (typeof msg.message !== 'string') return;
 
-/** Remove a toast by id. */
-export function removeToast(id: string): void {
-	toasts = toasts.filter((t) => t.id !== id);
+	const severity: Severity = msg.severity ?? 'info';
+	const opts: {
+		duration: number;
+		action?: { label: string; onClick: () => void };
+	} = {
+		duration: msg.duration ?? DEFAULT_DURATION,
+	};
+
+	if (msg.action && typeof msg.action.label === 'string' && msg.action.action) {
+		const a = msg.action;
+		opts.action = {
+			label: a.label,
+			onClick: () => {
+				sendAction(a.action.name, a.action.payload);
+			},
+		};
+	}
+
+	// Dispatch to the right sonner method based on severity.
+	switch (severity) {
+		case 'success':
+			toast.success(msg.message, opts);
+			break;
+		case 'error':
+			toast.error(msg.message, opts);
+			break;
+		case 'warning':
+			toast.warning(msg.message, opts);
+			break;
+		case 'info':
+		default:
+			toast.info(msg.message, opts);
+			break;
+	}
 }

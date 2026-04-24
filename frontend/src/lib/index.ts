@@ -23,7 +23,7 @@ export {
 	removeChild,
 	gcOrphans,
 } from './store/surfaces.svelte';
-export { addToast, removeToast, getToasts } from './store/toasts.svelte';
+export { showToast } from './store/toasts.svelte';
 
 // Transport
 export { sendAction } from './transport/dispatcher';

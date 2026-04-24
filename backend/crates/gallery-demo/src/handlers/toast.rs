@@ -1,37 +1,39 @@
-//! Toast demo handlers — `gallery-demo/toast-fire` and the frontend-hardcoded
-//! `dismiss-toast` (copied from crm-demo/src/handlers/contact.rs:1687-1711).
+//! Toast demo handlers.
+//!
+//! `gallery-demo/toast-fire` dispatches a `toast` event — the client
+//! renders via svelte-sonner (stacking / fade / countdown); the server
+//! owns content. See CONCEPT.md §"Where the Client Is Smart".
+//!
+//! `dismiss-toast` is preserved for legacy callers (confirm and noop
+//! demos still emit Button toasts into `toasts-root`). Post-sonner,
+//! sonner owns dismissal for any toast fired via the event channel; the
+//! legacy SurfaceMount-based path continues to use this handler to clear
+//! its nodes.
 
-use marionette::builders::Button;
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
 use marionette_protocol::data::PatchOperation;
-use marionette_protocol::messages::PatchMessage;
-use marionette_protocol::{ComponentAction, ProtocolMessage};
+use marionette_protocol::messages::{EventMessage, PatchMessage};
+use marionette_protocol::ProtocolMessage;
 
 #[allow(clippy::unused_async)]
 pub async fn handle_toast_fire(ctx: HandlerContext) -> ActionResult {
-    let toast_id = format!("toast-demo-{}", uuid::Uuid::new_v4());
-    let (_, toast_node) = Button::new("Demo toast from gallery-demo/toast-fire")
-        .id(&toast_id)
-        .action(ComponentAction::click("dismiss-toast"))
-        .build();
-
-    let ops = vec![
-        PatchOperation::SetNode {
-            id: toast_id.clone(),
-            component: toast_node,
-        },
-        PatchOperation::InsertChild {
-            parent: "toasts-root".into(),
-            index: 0,
-            child_id: toast_id,
-        },
-    ];
-
-    Ok(vec![ProtocolMessage::Patch(PatchMessage {
+    // Showcase the `action` hint shape — sonner renders a "Retry" button
+    // inside the toast; clicking it dispatches the named action
+    // server-side, same as any SDUI Button's action.
+    Ok(vec![ProtocolMessage::Event(EventMessage {
         id: ctx.action.id.clone(),
-        surface: "toasts".into(),
-        patch: ops,
+        name: "toast".into(),
+        surface: None,
+        hint: Some(serde_json::json!({
+            "message": "Demo toast from gallery-demo/toast-fire",
+            "severity": "success",
+            "duration": 5000,
+            "action": {
+                "label": "Retry",
+                "action": { "name": "gallery-demo/toast-fire" },
+            },
+        })),
     })])
 }
 

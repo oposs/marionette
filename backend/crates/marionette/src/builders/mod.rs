@@ -28,9 +28,14 @@ pub mod switch;
 pub mod field_set;
 pub mod field_separator;
 pub mod data_table;
-// `modal` module hosts ONLY the `gallery_demo()` sibling (Phase 17 Plan 17-08
-// deleted the `Modal` struct after the popups-global architectural refactor).
-// No `pub use modal::*;` re-export since there are no public types.
+// `modal` and `toast` modules host ONLY the `gallery_demo()` sibling.
+// - `modal`: Phase 17 Plan 17-08 deleted the `Modal` struct after the
+//   popups-global architectural refactor.
+// - `toast`: the `Toast` struct was deleted in the sonner migration —
+//   toasts are now protocol events rendered by the client's sonner
+//   chrome (CONCEPT.md §"Where the Client Is Smart").
+// No `pub use modal::*;` / `pub use toast::*;` re-exports since there
+// are no public types in these modules.
 pub mod modal;
 pub mod toast;
 pub mod confirm_dialog;
@@ -62,7 +67,6 @@ pub use switch::*;
 pub use field_set::*;
 pub use field_separator::*;
 pub use data_table::*;
-pub use toast::*;
 pub use confirm_dialog::*;
 pub use spinner::*;
 pub use error_display::*;
@@ -73,17 +77,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn all_18_standard_types() {
-        // Verify each of the 18 standard component types compiles and builds.
+    fn all_17_standard_types() {
+        // Verify each of the 17 standard component types compiles and builds.
         // Meta-test for the whole builders module — stays here (at the hub)
         // rather than under any single component. Moved from standard.rs
         // during the Phase 17 D-B3 per-component file refactor.
         //
-        // Phase 17 Plan 17-08: the `"modal"` type was removed from this list
-        // after G-08 cleanup — `ModalSurface.svelte` is now a layout-root
-        // singleton mount (see Plan 17-05) and the `Modal` builder struct was
-        // deleted. Popups are composed into the `modal` sub-surface directly;
-        // see `GALLERY-DEMOS.md` §Popup composition.
+        // History:
+        // - Phase 17 Plan 17-08: `"modal"` removed — `ModalSurface.svelte`
+        //   became a layout-root singleton mount; the `Modal` builder was
+        //   deleted. Popups compose into the `modal` sub-surface directly
+        //   (see `GALLERY-DEMOS.md` §Popup composition).
+        // - Sonner migration: `"toast"` removed — toasts are protocol events
+        //   (`type: "event"`, `name: "toast"`) rendered by the client's
+        //   sonner chrome, not persistent SDUI nodes. See CONCEPT.md
+        //   §"Where the Client Is Smart".
         let types = vec![
             Button::new("x").build().1.r#type,
             TextInput::new("x").build().1.r#type,
@@ -99,7 +107,6 @@ mod tests {
             SurfaceMount::new("x").build().1.r#type,
             Form::new().build().1.r#type,
             DataTable::new(vec![]).build().1.r#type,
-            Toast::new("x").build().1.r#type,
             ConfirmDialog::new("x", "y").build().1.r#type,
             Spinner::new().build().1.r#type,
             ErrorDisplay::new("x").build().1.r#type,
@@ -108,7 +115,7 @@ mod tests {
         let expected = vec![
             "button", "text-input", "select", "checkbox", "container", "grid",
             "heading", "text", "side-nav", "nav-item", "nav-group", "surface-mount",
-            "form", "data-table", "toast", "confirm-dialog", "spinner", "error-display",
+            "form", "data-table", "confirm-dialog", "spinner", "error-display",
         ];
 
         assert_eq!(types, expected);
