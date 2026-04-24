@@ -154,18 +154,19 @@ mod tests {
     }
 
     #[test]
-    fn tree_contains_two_app_shell_nodes() {
+    fn tree_contains_exactly_one_app_shell() {
         // Pitfall 1 regression guard: if someone "fixes" the nesting by
-        // falling back to Phase 17's static-preview workaround, this test
+        // falling back to Phase 17's static-preview workaround (Container +
+        // Heading + Text), the app-shell count drops to zero and this test
         // fails. The whole point of EXER-01 is the real nested AppShell.
         let v = gallery_demo();
         let count = v.iter().filter(|(_, c)| {
             let s = serde_json::to_value(c).expect("serialize");
             s["type"] == "app-shell"
         }).count();
-        // Outer AppShell is in the gallery root (not in this demo's tree),
-        // so we expect exactly one app-shell in THIS screen's Vec<Node>
-        // — the inner one. (Adjust based on Plan 19-01 decision.)
+        // The outer AppShell is mounted by the gallery binary (not by this
+        // demo fn), so we expect exactly one app-shell in this demo's returned
+        // Vec<Node> — the inner shell.
         assert_eq!(count, 1, "exactly one nested app-shell expected in exer-01");
     }
 

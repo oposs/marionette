@@ -598,7 +598,7 @@ export function reportPerf(snapshot: PerfSnapshot): void {
 
 **What goes wrong:** A developer reviewing EXER-01 reads the code and "helpfully" fixes the collision by making the inner shell use a different context key.
 **Why it happens:** Looks like a bug, acts like a bug, but D-1 locks "does not attempt a v1.2 fix." The screen is an observation harness.
-**How to avoid:** Two defenses. (1) CONTEXT.md D-1 language reprised in the plan's §Scope section. (2) A test that asserts `nested_appshell::gallery_demo()` tree contains two `app-shell` component types (not one structural-preview) — if someone tries to revert to the Phase 17 workaround, this test fails.
+**How to avoid:** Two defenses. (1) CONTEXT.md D-1 language reprised in the plan's §Scope section. (2) A test that asserts `nested_appshell::gallery_demo()` returns exactly one app-shell in the demo fn's returned Vec<Node> — the inner shell — because the outer AppShell is mounted by the gallery binary, not by this demo fn. If someone tries to revert to the Phase 17 workaround (static preview using Container+Heading+Text instead of a real AppShell), this test fails because the app-shell count drops to zero.
 **Warning signs:** Anyone proposing "let's just scope the provider" inline — that's v1.3 work per D-1.
 
 ### Pitfall 2: EXER-02 patching the focused input itself
@@ -1066,32 +1066,37 @@ No project-level `./CLAUDE.md` exists. Global user instructions apply:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **EXER-03 advisory threshold validity (LOW urgency)**
    - What we know: CONTEXT D-3 names them (FPS ≥ 30, TTFP ≤ 3s, memory +50MB, latency p95 ≤ 50ms) and the researcher is asked to validate/refine.
    - What's unclear: whether these match actual observed values on the dev machines the team uses.
    - Recommendation: ship Plan 19-03 with the CONTEXT-provided values; UAT reveals the baseline; if any threshold is consistently missed despite the system "feeling responsive," update in a follow-up trivial-fix commit (D-4 allows this).
+   - **RESOLVED:** use CONTEXT.md D-3 values as the shipped advisory baseline (FPS ≥ 30, TTFP ≤ 3 s, memory growth ≤ +50 MB, patch latency p95 ≤ 50 ms); Plan 19-04 wires them verbatim. Post-UAT refinement is permitted via the D-4 trivial-fix carve-out if measurements consistently diverge.
 
 2. **EXER-02 backend push mechanism (A1) — HIGH urgency**
    - What we know: the backend already delivers server-pushed PatchMessages (Plan 17-05 modal close emits a Patch; confirm_open emits a Patch). Those all happen inside an ActionResult return.
    - What's unclear: can a spawned task OUTSIDE of a request/response emit to a specific client? Or do we need a new pattern (e.g. the task writes to an AppState queue polled from the frontend via client-initiated tick actions)?
    - Recommendation: Plan 19-02 Wave 0 includes a 30-minute spike — read `gallery-demo/src/main.rs` + `gallery-demo/src/state.rs` for any existing broadcast infra. If none, we reverse to a client-initiated-tick shape: frontend sends `gallery-demo/exer-02/tick` every 500 ms, backend's handler applies the 3-op mix and returns a PatchMessage in ActionResult. Less elegant (frontend drives cadence) but keeps the wire pressure semantic.
+   - **RESOLVED:** `AppState` in `backend/crates/marionette/src/ws.rs:24-33` does not carry a broadcast channel, and extending it is out of scope per CONTEXT.md §D-4 (no framework crate changes). Plan 19-03 implements the client-initiated-tick shape: the frontend drives cadence via `setInterval`, each tick calling `sendAction('gallery-demo/exer-02/tick')`; the backend responds with a real PatchMessage via the normal ActionResult return path. No AppState broadcaster is introduced. Route `gallery-demo/exer-02/tick` is reserved in Plan 19-01 and wired in Plan 19-03.
 
 3. **Chrome MCP synthetic keyboard dispatch (A8) — LOW urgency**
    - What we know: the observation matrix entry for keyboard-shortcut scoping is a best-effort probe.
    - What's unclear: whether Chrome's synthetic event actually triggers shadcn's onkeydown listener.
    - Recommendation: if synthetic dispatch fails silently, the observation matrix cell for keyboard-shortcut still renders its LOCKED FAIL state from UI-SPEC copy (the copy describes the KNOWN bug from Phase 17). Only the LIVE observation is at risk, not the matrix's informational content.
+   - **RESOLVED:** Plan 19-02 treats synthetic keyboard dispatch as best-effort. If the synthetic `KeyboardEvent` does not reach shadcn's onkeydown listener, the observation matrix keyboard-shortcut cell falls back to the LOCKED FAIL copy from UI-SPEC (the informational evidence of the Phase 17 collision). The matrix stays honest either way.
 
 4. **Paint-timing semantics in SPA (A9) — LOW urgency**
    - What we know: `PerformancePaintTiming` entries fire for document navigations.
    - What's unclear: whether "navigate to #exer-03 via WebSocket action" produces a paint entry.
    - Recommendation: Plan 19-03 SUMMARY documents that TTFP is "initial page load to first-paint," not "click-nav-to-first-paint." Add explanatory text below the TTFP readout: "Measured from page load, not navigation — reload to remeasure."
+   - **RESOLVED:** Plan 19-04 SUMMARY documents TTFP semantics as "initial page load to first-paint; reload to remeasure"; the Remeasure CTA calls `performance.getEntriesByType(''paint'')` fresh each invocation. The readout copy below the TTFP cell states this explicitly so users are not confused by SPA navigations not updating the TTFP number.
 
 5. **Toast global-overlay refactor — DEFERRED per D-4, but confirm scope**
    - What we know: STATE.md §Blockers mentions "Candidate for Phase 19 EXER-01 or a v1.3+ popup-unification plan."
    - What's unclear: whether CONTEXT.md D-1's "scoped to EXER-01 observation + v1.3 seed" implicitly forecloses this.
    - Recommendation: does NOT belong in Phase 19. D-1 locks EXER-01 to the 4 dimensions of AppShell nestability — toast overlay is a separate concern. Confirm with user if they mention it; default: defer.
+   - **RESOLVED:** deferred to a future phase (v1.3+ popup-unification plan). Not in Phase 19 scope per CONTEXT.md §D-1.
 
 ---
 
