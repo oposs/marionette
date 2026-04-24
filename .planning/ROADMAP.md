@@ -237,7 +237,13 @@ Plans:
   2. Rapid Patching screen fires node patches at a configurable interval (default ≈500 ms) while a text input retains focus; PATCH-02's focus-preservation invariant holds for ≥60 seconds of sustained mutation pressure without losing focus or cursor position
   3. Pathological Scale screen mounts a single page containing a DataTable seeded with ≥10 000 synthetic rows and a FormScreen with ≥80 synthetic fields; the page renders without freezing the browser, virtualization keeps scroll responsive, and observed performance baselines (time-to-first-paint, scroll FPS) are recorded in the phase report
   4. Every exerciser screen is reachable from the auto-discovered gallery nav and executes without console errors under normal use
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 19-01-PLAN.md — Wave 1 framework polish (16 icons + patchProbe + state + handler stubs + 3 seed arms + exer-03-synthetic)
+- [ ] 19-02-PLAN.md — EXER-01 Nested AppShell (real nested shell + observation matrix + v1.3 seed)
+- [ ] 19-03-PLAN.md — EXER-02 Rapid Patching (client-initiated tick + 4 invariants)
+- [ ] 19-04-PLAN.md — EXER-03 Pathological Scale (10k DataTable + 80-field FormScreen + 4 perf signals)
+- [ ] 19-05-PLAN.md — Chrome MCP UAT + phase close-out
 **UI hint**: yes
 
 ### Phase 20: Live Token Editor
