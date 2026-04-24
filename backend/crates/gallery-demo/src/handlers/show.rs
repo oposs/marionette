@@ -53,6 +53,10 @@ pub async fn handle_gallery_show(ctx: HandlerContext) -> ActionResult {
 /// Paths under `/demo/{key}/...` seed the data store so bindings in the
 /// demo's Component tree resolve to sensible initial values. Unknown keys
 /// yield an empty seed — fine for pure-visual leaves (Heading, Text, Spinner).
+///
+/// Clippy: the function is a registry-style dispatch with short parallel
+/// arms; splitting it would obscure the per-key seed correspondence.
+#[allow(clippy::too_many_lines)]
 fn seed_for_key(key: &str) -> serde_json::Value {
     // Explicit `catalog-*` arms that return empty JSON are deliberate
     // documentation — the wildcard also returns empty, but naming the
@@ -206,8 +210,123 @@ fn seed_for_key(key: &str) -> serde_json::Value {
         // the wildcard) to prevent accidental seed drift if CAT-05 ever gains
         // bindable state in a later plan.
         "catalog-typography" => serde_json::json!({}),
+        // Phase 19 Plan 19-01 (EXER-01): observation matrix of 4 dimensions
+        // (provider-context, mobile-sheet, keyboard-shortcuts, sidebar-tokens)
+        // seeded with the Phase 17 G-02 findings verbatim from 19-PATTERNS.md.
+        // Wave 2 Plan 19-02 may update copy as the investigation deepens.
+        "exer-01" => serde_json::json!({
+            "demo": { "exer-01": {
+                "matrix": {
+                    "provider-context": {
+                        "state": "FAIL",
+                        "details": "shadcn <Sidebar.Provider> is not scoped: the inner provider re-mounts with the same viewport anchors as the outer, visually replacing the outer 20-entry nav. Observed 2026-04-22 in Phase 17 G-02."
+                    },
+                    "mobile-sheet": {
+                        "state": "FAIL",
+                        "details": "Inner AppShell on narrow viewport opens a Sheet that covers the outer Sheet; dismissing either closes both. Expected scoping by surface name is absent."
+                    },
+                    "keyboard-shortcuts": {
+                        "state": "FAIL",
+                        "details": "Sidebar toggle shortcut (Ctrl+B by default) triggers both providers. Last-registered wins; which shell responds is implementation-detail, not contract."
+                    },
+                    "sidebar-tokens": {
+                        "state": "WARN",
+                        "details": "CSS custom-property inheritance cascades naturally: inner shell inherits whatever the outer sets. Not a bug per se — scoped tokens would need :where(.surface-name) or a style-isolation mechanism (e.g. shadow DOM, @scope)."
+                    }
+                }
+            }}
+        }),
+        // Phase 19 Plan 19-01 (EXER-02): rapid-patching dashboard seed.
+        // Four invariants start as PENDING; cadence defaults to 500ms (aligned
+        // with GalleryState::default().exer02_cadence_ms); elapsed resets to 0.
+        "exer-02" => serde_json::json!({
+            "demo": { "exer-02": {
+                "focused-value": "",
+                "cadence-ms": 500,
+                "invariants": {
+                    "focus":  { "state": "PENDING" },
+                    "cursor": { "state": "PENDING" },
+                    "typed":  { "state": "PENDING" },
+                    "ime":    { "state": "PENDING" }
+                },
+                "elapsed-s": 0
+            }}
+        }),
+        // Phase 19 Plan 19-01 (EXER-03): pathological-scale seed.
+        // rows is EMPTY (fetch-rows paginates 10_000 rows — 19-RESEARCH.md
+        // §Pitfall 7); 4 form groups (personal-info, contact, preferences,
+        // advanced) total 80 fields per 19-UI-SPEC §EXER-03 legends.
+        "exer-03" => seed_exer_03(),
         _ => serde_json::json!({}),
     }
+}
+
+/// Phase 19 Plan 19-01: EXER-03 pathological-scale seed.
+///
+/// Per 19-RESEARCH.md §Pitfall 7, rows are seeded EMPTY — the 10 000 rows
+/// load 50 at a time via fetch-rows (source="exer-03-synthetic"); never
+/// seed the full generator into the initial Render data payload.
+///
+/// The 80-field defaults across 4 groups per 19-UI-SPEC §EXER-03 legends
+/// (lines 294-299). Bind-path template: /demo/exer-03/<group-slug>/<field-name>
+/// with group-slug ∈ {personal-info, contact, preferences, advanced}.
+/// All TextInput/Textarea/Select/RadioGroup default to empty string;
+/// Switch/Checkbox default to false.
+fn seed_exer_03() -> serde_json::Value {
+    // Group 1: Personal info — 15 TextInput + 2 Select + 2 RadioGroup + 1 Textarea = 20
+    let personal = serde_json::json!({
+        "first-name": "", "last-name": "", "middle-name": "", "preferred-name": "",
+        "nickname": "", "birthdate-text": "", "gender-text": "", "pronouns": "",
+        "nationality": "", "languages": "", "ethnicity": "", "religion": "",
+        "marital-status": "", "dependents-count": "", "emergency-contact": "",
+        "salutation": "", "title": "",
+        "primary-language": "", "secondary-language": "",
+        "bio": ""
+    });
+
+    // Group 2: Contact — 12 TextInput + 2 Select + 4 Checkbox + 2 Textarea = 20
+    let contact = serde_json::json!({
+        "email-primary": "", "email-secondary": "", "phone-mobile": "", "phone-home": "",
+        "phone-work": "", "address-line-1": "", "address-line-2": "", "city": "",
+        "state-region": "", "postal-code": "", "country-text": "", "fax": "",
+        "preferred-method": "", "timezone": "",
+        "consent-email": false, "consent-sms": false, "consent-phone": false, "consent-mail": false,
+        "address-notes": "", "communication-notes": ""
+    });
+
+    // Group 3: Preferences — 5 Select + 8 Switch + 4 RadioGroup + 3 Checkbox = 20
+    let preferences = serde_json::json!({
+        "theme": "", "density": "", "language": "", "timezone-pref": "", "currency": "",
+        "notif-email": false, "notif-sms": false, "notif-push": false, "notif-weekly": false,
+        "notif-monthly": false, "notif-marketing": false, "notif-security": false, "notif-updates": false,
+        "frequency": "", "privacy": "", "sharing": "", "visibility": "",
+        "terms": false, "privacy-policy": false, "marketing": false
+    });
+
+    // Group 4: Advanced — 10 TextInput + 4 Textarea + 3 Select + 2 Switch + 1 Checkbox = 20
+    let advanced = serde_json::json!({
+        "api-key-alias-1": "", "api-key-alias-2": "", "api-key-alias-3": "", "api-key-alias-4": "",
+        "api-key-alias-5": "", "api-key-alias-6": "", "api-key-alias-7": "", "api-key-alias-8": "",
+        "api-key-alias-9": "", "api-key-alias-10": "",
+        "notes-1": "", "notes-2": "", "notes-3": "", "notes-4": "",
+        "access-level": "", "rotation-policy": "", "audit-mode": "",
+        "mfa-enabled": false, "biometric-enabled": false,
+        "danger-ack": false
+    });
+
+    serde_json::json!({
+        "demo": { "exer-03": {
+            "rows": {},
+            "perf": {
+                "ttfp_ms": null, "fps": null, "memory_mb": null,
+                "latency_p95_ms": null, "remeasure-tick": 0
+            },
+            "personal-info": personal,
+            "contact": contact,
+            "preferences": preferences,
+            "advanced": advanced
+        }}
+    })
 }
 
 /// Initial 50-row object-map for the CAT-03 Data Table catalog screen.
@@ -442,6 +561,65 @@ mod tests {
             "message copy drifted: {m}"
         );
         assert!(errs[0]["path"].is_null(), "path is null for system-level sample error");
+    }
+
+    #[test]
+    fn seed_exer_01_has_four_dimensions_with_fail_and_warn() {
+        // Phase 19 Plan 19-01: verify the observation-matrix seed shape.
+        let s = seed_for_key("exer-01");
+        let matrix = &s["demo"]["exer-01"]["matrix"];
+        assert_eq!(matrix["provider-context"]["state"], "FAIL");
+        assert_eq!(matrix["mobile-sheet"]["state"], "FAIL");
+        assert_eq!(matrix["keyboard-shortcuts"]["state"], "FAIL");
+        assert_eq!(matrix["sidebar-tokens"]["state"], "WARN");
+    }
+
+    #[test]
+    fn seed_exer_02_pending_invariants_and_default_cadence() {
+        // Phase 19 Plan 19-01: verify 4 invariants seeded PENDING + 500ms cadence.
+        let s = seed_for_key("exer-02");
+        let e2 = &s["demo"]["exer-02"];
+        assert_eq!(e2["cadence-ms"], 500);
+        assert_eq!(e2["focused-value"], "");
+        for inv in ["focus", "cursor", "typed", "ime"] {
+            assert_eq!(
+                e2["invariants"][inv]["state"],
+                "PENDING",
+                "invariant {inv} should start PENDING"
+            );
+        }
+    }
+
+    #[test]
+    fn seed_exer_03_has_four_groups_and_empty_rows() {
+        // Phase 19 Plan 19-01: rows MUST be empty (fetch-rows paginates per
+        // 19-RESEARCH.md §Pitfall 7); 4 form groups all objects.
+        let s = seed_for_key("exer-03");
+        let e3 = &s["demo"]["exer-03"];
+        assert_eq!(e3["rows"], serde_json::json!({}));
+        for group in ["personal-info", "contact", "preferences", "advanced"] {
+            assert!(e3[group].is_object(), "group {group} must be an object");
+        }
+        // Spot-check one field per group confirms defaults.
+        assert_eq!(e3["personal-info"]["first-name"], "");
+        assert_eq!(e3["contact"]["consent-email"], false);
+        assert_eq!(e3["preferences"]["notif-email"], false);
+        assert_eq!(e3["advanced"]["danger-ack"], false);
+    }
+
+    #[test]
+    fn seed_exer_03_field_count_is_80() {
+        // UI-SPEC §EXER-03 locks 80 total fields across 4 groups of 20 each.
+        let s = seed_for_key("exer-03");
+        let e3 = &s["demo"]["exer-03"];
+        let count = ["personal-info", "contact", "preferences", "advanced"]
+            .iter()
+            .map(|g| e3[*g].as_object().expect("group is object").len())
+            .sum::<usize>();
+        assert_eq!(
+            count, 80,
+            "UI-SPEC §EXER-03 locks 80 total fields across 4 groups"
+        );
     }
 
     #[test]

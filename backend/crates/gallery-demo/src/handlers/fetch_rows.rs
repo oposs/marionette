@@ -54,6 +54,31 @@ pub async fn handle_demo_fetch_rows(ctx: HandlerContext) -> ActionResult {
                 .collect();
             ("/demo/catalog-data-table/rows", json_rows)
         }
+        "exer-03-synthetic" => {
+            // Phase 19 Plan 19-01: 10_000 row pool for EXER-03 pathological scale
+            // (19-RESEARCH.md §Pattern 4). Mirrors catalog-synthetic-rows' shape
+            // (same Row struct + injected actions array) but against a 20x-larger
+            // generator and at bind path /demo/exer-03/rows.
+            let all = crate::fixtures::synthetic_rows(10_000);
+            let start = payload.offset as usize;
+            let end = start
+                .saturating_add(payload.limit as usize)
+                .min(all.len());
+            let slice = all.get(start..end).unwrap_or(&[]);
+            let json_rows: Vec<serde_json::Value> = slice
+                .iter()
+                .map(|r| {
+                    let mut v = serde_json::to_value(r).expect("Row serializes");
+                    v["actions"] = serde_json::json!([
+                        { "label": "Edit",      "action": { "type": "click", "name": "gallery-demo/noop" } },
+                        { "label": "Delete",    "action": { "type": "click", "name": "gallery-demo/noop" } },
+                        { "label": "Duplicate", "action": { "type": "click", "name": "gallery-demo/noop" } },
+                    ]);
+                    v
+                })
+                .collect();
+            ("/demo/exer-03/rows", json_rows)
+        }
         other => {
             return Err(ActionError::BadPayload(format!(
                 "unknown fetch-rows source: {other}"
@@ -221,6 +246,50 @@ mod tests {
             panic!("expected Set op at index 0");
         };
         assert_eq!(path, "/demo/data-table/rows/1");
+    }
+
+    #[tokio::test]
+    async fn exer03_rows_first_page_50_ids_1_through_50() {
+        // Phase 19 Plan 19-01: verify the exer-03-synthetic arm returns a
+        // 50-row page starting at id=1 under /demo/exer-03/rows.
+        let ctx = make_ctx(serde_json::json!({
+            "source": "exer-03-synthetic",
+            "offset": 0,
+            "limit": 50
+        }));
+        let result = handle_demo_fetch_rows(ctx).await.expect("ok");
+        let ProtocolMessage::Patch(msg) = &result[0] else {
+            panic!("expected Patch message");
+        };
+        assert_eq!(msg.patch.len(), 50);
+        let PatchOperation::Set { path, .. } = &msg.patch[0] else {
+            panic!("expected Set op at index 0");
+        };
+        assert_eq!(path, "/demo/exer-03/rows/1");
+        let PatchOperation::Set { path, .. } = &msg.patch[49] else {
+            panic!("expected Set op at index 49");
+        };
+        assert_eq!(path, "/demo/exer-03/rows/50");
+    }
+
+    #[tokio::test]
+    async fn exer03_rows_last_page_offset_9950() {
+        // Phase 19 Plan 19-01: verify the 10_000-row cap — offset 9950 returns
+        // exactly the final 50 rows ending at id=10_000, with no panic.
+        let ctx = make_ctx(serde_json::json!({
+            "source": "exer-03-synthetic",
+            "offset": 9950,
+            "limit": 50
+        }));
+        let result = handle_demo_fetch_rows(ctx).await.expect("ok");
+        let ProtocolMessage::Patch(msg) = &result[0] else {
+            panic!("expected Patch message");
+        };
+        assert_eq!(msg.patch.len(), 50);
+        let PatchOperation::Set { path, .. } = &msg.patch[49] else {
+            panic!("expected Set op at index 49");
+        };
+        assert_eq!(path, "/demo/exer-03/rows/10000");
     }
 
     #[tokio::test]
