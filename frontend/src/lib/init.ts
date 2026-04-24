@@ -127,9 +127,23 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 	// at .planning/seeds/v1.3-exerciser-instrumentation.md captures the
 	// cleanest fix options (data-attribute propagation vs. Svelte-mount hook).
 	if (typeof window !== 'undefined') {
-		void import('./exer01/observe.svelte');
-		void import('./exer02/invariants.svelte').then((m) => m.autoArm());
-		void import('./exer03/perf.svelte');
+		// Surface dynamic-import failures via console.error rather than
+		// `void`-discarding the promise — otherwise a bundle/parse error or
+		// a throw inside autoArm() silently disables the exerciser
+		// instrumentation and UAT only sees "invariants never fire".
+		// Matches the init module's error-hygiene style (see handler
+		// registrations above).
+		import('./exer01/observe.svelte').catch((e) =>
+			console.error('[marionette] failed to load exer01/observe', e)
+		);
+		import('./exer02/invariants.svelte')
+			.then((m) => m.autoArm())
+			.catch((e) =>
+				console.error('[marionette] failed to load/arm exer02/invariants', e)
+			);
+		import('./exer03/perf.svelte').catch((e) =>
+			console.error('[marionette] failed to load exer03/perf', e)
+		);
 	}
 
 	// E2E / UAT test hooks: expose sendAction + setData on window so Playwright
