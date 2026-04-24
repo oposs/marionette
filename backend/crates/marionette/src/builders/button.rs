@@ -41,8 +41,12 @@ pub fn gallery_demo() -> Vec<crate::gallery::Node> {
         .action(ComponentAction::submit("gallery-demo/noop"))
         .build();
 
+    // Arrange the 3 buttons side-by-side with a gap — opt into flex-row
+    // layout via props.class. Default Container is plain block flow, so
+    // this opt-in is explicit at the demo level.
     crate::builders::container::Container::new()
         .id("demo-button-root")
+        .class("flex flex-row flex-wrap items-center gap-2")
         .children(vec![primary, disabled, destructive])
         .build_with_children()
 }

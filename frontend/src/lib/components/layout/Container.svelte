@@ -51,7 +51,15 @@
 		</Card.Root>
 	</div>
 {:else}
-	<div class="flex flex-col flex-1 min-h-0 {paddingClass} {(props.class as string) ?? ''}">
+	<!--
+		Plain block wrapper — children flow naturally:
+		- Block-level elements (Heading, Text, Form) break to their own line.
+		- Inline-flex elements (Button) sit side-by-side and wrap when needed.
+		`gap-2` only takes effect when the caller opts into flex/grid via
+		`props.class` (e.g. `flex flex-row flex-wrap`); in plain block flow
+		it's inert. `space-y-2` gives vertical rhythm to block siblings.
+	-->
+	<div class="space-y-2 gap-2 {paddingClass} {(props.class as string) ?? ''}">
 		{#if IconComponent}
 			<IconComponent class="size-4" aria-hidden="true" />
 		{/if}
