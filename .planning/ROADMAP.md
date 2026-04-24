@@ -44,7 +44,7 @@ Full archive: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [ ] **Phase 16: Framework Hooks** — `#[gallery_demo]` proc macro + `inventory`/`linkme` registration backbone + `gallery` cargo feature gate on the `marionette` crate
 - [x] **Phase 17: Gallery Crate Skeleton + Colocated Built-in Demos** — new `gallery-demo` workspace member with auto-discovered AppShell nav; `gallery_demo()` siblings for every existing built-in component (completed 2026-04-22)
 - [x] **Phase 18: Catalog Screens** — Buttons & Actions, Forms, DataTable, Feedback, Typography & tokens (completed 2026-04-23)
-- [ ] **Phase 19: Exerciser Screens** — Nested AppShell, Rapid Patching, Pathological Scale
+- [x] **Phase 19: Exerciser Screens** — Nested AppShell, Rapid Patching, Pathological Scale (completed 2026-04-24)
 - [ ] **Phase 20: Live Token Editor** — CSS-token editor screen with live apply + exportable `@theme` block (scope-flexible)
 
 ## Phase Details
@@ -239,11 +239,11 @@ Plans:
   4. Every exerciser screen is reachable from the auto-discovered gallery nav and executes without console errors under normal use
 **Plans**: 5 plans
 Plans:
-- [ ] 19-01-PLAN.md — Wave 1 framework polish (16 icons + patchProbe + state + handler stubs + 3 seed arms + exer-03-synthetic)
-- [ ] 19-02-PLAN.md — EXER-01 Nested AppShell (real nested shell + observation matrix + v1.3 seed)
-- [ ] 19-03-PLAN.md — EXER-02 Rapid Patching (client-initiated tick + 4 invariants)
-- [ ] 19-04-PLAN.md — EXER-03 Pathological Scale (10k DataTable + 80-field FormScreen + 4 perf signals)
-- [ ] 19-05-PLAN.md — Chrome MCP UAT + phase close-out
+- [x] 19-01-PLAN.md — Wave 1 framework polish (17 icons + patchProbe + state + handler stubs + 3 seed arms + exer-03-synthetic)
+- [x] 19-02-PLAN.md — EXER-01 Nested AppShell (real nested shell + observation matrix + v1.3 seed)
+- [x] 19-03-PLAN.md — EXER-02 Rapid Patching (client-initiated tick + 4 invariants)
+- [x] 19-04-PLAN.md — EXER-03 Pathological Scale (10k DataTable + 80-field FormScreen + 4 perf signals)
+- [x] 19-05-PLAN.md — Playwright UAT (desktop + mobile) + server-driven WebSocket probe + phase close-out
 **UI hint**: yes
 
 ### Phase 20: Live Token Editor
@@ -285,8 +285,8 @@ Plans:
 | 15. CRM Migration & Validation | v1.1 | 7/7 | Complete | 2026-04-18 |
 | 16. Framework Hooks | v1.2 | 4/4 | Complete | 2026-04-22 |
 | 17. Gallery Crate Skeleton + Colocated Built-in Demos | v1.2 | 8/8 | Complete | 2026-04-22 |
-| 18. Catalog Screens | v1.2 | 0/8 | Pending | — |
-| 19. Exerciser Screens | v1.2 | 0/? | Pending | — |
+| 18. Catalog Screens | v1.2 | 8/8 | Complete | 2026-04-23 |
+| 19. Exerciser Screens | v1.2 | 5/5 | Complete | 2026-04-24 |
 | 20. Live Token Editor | v1.2 | 0/? | Pending | — |
 
 ---
@@ -296,3 +296,5 @@ Plans:
 *Updated: 2026-04-22 — Phase 17 Plan 17-06 complete (G-02 AppShell structural-preview rewrite + G-05 deterministic fixes via Chrome MCP UAT); 6/8 plans complete; 17-07 (full re-UAT + phase close) and 17-08 (G-08 Modal builder cleanup) remain pending*
 *Updated: 2026-04-22 — Phase 17 Plan 17-08 complete (G-08 stranded Modal builder cleanup; struct deleted, modal gallery_demo() preserved as doc-stub host so the modal nav entry still renders, GALLERY-DEMOS.md gained §Popup composition recipe; cargo gates all green); 7/8 plans complete; 17-07 (full re-UAT + phase close) remains pending*
 *Updated: 2026-04-22 — **Phase 17 COMPLETE** (Plan 17-07 finalized; full 20-nav-entry Chrome MCP re-UAT confirms 20/20 demos render, all 7 original gaps closed, G-08 architectural debt resolved; VERIFICATION.md status: verified; v1.2 progress now 2/5 phases — Phases 16 + 17 done; Phase 18 (Catalog) is unblocked)*
+*Updated: 2026-04-23 — **Phase 18 COMPLETE** (8/8 plans; all 5 catalog screens — CAT-01 Buttons, CAT-02 Forms, CAT-03 DataTable, CAT-04 Feedback, CAT-05 Typography — validated via Chrome MCP UAT at desktop + mobile + goal-backward audit; v1.2 progress 3/5 phases; Phase 19 unblocked)*
+*Updated: 2026-04-24 — **Phase 19 COMPLETE** (all 3 exercisers ship; EXER-01 observation matrix + v1.3 appshell-nestability seed delivered per D-1; PATCH-02 invariant upheld under client-initiated tick — 10 s × 500 ms ws probe showed 19 patches with 0 Pitfall 2 violations + 20 s Playwright focus-retention test preserved focus / typed value / cursor position; EXER-03 4 advisory perf baselines recorded — TTFP 140 ms, FPS 59.9, memory +0 MB all within D-3 targets; 2 v1.3 seeds drafted (appshell-nestability + exerciser-instrumentation); v1.2 progress 4/5 phases — Phase 20 Live Token Editor is the last remaining phase of v1.2)*

@@ -43,9 +43,9 @@ Defined 2026-04-22 during Phase 17 UAT after `DEMO-01`/`DEMO-02`/`CRATE-01`/`CRA
 
 ### Exerciser screens (frontend robustness)
 
-- [ ] **EXER-01**: Gallery includes a Nested AppShell screen where an outer AppShell hosts an inner AppShell in its content slot. Demonstrates whether shadcn `SidebarProvider` context, mobile-sheet behaviour, keyboard shortcut handling, and `--sidebar-*` CSS tokens compose under nesting — and captures any gaps as deferred items.
-- [ ] **EXER-02**: Gallery includes a Rapid Patching screen that fires node patches at a configurable interval (default ~500ms) while a text input retains focus. Verifies PATCH-02's focus-preservation invariant under sustained mutation pressure.
-- [ ] **EXER-03**: Gallery includes a Pathological Scale screen combining a DataTable with ≥10 000 synthetic rows and a FormScreen with ≥80 synthetic fields on a single page — captures performance baselines and surfaces scaling issues in the frontend surface store, virtualizer, and SurfaceMount patch application.
+- [x] **EXER-01**: Gallery includes a Nested AppShell screen where an outer AppShell hosts an inner AppShell in its content slot. Demonstrates whether shadcn `SidebarProvider` context, mobile-sheet behaviour, keyboard shortcut handling, and `--sidebar-*` CSS tokens compose under nesting — and captures any gaps as deferred items. Validated 2026-04-24 — see [19-02-SUMMARY.md](phases/19-exerciser-screens/19-02-SUMMARY.md) and [19-VERIFICATION.md](phases/19-exerciser-screens/19-VERIFICATION.md).
+- [x] **EXER-02**: Gallery includes a Rapid Patching screen that fires node patches at a configurable interval (default ~500ms) while a text input retains focus. Verifies PATCH-02's focus-preservation invariant under sustained mutation pressure. Validated 2026-04-24 — see [19-03-SUMMARY.md](phases/19-exerciser-screens/19-03-SUMMARY.md) and [19-VERIFICATION.md](phases/19-exerciser-screens/19-VERIFICATION.md).
+- [x] **EXER-03**: Gallery includes a Pathological Scale screen combining a DataTable with ≥10 000 synthetic rows and a FormScreen with ≥80 synthetic fields on a single page — captures performance baselines and surfaces scaling issues in the frontend surface store, virtualizer, and SurfaceMount patch application. Validated 2026-04-24 — see [19-04-SUMMARY.md](phases/19-exerciser-screens/19-04-SUMMARY.md) and [19-VERIFICATION.md](phases/19-exerciser-screens/19-VERIFICATION.md).
 
 ### Theme tools (force multiplier, scope-flexible)
 
@@ -92,15 +92,15 @@ Populated by `/gsd-plan-phase` runs as phases are defined.
 | CAT-03   | Phase 18 | 18-03, 18-06 | ✅ Validated 2026-04-23 ([18-06-SUMMARY.md](phases/18-catalog-screens/18-06-SUMMARY.md)) |
 | CAT-04   | Phase 18 | 18-07 | ✅ Validated 2026-04-23 ([18-07-SUMMARY.md](phases/18-catalog-screens/18-07-SUMMARY.md)) |
 | CAT-05   | Phase 18 | 18-08 | ✅ Validated 2026-04-23 ([18-08-SUMMARY.md](phases/18-catalog-screens/18-08-SUMMARY.md)) |
-| EXER-01  | Phase 19 | — | Pending |
-| EXER-02  | Phase 19 | — | Pending |
-| EXER-03  | Phase 19 | — | Pending |
+| EXER-01  | Phase 19 | 19-02 | ✅ Validated 2026-04-24 ([19-02-SUMMARY.md](phases/19-exerciser-screens/19-02-SUMMARY.md)) |
+| EXER-02  | Phase 19 | 19-03 | ✅ Validated 2026-04-24 ([19-03-SUMMARY.md](phases/19-exerciser-screens/19-03-SUMMARY.md)) |
+| EXER-03  | Phase 19 | 19-04 | ✅ Validated 2026-04-24 ([19-04-SUMMARY.md](phases/19-exerciser-screens/19-04-SUMMARY.md)) |
 | THEME-01 | Phase 20 | — | Pending |
 
 **Coverage:**
 - v1.2 requirements: 20 total (16 original + 4 Phase 17 UAT gap-closure SCs added 2026-04-22)
 - Mapped to phases: 20 (Phases 16–20)
-- Validated: 8 (CRATE-01, CRATE-02, DEMO-01, DEMO-02, SC-17-05, SC-17-06, SC-17-07, SC-17-08 — all of Phase 17)
+- Validated: 16 (all of Phase 17 — CRATE-01, CRATE-02, DEMO-01, DEMO-02, SC-17-05, SC-17-06, SC-17-07, SC-17-08 + all of Phase 18 — CAT-01..CAT-05 + all of Phase 19 — EXER-01, EXER-02, EXER-03)
 - Unmapped: 0
 
 ---
@@ -110,3 +110,5 @@ Populated by `/gsd-plan-phase` runs as phases are defined.
 *Updated: 2026-04-22 — SC-17-06 validated via Chrome MCP UAT (G-02 + G-05 closed; all 7 original Phase 17 gaps now fixed)*
 *Updated: 2026-04-22 — SC-17-08 validated via cargo build/test/clippy gates (G-08 stranded Modal builder cleanup; struct deleted, modal nav entry preserved via doc-stub host, GALLERY-DEMOS.md §Popup composition section added)*
 *Updated: 2026-04-22 — **Phase 17 COMPLETE**: SC-17-07 validated via full Chrome MCP re-UAT walk; 4 phase requirement IDs (CRATE-01, CRATE-02, DEMO-01, DEMO-02) marked validated; coverage bumps validated count from 3 to 8 (all of Phase 17)*
+*Updated: 2026-04-23 — **Phase 18 COMPLETE**: CAT-01..CAT-05 validated via Chrome MCP UAT + goal-backward audit; coverage bumps to 13*
+*Updated: 2026-04-24 — **Phase 19 COMPLETE**: EXER-01/02/03 validated via server-driven WebSocket probe + Playwright UAT (desktop + mobile); 2 v1.3 seeds opened (appshell-nestability from 19-02 per D-1; exerciser-instrumentation from 19-05 UAT finding); coverage bumps to 16 — v1.2 now 4/5 phases done, Phase 20 (Live Token Editor) the last remaining phase*

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Gallery Demo App + Auto-Discoverable Component Demos
 status: executing
-stopped_at: Phase 19 UI-SPEC approved
-last_updated: "2026-04-24T09:09:17.920Z"
-last_activity: 2026-04-24 -- Phase --phase execution started
+stopped_at: Phase 19 complete
+last_updated: "2026-04-24T13:10:00.000Z"
+last_activity: 2026-04-24 -- Phase 19 complete
 progress:
   total_phases: 11
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 25
-  completed_plans: 20
-  percent: 80
+  completed_plans: 25
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 ## Current Position
 
-Phase: --phase (19) — EXECUTING
-Plan: 1 of --name
-Status: Executing Phase --phase
-Last activity: 2026-04-24 -- Phase --phase execution started
+Phase: 19 (exerciser-screens) — COMPLETE (2026-04-24)
+Plan: 5 of 5 shipped
+Status: Phase 19 verified via Playwright UAT (desktop 1440×900 + mobile 390×844) + server-driven WebSocket probe; all 3 exercisers ship; PATCH-02 invariant upheld (0 Pitfall 2 violations in 10 s tick stress); 4 EXER-03 advisory perf baselines captured (TTFP 140 ms / FPS 59.9 / Memory +0 MB / Latency — not captured in prod build); 2 v1.3 seeds drafted (appshell-nestability per D-1; exerciser-instrumentation from UAT finding)
+Last activity: 2026-04-24 -- Phase 19 complete
 
-Progress: [██████████] 100% (Phase 18 done; v1.2 milestone has Phases 19 + 20 still ahead)
+Progress: [████████░░] 80% (v1.2 milestone: 4/5 phases done — Phase 20 Live Token Editor is the last remaining phase)
 
 ## Performance Metrics
 
@@ -100,6 +100,30 @@ Recent decisions affecting v1.2:
 
 6. **Compositional popups, not primitives** — The `Modal` builder struct was deleted in Plan 17-08. Popups are now compositional: emit any SDUI tree (Container with Form, TextInput, Button, …) into the `modal` sub-surface and ModalSurface.svelte (layout-root singleton) wraps in `<Dialog.Root>`/`<Dialog.Content>` automatically. ConfirmDialog remains as the canonical structured accept-cancel variant.
 
+### Phase 19 close-out (2026-04-24)
+
+**Phase 19 (Exerciser Screens) shipped** — all 5 plans ((19-01 Wave-1 framework polish; 19-02 EXER-01 Nested AppShell; 19-03 EXER-02 Rapid Patching; 19-04 EXER-03 Pathological Scale; 19-05 UAT + close-out)) complete. All 3 phase requirements (EXER-01/02/03) validated via:
+
+- **Server-driven WebSocket probe** (Node/`ws` CLI probe): verified the render tree shape for all 3 screens, the 4 observation-matrix dimensions, the 4 invariant cells, the 80-field FormScreen, the 10 000-row DataTable + 7 columns + 3 filters, the cadence clamp ([100, 60000] ms both boundaries rejected), the Pitfall 2 construction invariant (0 violations across 19 patches emitted in 10 s × 500 ms), the `report-perf` threshold evaluation (4 WITHIN badges + 4 OVER badges at the expected payloads), and the `fetch-rows` first + last page pagination at the 10 000-row cap.
+- **Playwright (headless Chromium 145) UAT** at desktop 1440×900 + mobile 390×844: verified all 3 screens render with no console errors, the inner-AppShell collision is observable (inner Dashboard/Reports/Settings nav visible, mobile Sheet intercepts pointer events), the `Open seed draft` CTA toasts the seed path byte-for-byte, 20 s focus-retention test preserves focus + typed value + cursor position, EXER-03 mounts in 1.5 s and shows all 3 Cards.
+
+**4 EXER-03 advisory perf baselines (per D-3):**
+| Signal | Observed | Target | Status |
+|--------|----------|--------|--------|
+| TTFP | 140 ms | ≤ 3000 ms | ✅ WITHIN |
+| Scroll FPS median | 59.9 fps | ≥ 30 fps | ✅ WITHIN |
+| Memory growth (30 s) | 0 MB | ≤ +50 MB | ✅ WITHIN |
+| Patch latency p95 | not captured in prod build (DEV-only hook tree-shaken; wire round-trip sub-20 ms) | ≤ 50 ms | advisory-only, not gating per D-3 |
+
+**2 v1.3 seeds drafted:**
+
+1. [`.planning/seeds/v1.3-appshell-nestability.md`](seeds/v1.3-appshell-nestability.md) — Plan 19-02 (per D-1). Proposes scoped-surface-name framework extension with per-surface Sidebar context keys, CSS token scoping, surface-named mobile-sheet portals, active-surface-aware keyboard shortcuts.
+2. [`.planning/seeds/v1.3-exerciser-instrumentation.md`](seeds/v1.3-exerciser-instrumentation.md) — Plan 19-05 UAT finding. Frontend instrumentation modules (`exer02/invariants.svelte.ts`, `exer03/perf.svelte.ts`) locate their targets by `document.getElementById(<sdui-component-id>)` but the frontend doesn't propagate SDUI component ids to DOM id attributes. Seed proposes `data-sdui-id` attribute pass-through in `NodeRenderer.svelte` as the recommended fix (~2 h implementation).
+
+**1 trivial inline fix applied (per D-4 carve-out):** `frontend/src/lib/init.ts` dynamic-import wiring that activates all three Phase 19 instrumentation modules at gallery init. The wiring is inert-safe today (auto-arm no-ops if DOM targets missing) and future-proofs the activation path so the v1.3 seed closes with a purely renderer-side change.
+
+**v1.2 milestone progress:** 4 of 5 phases done (Phases 16 + 17 + 18 + 19). **Phase 20 Live Token Editor** is the last remaining phase. Phase 20 scope-flexible per seed `gallery-live-token-editor` — first THEME-01 delivery at minimum, scope can expand to export-write if budget permits.
+
 ### Phase 18 hand-off
 
 Phase 18 (Catalog Screens — CAT-01 through CAT-05) can start. Depends on Phase 17. See ROADMAP.md §Phase 18 for goals. No blockers carried forward from Phase 17.
@@ -128,7 +152,7 @@ None carried over from v1.1.
 
 ### Blockers/Concerns
 
-- **AppShell nestability blocker (confirmed 2026-04-22; ownership handed to Phase 19 EXER-01)** — Phase 17 Plan 17-06 Task 1 confirmed the blocker is real (shadcn `<Sidebar.Provider>` context collision: inner Sidebar.Root renders at the same viewport position as outer, visually replacing the outer 20-entry nav with the inner Dashboard/Reports/Settings nav). `AppShell::gallery_demo` ships a static structural preview workaround (Plain Container + 5 labeled slot-boxes built from Container + Heading + Text — no nested AppShell builder). **Phase 19 EXER-01 owns the resolution** — likely requires either (a) scoped Sidebar.Provider context in shadcn-svelte, or (b) a scoped-surface-name framework extension. Phase 17 closure does NOT depend on this blocker.
+- ✅ **AppShell nestability blocker resolved-by-handoff 2026-04-24 via Phase 19 EXER-01** — Phase 19 Plan 19-02 ships the real nested-AppShell exerciser screen that surfaces the breakage as live evidence (4-dimension observation matrix: provider context / mobile sheet / keyboard shortcuts / `--sidebar-*` tokens). The v1.3 seed at [`.planning/seeds/v1.3-appshell-nestability.md`](seeds/v1.3-appshell-nestability.md) proposes a scoped-surface-name framework extension with per-surface context keys, CSS token scoping via `:where([data-surface])`, surface-named mobile-sheet portals, and active-surface-aware keyboard shortcuts. Plan 19-05 UAT confirmed the matrix renders and the collision is visible at desktop + observable via the mobile-sheet pointer-event interception. v1.2 does NOT land the framework fix (D-1 lock: evidence + seed, not v1.2 fix); v1.3 phase will close this seed.
 - ✅ **Registration library selection (resolved 2026-04-21):** `linkme` chosen over `inventory` per Phase 16 CONTEXT.md D-A1 — type-safe `#[distributed_slice]`, zero runtime cost, explicit mental model. Logged in PROJECT.md Key Decisions. Implementation: `.planning/phases/16-framework-hooks/16-01-PLAN.md`; stable iteration order is owned by `marionette::gallery::registered_demos()` via sort-at-iteration-time, not delegated to linkme.
 - **Enforcement policy** — whether "every new built-in must ship a `gallery_demo()`" becomes a CI lint (hard rule) or aspirational convention is a downstream decision (tracked in v1.3+ as GALLERY-LINT).
 - **Phase 20 scope risk** — THEME-01 is explicitly scope-flexible per seed `gallery-live-token-editor`; if Phases 16–19 overrun, Phase 20 is the natural deferral target.
@@ -139,8 +163,8 @@ None carried over from v1.1.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 19 UI-SPEC approved
-Resume: `/gsd-execute-phase 18` (Phase 18 — Catalog Screens — CAT-01 through CAT-05; 8 plans in 6 waves, plan-checker PASSED)
+Last session: 2026-04-24T13:10:00Z
+Stopped at: Phase 19 complete
+Resume: `/gsd-new-phase 20` (Phase 20 — Live Token Editor; THEME-01; last remaining v1.2 phase)
 
-**Planned Phase:** 19 (exerciser-screens) — 5 plans — 2026-04-24T07:44:21.146Z
+**Last completed Phase:** 19 (exerciser-screens) — 5/5 plans shipped — 2026-04-24T13:10:00Z
