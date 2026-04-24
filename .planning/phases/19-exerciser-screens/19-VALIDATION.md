@@ -40,9 +40,12 @@ created: 2026-04-24
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | EXER-01 | — | N/A (no untrusted input) | unit / browser-test | TBD | ⬜ W0 | ⬜ pending |
-| TBD | TBD | TBD | EXER-02 | — | N/A | browser-test | TBD | ⬜ W0 | ⬜ pending |
-| TBD | TBD | TBD | EXER-03 | — | N/A | cargo test + manual | TBD | ⬜ W0 | ⬜ pending |
+| 19-01-T1 | 19-01 | 1 | EXER-01/02/03 (framework) | — | N/A (no untrusted input; client-side UI registry + probe slot) | vitest unit | `cd frontend && pnpm exec vitest run src/lib/init.patchprobe.test.ts` | ✅ `frontend/src/lib/init.patchprobe.test.ts` | ✅ green (5/5) |
+| 19-01-T2 | 19-01 | 1 | EXER-02 (state backbone) + EXER-01/03 (module scaffold) | — | N/A (in-memory state, anonymous session) | cargo unit | `cd backend && cargo test -p gallery-demo --features gallery state::tests` | ✅ `backend/crates/gallery-demo/src/{state.rs,exerciser/mod.rs,exerciser/nested_appshell.rs,exerciser/rapid_patching.rs,exerciser/pathological_scale.rs,lib.rs}` | ✅ green (2/2) |
+| 19-01-T3 | 19-01 | 1 | EXER-01/02/03 (seeds + route stubs) | T-19-01 (stub-safe), T-19-03 (10k-row accept) | Stub handlers do not deserialise cadence_ms or perf payloads — T-19-01 mitigate disposition ships in Plan 19-03 | cargo unit + router-dispatch | `cd backend && cargo test -p gallery-demo --features gallery handlers::show::tests handlers::fetch_rows::tests::exer03 handlers::router_tests` | ✅ `backend/crates/gallery-demo/src/handlers/{fetch_rows.rs,show.rs,exer01.rs,exer02.rs,exer03.rs,mod.rs}` | ✅ green (13+ new cases) |
+| TBD | 19-02 | 2 | EXER-01 | — | N/A (no untrusted input) | unit / browser-test | TBD | ⬜ pending Plan 19-02 | ⬜ pending |
+| TBD | 19-03 | 2 | EXER-02 | T-19-01 (cadence clamp) | cadence_ms ∈ [100, 60_000] enforced at handle_exer02_start (framework ships 19-01) | browser-test | TBD | ⬜ pending Plan 19-03 | ⬜ pending |
+| TBD | 19-04 | 2 | EXER-03 | T-19-03 (10k row accept) | 10_000-row cap lives in handlers::fetch_rows.rs (shipped 19-01) | cargo test + manual | TBD | ⬜ pending Plan 19-04 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -52,10 +55,10 @@ created: 2026-04-24
 
 *Populated by gsd-planner. Candidate items from RESEARCH.md:*
 
-- [ ] 16 new lucide icons appended to `frontend/src/lib/registry/icons.ts` defaults
-- [ ] `installPatchProbe` hook in `frontend/src/lib/init.ts` (instrumentation shared by EXER-02 + EXER-03)
-- [ ] Synthetic row generator parameter bump (`synthetic_rows(10_000)` path in `backend/crates/gallery-demo/src/fixtures.rs`)
-- [ ] Spike of A1 — backend `PatchMessage` out-of-band push capability (gates EXER-02 Pattern 2; fallback is client-initiated tick)
+- [x] 17 new lucide icons appended to `frontend/src/lib/registry/icons.ts` defaults (16 from UI-SPEC + rotate-ccw; Plan 19-01 Task 1)
+- [x] `installPatchProbe` hook in `frontend/src/lib/init.ts` (instrumentation shared by EXER-02 + EXER-03; Plan 19-01 Task 1)
+- [x] Synthetic row generator parameter bump covered by `exer-03-synthetic` source arm in `handlers/fetch_rows.rs` calling `synthetic_rows(10_000)` (generator itself in `fixtures.rs` already accepts any n; Plan 19-01 Task 3)
+- [x] A1 resolved: client-initiated tick. Route `gallery-demo/exer-02/tick` reserved + reachability-verified; per-tick Patch returned through the normal ActionResult return path. Rationale: `marionette::ws::AppState` does not expose a broadcast channel, and extending it is a framework change out of scope per 19-CONTEXT.md §D-4. Full resolution ships in Plan 19-03.
 
 ---
 
