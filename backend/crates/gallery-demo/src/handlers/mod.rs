@@ -21,8 +21,10 @@ pub mod toast;
 
 /// Register every gallery-demo action handler on the given router, in a single
 /// helper for readability. Action names match CONTEXT.md §D-C4 with the
-/// frontend-hardcoded `close-modal` + `dismiss-toast` names included per
-/// RESEARCH.md §Pitfall 3.
+/// frontend-hardcoded `close-modal` name included per RESEARCH.md §Pitfall 3.
+/// (Legacy `dismiss-toast` removed in the sonner migration — toasts are now
+/// dispatched as `type: "event"` and sonner owns dismissal. See CONCEPT.md
+/// §"Where the Client Is Smart".)
 #[must_use]
 pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
     // Force-link external demo crates (currently just gallery-smoke) so the
@@ -40,7 +42,6 @@ pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
         .action("gallery-demo/confirm-accept", box_handler(confirm::handle_confirm_accept), AuthRequirement::None)
         .action("gallery-demo/confirm-reject", box_handler(confirm::handle_confirm_reject), AuthRequirement::None)
         .action("gallery-demo/toast-fire", box_handler(toast::handle_toast_fire), AuthRequirement::None)
-        .action("dismiss-toast", box_handler(toast::handle_dismiss_toast), AuthRequirement::None)
         .action("fetch-rows", box_handler(fetch_rows::handle_demo_fetch_rows), AuthRequirement::None)
         // --- CAT-02 blur-validate handlers (Phase 18 Plan 18-05) ---
         // Six validators demonstrate Phase 12 node-tree ops (set-node /

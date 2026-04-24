@@ -14,11 +14,10 @@
 
 use std::collections::HashMap;
 
-use marionette::builders::{Button, ConfirmDialog, Container};
+use marionette::builders::{ConfirmDialog, Container};
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;
-use marionette_protocol::data::PatchOperation;
-use marionette_protocol::messages::{PatchMessage, RenderMessage};
+use marionette_protocol::messages::{EventMessage, RenderMessage};
 use marionette_protocol::{Component, ComponentAction, ProtocolMessage};
 
 #[allow(clippy::unused_async)]
@@ -65,24 +64,9 @@ async fn confirm_close_with_toast(ctx: HandlerContext, choice: &str) -> ActionRe
     let mut modal_map: HashMap<String, Component> = HashMap::new();
     modal_map.insert(modal_empty_id.clone(), modal_empty);
 
-    // 2. Enqueue a toast naming the choice
-    let toast_id = format!("toast-confirm-{}", uuid::Uuid::new_v4());
-    let toast_label = format!("Confirm {choice}");
-    let (_, toast_node) = Button::new(toast_label)
-        .id(&toast_id)
-        .action(ComponentAction::click("dismiss-toast"))
-        .build();
-    let toast_ops = vec![
-        PatchOperation::SetNode {
-            id: toast_id.clone(),
-            component: toast_node,
-        },
-        PatchOperation::InsertChild {
-            parent: "toasts-root".into(),
-            index: 0,
-            child_id: toast_id,
-        },
-    ];
+    // 2. Fire a `toast` event naming the choice. Severity maps intent:
+    //    accept → success (green), reject → info (neutral).
+    let severity = if choice == "accepted" { "success" } else { "info" };
 
     Ok(vec![
         ProtocolMessage::Render(RenderMessage {
@@ -92,10 +76,15 @@ async fn confirm_close_with_toast(ctx: HandlerContext, choice: &str) -> ActionRe
             nodes: modal_map,
             data: serde_json::json!({}),
         }),
-        ProtocolMessage::Patch(PatchMessage {
+        ProtocolMessage::Event(EventMessage {
             id: None,
-            surface: "toasts".into(),
-            patch: toast_ops,
+            name: "toast".into(),
+            surface: None,
+            hint: Some(serde_json::json!({
+                "message": format!("Confirm {choice}"),
+                "severity": severity,
+                "duration": 3000,
+            })),
         }),
     ])
 }

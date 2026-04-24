@@ -3,8 +3,13 @@
 //! Emits three Renders in canonical order:
 //! 1. `main` sub-surface — the AppShell with sidebar iterating `registered_demos()` (CRATE-02)
 //! 2. `content` sub-surface — the Home page (D-C2)
-//! 3. `toasts` sub-surface — an empty `toasts-root` Container so subsequent
-//!    `PatchOperation::InsertChild` calls have a valid parent (D-B15 parallel).
+//! 3. `modal` sub-surface — a `modal-empty` Container sentinel so ModalSurface
+//!    doesn't render its LoadingSkeleton on first paint.
+//!
+//! Toasts are NOT seeded — the sonner migration moved toasts off the
+//! SurfaceMount-based path; they're now `type: "event"` with `name: "toast"`
+//! rendered by svelte-sonner at the layout root. See CONCEPT.md
+//! §"Where the Client Is Smart".
 
 use std::collections::HashMap;
 
@@ -79,11 +84,9 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
     let content_mount = SurfaceMount::new("content")
         .id("shell-content-mount")
         .build();
-    let toasts_mount = SurfaceMount::new("toasts")
-        .id("shell-toasts-mount")
-        .build();
 
     // -- Assemble AppShell --
+    // No `.toasts(...)` — toasts ship as sonner events now (see module docstring).
     let mut descendants: Vec<(String, Component)> = Vec::new();
     descendants.extend(sidebar_desc);
     descendants.extend(header_desc);
@@ -95,7 +98,6 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
         .header(header_root)
         .footer(footer_root)
         .main(content_mount)
-        .toasts(toasts_mount)
         .with_descendants(descendants)
         .build_with_children();
 
@@ -109,11 +111,6 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
 
     // -- Home page --
     let (home_root_id, home_nodes_map, home_data) = build_home_page();
-
-    // -- Toasts root seed (Container so InsertChild has a parent) --
-    let (toasts_root_tuple, _) = Container::new().id("toasts-root").build_tree();
-    let mut toasts_map: HashMap<String, Component> = HashMap::new();
-    toasts_map.insert(toasts_root_tuple.0.clone(), toasts_root_tuple.1);
 
     // -- Modal root seed (Container so ModalSurface does not render LoadingSkeleton) --
     //
@@ -144,13 +141,6 @@ pub async fn handle_navigate(_ctx: HandlerContext) -> ActionResult {
             root: home_root_id,
             nodes: home_nodes_map,
             data: home_data,
-        }),
-        ProtocolMessage::Render(RenderMessage {
-            id: None,
-            surface: "toasts".into(),
-            root: toasts_root_tuple.0,
-            nodes: toasts_map,
-            data: serde_json::json!({}),
         }),
         ProtocolMessage::Render(RenderMessage {
             id: None,
