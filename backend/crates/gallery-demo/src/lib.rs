@@ -23,6 +23,7 @@
 #![allow(clippy::doc_markdown)]
 
 pub mod catalog;
+pub mod exerciser; // Phase 19 — EXER-01/02/03 screens
 pub mod fixtures;
 pub mod handlers;
 pub mod home;
