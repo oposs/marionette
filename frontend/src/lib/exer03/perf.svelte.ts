@@ -172,6 +172,23 @@ export function reportPerf(snapshot: PerfSnapshot): void {
 // so this module stays decoupled from the gallery's component registry.
 // Import-time effect is gated on `typeof window !== 'undefined'` to keep
 // SSR safe.
+//
+// Known-bounded leak (intentional for v1.2; see 19-REVIEW.md WR-01):
+//   Unlike EXER-02's `autoArm()` which returns a cleanup, this auto-arm
+//   block does NOT expose a teardown path. Once armed, the following
+//   resources live for the page lifetime:
+//     - The 30-second `setTimeout` fires a `reportPerf` round-trip even
+//       if the user has navigated away from the EXER-03 screen.
+//     - The capture-phase `scroll` handler is removed on its first
+//       invocation, but if the user never scrolls it stays registered.
+//     - The module-level `MutationObserver` (see below) keeps observing
+//       `document.body` for the tab lifetime (see IN-05).
+//   These are one-shot timers / cheap short-circuit handlers, so the
+//   impact is bounded (one stale `report-perf` message at t+30 s and a
+//   per-mutation short-circuit check). Do NOT assume symmetry with
+//   EXER-02's cleanup pattern when reading this code — cancellability
+//   is deferred to v1.3 when the exerciser instrumentation seed
+//   (.planning/seeds/v1.3-exerciser-instrumentation.md) lands.
 
 if (typeof window !== 'undefined') {
 	let armed = false;
