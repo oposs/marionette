@@ -124,18 +124,21 @@ pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
 
 #[cfg(test)]
 mod router_tests {
-    //! Plan 19-01 -> 19-03 handoff guard (Test 8 per 19-01-PLAN.md).
+    //! Phase 19 exerciser route reachability tests.
     //!
-    //! The `gallery-demo/exer-02/tick` route MUST be reachable through the
-    //! registered router AND return `Ok(vec![])` from the Plan 19-01 stub.
-    //! If someone later renames the route or drops the `.action(...)` call
-    //! for tick, this test fails immediately, surfacing the regression
-    //! before Plan 19-03 tries to build on top.
+    //! Originally written in Plan 19-01 as the 19-01 -> 19-03 handoff guard
+    //! when all 7 handlers were `Ok(vec![])` stubs (assertion: "dispatch
+    //! returns an empty Vec"). Updated in Plan 19-03 when the exer-02
+    //! handlers shipped real PatchMessage-emitting bodies: the assertion
+    //! now checks "dispatch does NOT return a NotFound error" (the
+    //! underlying reachability property), which survives both the stub era
+    //! and the real-implementation era.
     //!
     //! ActionRouter::dispatch returns `Vec<ProtocolMessage>` (not a Result).
-    //! Unknown routes produce a single `ProtocolMessage::Error`; a successful
-    //! empty-stub dispatch returns an empty Vec (the stub's `Ok(vec![])`
-    //! becomes the handler's `Vec<ProtocolMessage>` wire return).
+    //! Unknown routes produce a single `ProtocolMessage::Error` whose
+    //! message contains "Action not found"; successful dispatches return
+    //! whatever the handler builds (empty Vec for Plan 19-01 stubs, a
+    //! single PatchMessage for Plan 19-03 real handlers).
     use super::*;
 
     use std::sync::Arc;
@@ -172,17 +175,24 @@ mod router_tests {
     }
 
     #[tokio::test]
-    async fn exer_02_tick_route_is_reachable_and_returns_empty() {
+    async fn exer_02_tick_route_is_reachable() {
+        // Plan 19-01 stub returned Ok(vec![]); Plan 19-03 real handler returns
+        // a single PatchMessage. Assert the underlying reachability property
+        // that survives both eras: dispatch produces no NotFound error.
         let router = register_gallery_actions(ActionRouter::new());
         let result = router.dispatch(ctx_for("gallery-demo/exer-02/tick")).await;
 
-        // Reachability: NOT a NotFound Error. The Plan 19-01 stub's `Ok(vec![])`
-        // serialises to an empty Vec<ProtocolMessage> on the wire.
-        assert!(
-            result.is_empty(),
-            "gallery-demo/exer-02/tick must resolve to the Plan 19-01 stub \
-             returning Ok(vec![]); got {result:?}"
-        );
+        for msg in &result {
+            if let ProtocolMessage::Error(err) = msg {
+                for e in &err.errors {
+                    assert!(
+                        !e.message.contains("not found"),
+                        "gallery-demo/exer-02/tick must be registered; got: {}",
+                        e.message
+                    );
+                }
+            }
+        }
     }
 
     #[tokio::test]
@@ -208,9 +218,12 @@ mod router_tests {
 
     #[tokio::test]
     async fn all_seven_phase19_exerciser_routes_are_reachable() {
-        // Each of the 7 registered stubs must dispatch to Ok(vec![]) — no
-        // NotFound error for any of them. This is the broader reachability
-        // guard for Plans 19-02/03/04.
+        // Each of the 7 registered routes must NOT produce a NotFound error
+        // when dispatched. Broader reachability guard for Wave 2 plans.
+        //
+        // Plan 19-01 stubs returned Ok(vec![]); Plan 19-03 real handlers for
+        // exer-02 return PatchMessages. Future plans may fill in exer-01/03.
+        // The invariant surviving all eras is "the route is registered".
         let dispatcher = register_gallery_actions(ActionRouter::new());
         let route_names = [
             "gallery-demo/exer-01/report",
@@ -223,11 +236,17 @@ mod router_tests {
         ];
         for name in route_names {
             let result = dispatcher.dispatch(ctx_for(name)).await;
-            assert!(
-                result.is_empty(),
-                "route {name} must dispatch to Plan 19-01 stub Ok(vec![]); \
-                 got {result:?}"
-            );
+            for msg in &result {
+                if let ProtocolMessage::Error(err) = msg {
+                    for e in &err.errors {
+                        assert!(
+                            !e.message.contains("not found"),
+                            "route {name} must be registered; got: {}",
+                            e.message
+                        );
+                    }
+                }
+            }
         }
     }
 }
