@@ -86,6 +86,11 @@ pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {
             AuthRequirement::None,
         )
         .action(
+            "gallery-demo/exer-01/open-seed",
+            box_handler(exer01::handle_exer01_open_seed),
+            AuthRequirement::None,
+        )
+        .action(
             "gallery-demo/exer-02/start",
             box_handler(exer02::handle_exer02_start),
             AuthRequirement::None,

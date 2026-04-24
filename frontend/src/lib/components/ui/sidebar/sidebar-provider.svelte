@@ -33,6 +33,20 @@
 			document.cookie = `${SIDEBAR_COOKIE_NAME}=${open}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
 		},
 	});
+
+	// Phase 19 EXER-01 probe hook — see frontend/src/lib/exer01/observe.svelte.ts.
+	// Exposes the OUTER Sidebar.Provider's state handle on `window` so the
+	// nestability probe can compare it against the inner provider's handle
+	// obtained via `getContext` from inside EXER-01's inner shell. Gated on
+	// DEV so production builds ship nothing. The first-mount guard ensures
+	// the inner provider's setSidebar does NOT clobber the outer handle —
+	// Svelte mounts outer before inner, so whichever mounts first is outer.
+	if (import.meta.env.DEV && typeof window !== "undefined") {
+		const w = window as unknown as { __mrnExer01OuterSidebar?: unknown };
+		if (w.__mrnExer01OuterSidebar === undefined) {
+			w.__mrnExer01OuterSidebar = sidebar;
+		}
+	}
 </script>
 
 <svelte:window onkeydown={sidebar.handleShortcutKeydown} />
