@@ -1,7 +1,28 @@
-node_modules/
-build/
-.svelte-kit/
-dist/
-test-results/
-.vitest-attachments/
+# Permission-model .gitignore: deny everything by default,
+# then explicitly allow tracked entries. Adding a new file or
+# directory at this level requires updating this file.
+
+# Deny everything at frontend/.
+/*
+
+# Allowed entries.
+!/.gitignore
+!/.prettierignore
+!/.prettierrc
+!/components.json
+!/eslint.config.js
+!/package.json
+!/package-lock.json
+!/playwright.config.ts
+!/playwright.e2e.config.ts
+!/src/
+!/static/
+!/svelte.config.js
+!/tests/
+!/tsconfig.json
+!/vite.config.ts
+!/vitest-browser.config.ts
+
+# Recursive denies that apply inside the allowed directories above.
+# (vitest browser snapshot tests dump these under src/ subtrees.)
 **/__screenshots__/

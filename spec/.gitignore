@@ -1,2 +1,17 @@
-node_modules/
-dist/
+# Permission-model .gitignore: deny everything by default,
+# then explicitly allow tracked entries. Adding a new file or
+# directory at this level requires updating this file.
+
+# Deny everything at spec/.
+/*
+
+# Allowed entries.
+!/.gitignore
+!/.gitkeep
+!/.redocly.yaml
+!/PROTOCOL.md
+!/examples/
+!/openapi.yaml
+!/package.json
+!/package-lock.json
+!/schemas/

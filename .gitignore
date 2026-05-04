@@ -1,2 +1,26 @@
-/.claude/worktrees/
-*~
+# Permission-model .gitignore: deny everything by default,
+# then explicitly allow tracked entries. Adding a new top-level
+# file or directory requires updating this file.
+#
+# Each allowed subdirectory carries its own .gitignore that
+# continues the same model.
+
+# Deny everything at the repo root.
+/*
+
+# Allowed top-level directories.
+!/.github/
+!/.planning/
+!/backend/
+!/docs/
+!/frontend/
+!/spec/
+
+# Allowed top-level files.
+!/.gitignore
+!/.mcp.json
+!/LICENSE
+!/Makefile
+!/README.md
+!/TOOLING.md
+!/mise.toml

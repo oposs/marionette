@@ -1,3 +1,14 @@
-target/
-crm.db
-crm.db-journal
+# Permission-model .gitignore: deny everything by default,
+# then explicitly allow tracked entries. Adding a new file or
+# directory at this level requires updating this file.
+
+# Deny everything at backend/.
+/*
+
+# Allowed entries.
+!/.gitignore
+!/.planning/
+!/Cargo.lock
+!/Cargo.toml
+!/crates/
+!/rustfmt.toml
