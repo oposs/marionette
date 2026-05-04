@@ -4,7 +4,7 @@
 //! Toasts are dispatched via `type: "event"` with `name: "toast"` and a
 //! structured hint (message / severity / duration / action / component).
 //! The client (svelte-sonner in the reference frontend) owns the overlay
-//! chrome — stacking, fade, countdown, dismissal. See docs/SDUI-CONCEPT.md
+//! chrome — stacking, fade, countdown, dismissal. See docs/OpenSDUI-CONCEPT.md
 //! §"Where the Client Is Smart" for the protocol-vs-client boundary
 //! this reflects.
 //!

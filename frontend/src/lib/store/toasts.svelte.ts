@@ -11,7 +11,7 @@
  *   - { message, severity?, duration?, action: { label, action: { name, payload? } } }
  *   - { root, nodes, duration? }  // embedded SDUI tree via toast.custom()
  *
- * See docs/SDUI-CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
+ * See docs/OpenSDUI-CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
  * boundary this implements.
  */
 import { toast } from 'svelte-sonner';

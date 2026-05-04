@@ -4,7 +4,7 @@
 
 OpenSDUI is a server-driven UI protocol built on three primitives: **components**, **data**, and **messages**. A server describes what to render, a client knows how to render it. All communication flows over a single WebSocket connection using JSON text frames.
 
-> This document is the authoritative protocol reference. See `docs/SDUI-CONCEPT.md` for design motivation and background.
+> This document is the authoritative protocol reference. See `docs/OpenSDUI-CONCEPT.md` for design motivation and background.
 
 ## Three Primitives
 

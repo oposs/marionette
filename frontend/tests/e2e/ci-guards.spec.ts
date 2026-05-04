@@ -76,7 +76,7 @@ test.describe('Phase 13/14/15 CI guards', () => {
 					"'frontend/src/**' " +
 					"'backend/crates/**' " +
 					"'spec/**' " +
-					'docs/SDUI-CONCEPT.md ' +
+					'docs/OpenSDUI-CONCEPT.md ' +
 					'TOOLING.md',
 				{ cwd: REPO_ROOT, encoding: 'utf8' },
 			);
