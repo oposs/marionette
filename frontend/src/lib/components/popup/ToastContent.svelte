@@ -5,7 +5,7 @@
 	// Wrapper for sonner's `toast.custom()` path — renders a server-supplied
 	// SDUI node tree inside toast chrome. Sonner owns the overlay mechanics
 	// (stacking, fade, position, countdown); the tree here owns content.
-	// See CONCEPT.md §"Where the Client Is Smart".
+	// See docs/SDUI-CONCEPT.md §"Where the Client Is Smart".
 	//
 	// The toast lives outside any normal Surface, so we supply a synthetic
 	// surface name ("__toast__") for NodeRenderer. Data bindings on toast

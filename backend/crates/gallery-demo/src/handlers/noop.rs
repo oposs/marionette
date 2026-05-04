@@ -1,7 +1,7 @@
 //! `gallery-demo/noop` handler — catch-all fire-and-toast for leaf-demo
 //! components. Every leaf-demo Button/Switch/etc. dispatches this action;
 //! the handler fires a `toast` event naming the source action so the demo
-//! feels alive. The client renders via svelte-sonner (see CONCEPT.md
+//! feels alive. The client renders via svelte-sonner (see docs/SDUI-CONCEPT.md
 //! §"Where the Client Is Smart").
 
 use marionette::error::ActionResult;

@@ -23,7 +23,7 @@ pub mod toast;
 /// helper for readability. Action names match CONTEXT.md §D-C4 with the
 /// frontend-hardcoded `close-modal` name included per RESEARCH.md §Pitfall 3.
 /// (Legacy `dismiss-toast` removed in the sonner migration — toasts are now
-/// dispatched as `type: "event"` and sonner owns dismissal. See CONCEPT.md
+/// dispatched as `type: "event"` and sonner owns dismissal. See docs/SDUI-CONCEPT.md
 /// §"Where the Client Is Smart".)
 #[must_use]
 pub fn register_gallery_actions(router: ActionRouter) -> ActionRouter {

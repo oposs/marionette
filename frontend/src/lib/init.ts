@@ -84,7 +84,7 @@ export function initMarionette(wsUrl: string = '/ws'): void {
 		const msg = raw as EventMessage;
 		// Protocol-level notifications: route `name: "toast"` through sonner.
 		// Client owns chrome (stacking/fade/countdown); protocol owns content
-		// (message/severity/duration/action). See CONCEPT.md §"Where the
+		// (message/severity/duration/action). See docs/SDUI-CONCEPT.md §"Where the
 		// Client Is Smart".
 		if (msg.name === 'toast') {
 			showToast(msg.hint as Record<string, unknown> | undefined);

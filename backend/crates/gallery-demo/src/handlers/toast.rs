@@ -2,7 +2,7 @@
 //!
 //! `gallery-demo/toast-fire` dispatches a `toast` event — the client
 //! renders via svelte-sonner (stacking / fade / countdown); the server
-//! owns content. See CONCEPT.md §"Where the Client Is Smart".
+//! owns content. See docs/SDUI-CONCEPT.md §"Where the Client Is Smart".
 
 use marionette::error::ActionResult;
 use marionette::extractors::HandlerContext;

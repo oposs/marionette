@@ -25,9 +25,9 @@
 
 	// The bound value can take two shapes depending on producer:
 	//   1. string — a single field-error message (blur-validate handlers
-	//      write this at `/_errors/<field>` paths; see CONCEPT.md
+	//      write this at `/_errors/<field>` paths; see docs/SDUI-CONCEPT.md
 	//      "Errors as data").
-	//   2. ErrorEntry[] — a form-level error list (CONCEPT.md §Data).
+	//   2. ErrorEntry[] — a form-level error list (docs/SDUI-CONCEPT.md §Data).
 	// Previously this component cast the value as ErrorEntry[] unconditionally,
 	// which iterated a string as its characters — producing 29 empty boxes
 	// for "Enter a valid email address." Normalise to an ErrorEntry[] up

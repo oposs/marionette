@@ -33,7 +33,7 @@ pub mod data_table;
 //   popups-global architectural refactor.
 // - `toast`: the `Toast` struct was deleted in the sonner migration —
 //   toasts are now protocol events rendered by the client's sonner
-//   chrome (CONCEPT.md §"Where the Client Is Smart").
+//   chrome (docs/SDUI-CONCEPT.md §"Where the Client Is Smart").
 // No `pub use modal::*;` / `pub use toast::*;` re-exports since there
 // are no public types in these modules.
 pub mod modal;
@@ -90,7 +90,7 @@ mod tests {
         //   (see `GALLERY-DEMOS.md` §Popup composition).
         // - Sonner migration: `"toast"` removed — toasts are protocol events
         //   (`type: "event"`, `name: "toast"`) rendered by the client's
-        //   sonner chrome, not persistent SDUI nodes. See CONCEPT.md
+        //   sonner chrome, not persistent SDUI nodes. See docs/SDUI-CONCEPT.md
         //   §"Where the Client Is Smart".
         let types = vec![
             Button::new("x").build().1.r#type,

@@ -5,7 +5,7 @@
 //! - `handle_exer01_open_seed` — dispatches a `toast` event carrying the
 //!   seed file path. The client renders it via svelte-sonner chrome
 //!   (stacking / fade / countdown), not as a persistent SDUI node.
-//!   See CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
+//!   See docs/SDUI-CONCEPT.md §"Where the Client Is Smart" for the protocol-vs-client
 //!   boundary this leans on.
 //!
 //! Threat model (from 19-02-PLAN.md):
@@ -96,7 +96,7 @@ pub async fn handle_exer01_open_seed(ctx: HandlerContext) -> ActionResult {
 
     // Dispatch a `toast` event — the client renders via svelte-sonner
     // (stacking / fade / countdown). Protocol owns the message content and
-    // severity; client owns the overlay mechanics. See CONCEPT.md
+    // severity; client owns the overlay mechanics. See docs/SDUI-CONCEPT.md
     // §"Where the Client Is Smart".
     Ok(vec![ProtocolMessage::Event(EventMessage {
         id: ctx.action.id.clone(),

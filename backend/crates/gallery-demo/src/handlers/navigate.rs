@@ -8,7 +8,7 @@
 //!
 //! Toasts are NOT seeded — the sonner migration moved toasts off the
 //! SurfaceMount-based path; they're now `type: "event"` with `name: "toast"`
-//! rendered by svelte-sonner at the layout root. See CONCEPT.md
+//! rendered by svelte-sonner at the layout root. See docs/SDUI-CONCEPT.md
 //! §"Where the Client Is Smart".
 
 use std::collections::HashMap;
