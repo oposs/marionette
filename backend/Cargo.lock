@@ -3433,6 +3433,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tutorial-people-app"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "futures",
+ "marionette",
+ "marionette-macros",
+ "marionette-protocol",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite 0.26.2",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "typenum"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
