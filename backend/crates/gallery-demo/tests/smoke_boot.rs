@@ -22,7 +22,7 @@ async fn start_server() -> (String, u16) {
         router: action_router,
         db: Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection()),
         login_form: None,
-        listmonk: None,
+        extensions: marionette::Extensions::new(),
     });
 
     // Frontend build path, relative to the test's CARGO_MANIFEST_DIR

@@ -43,7 +43,7 @@ async fn main() {
         router: action_router,
         db,
         login_form: None,
-        listmonk: None,
+        extensions: marionette::Extensions::new(),
     });
 
     // Static file serving with SPA fallback (tower-http::ServeDir).

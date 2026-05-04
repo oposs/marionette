@@ -100,6 +100,7 @@ async fn handle_login_action(ctx: HandlerContext) -> ActionResult {
             user_id: Some(user_id.to_string()),
             roles: vec![user_role.clone()],
         },
+        extensions: ctx.extensions.clone(),
     };
 
     // Get the authenticated view
@@ -144,6 +145,7 @@ async fn handle_navigate(ctx: HandlerContext) -> ActionResult {
         action: ctx.action.clone(),
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     })
     .await?;
 
@@ -603,7 +605,7 @@ async fn main() {
         router: action_router,
         db,
         login_form: Some(build_login_form()),
-        listmonk: listmonk_client.map(|c| c as Arc<dyn std::any::Any + Send + Sync>),
+        extensions: marionette::Extensions::new(),
     });
 
     // Static files with SPA fallback

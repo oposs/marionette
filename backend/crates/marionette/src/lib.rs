@@ -12,6 +12,7 @@ pub mod auth;
 pub mod builders;
 pub mod db;
 pub mod error;
+pub mod extensions;
 pub mod extractors;
 pub mod gallery;
 pub mod migration;
@@ -22,6 +23,7 @@ pub mod ws;
 
 pub use db::{init_db, session as db_session, test_db};
 pub use error::*;
+pub use extensions::Extensions;
 pub use extractors::*;
 pub use marionette_macros::*;
 pub use marionette_protocol as protocol;

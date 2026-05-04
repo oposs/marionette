@@ -108,6 +108,7 @@ mod tests {
             },
             db: mock_db(),
             session,
+            extensions: crate::extensions::Extensions::new(),
         }
     }
 

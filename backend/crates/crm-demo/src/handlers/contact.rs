@@ -1421,6 +1421,7 @@ pub async fn handle_contact_tag_save(ctx: HandlerContext) -> ActionResult {
         action: form_action,
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     };
     handle_contact_form(form_ctx).await
 }
@@ -1463,6 +1464,7 @@ pub async fn handle_contact_tag_remove(ctx: HandlerContext) -> ActionResult {
         action: form_action,
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     };
     handle_contact_form(form_ctx).await
 }

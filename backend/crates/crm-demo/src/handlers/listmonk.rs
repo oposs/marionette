@@ -191,6 +191,7 @@ pub async fn handle_listmonk_sync(ctx: HandlerContext) -> ActionResult {
         action: form_action,
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     };
     super::contact::handle_contact_form(form_ctx).await
 }
@@ -262,6 +263,7 @@ pub async fn handle_listmonk_sync_all(ctx: HandlerContext) -> ActionResult {
         action: ctx.action.clone(),
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     })
     .await
 }
@@ -451,6 +453,7 @@ pub async fn handle_listmonk_history_refresh(ctx: HandlerContext) -> ActionResul
         action: form_action,
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     };
     super::contact::handle_contact_form(form_ctx).await
 }

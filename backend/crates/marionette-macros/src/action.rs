@@ -18,8 +18,15 @@ pub fn action_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error(),
     };
 
-    // Convert "save-contact" -> "SAVE_CONTACT"
-    let const_name_str = name_value.replace('-', "_").to_uppercase();
+    // Build a valid Rust identifier from the action name. Any character that
+    // isn't `[A-Za-z0-9_]` (typically `-`, `/`, `.` used as namespacing
+    // separators in action names like `"app/add-person"`) becomes `_`, then
+    // the whole thing is uppercased: `"app/add-person"` -> `"APP_ADD_PERSON"`.
+    let const_name_str: String = name_value
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+        .collect::<String>()
+        .to_uppercase();
     let const_ident = Ident::new(&const_name_str, proc_macro2::Span::call_site());
 
     quote! {

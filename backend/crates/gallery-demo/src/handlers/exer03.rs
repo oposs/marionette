@@ -184,6 +184,7 @@ mod tests {
                 user_id: None,
                 roles: vec![],
             },
+            extensions: marionette::Extensions::new(),
         }
     }
 

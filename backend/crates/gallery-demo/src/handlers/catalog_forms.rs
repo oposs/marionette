@@ -427,6 +427,7 @@ mod tests {
             },
             db: mock_db(),
             session: anon_session(),
+            extensions: marionette::Extensions::new(),
         }
     }
 

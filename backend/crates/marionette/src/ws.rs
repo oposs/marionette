@@ -28,8 +28,13 @@ pub struct AppState {
     pub db: Arc<sea_orm::DatabaseConnection>,
     /// Optional login form to send to unauthenticated WebSocket connections.
     pub login_form: Option<ProtocolMessage>,
-    /// Optional extension data (e.g., external service clients).
-    pub listmonk: Option<Arc<dyn std::any::Any + Send + Sync>>,
+    /// Type-keyed registry of app-defined services. Cloned (cheaply) into
+    /// each [`HandlerContext`]; handlers reach app state via
+    /// [`HandlerContext::extensions`]. See [`crate::extensions`].
+    ///
+    /// [`HandlerContext`]: crate::extractors::HandlerContext
+    /// [`HandlerContext::extensions`]: crate::extractors::HandlerContext::extensions
+    pub extensions: crate::extensions::Extensions,
 }
 
 /// Axum handler that upgrades an HTTP connection to a WebSocket.
@@ -238,6 +243,7 @@ async fn handle_text_message(
         action,
         db: Arc::clone(&state.db),
         session: session.to_session(),
+        extensions: state.extensions.clone(),
     };
 
     let responses = state.router.dispatch(ctx).await;

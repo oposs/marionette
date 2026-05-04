@@ -22,7 +22,7 @@ async fn start_test_server(router: ActionRouter) -> String {
         router,
         db: mock_db(),
         login_form: None,
-        listmonk: None,
+        extensions: marionette::Extensions::new(),
     });
 
     let app = axum::Router::new()

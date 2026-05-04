@@ -33,6 +33,12 @@ pub struct HandlerContext {
     pub db: Arc<sea_orm::DatabaseConnection>,
     /// Current session.
     pub session: Session,
+    /// Type-keyed registry of app-defined services, cloned from
+    /// [`AppState`]. Handlers reach app state through this rather than
+    /// crate-local globals. See [`crate::extensions`].
+    ///
+    /// [`AppState`]: crate::ws::AppState
+    pub extensions: crate::extensions::Extensions,
 }
 
 /// Trait for extracting typed values from the handler context.

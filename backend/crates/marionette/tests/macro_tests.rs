@@ -11,6 +11,17 @@ fn action_macro_constant() {
     assert_eq!(SAVE_CONTACT, "save-contact");
 }
 
+// Action names commonly use `/` as a namespace separator
+// (e.g. `"app/add-person"`); the macro must convert non-identifier
+// characters to `_` so the const ident remains valid.
+#[action(name = "app/add-person")]
+async fn add_person() {}
+
+#[test]
+fn action_macro_namespaced_name_compiles() {
+    assert_eq!(APP_ADD_PERSON, "app/add-person");
+}
+
 #[requires(authenticated)]
 async fn edit_profile() {}
 

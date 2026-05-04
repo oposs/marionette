@@ -302,6 +302,7 @@ pub async fn handle_interaction_save(ctx: HandlerContext) -> ActionResult {
         },
         db: ctx.db.clone(),
         session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
     };
     super::contact::handle_contact_form(new_ctx).await
 }

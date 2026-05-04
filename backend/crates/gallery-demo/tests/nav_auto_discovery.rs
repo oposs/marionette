@@ -22,7 +22,7 @@ async fn start_server() -> String {
         router: action_router,
         db: Arc::new(MockDatabase::new(DatabaseBackend::Sqlite).into_connection()),
         login_form: None,
-        listmonk: None,
+        extensions: marionette::Extensions::new(),
     });
     let frontend_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../frontend/build");

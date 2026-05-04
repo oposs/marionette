@@ -149,6 +149,7 @@ mod tests {
             },
             db: mock_db(),
             session: anonymous_session(),
+            extensions: marionette::Extensions::new(),
         }
     }
 

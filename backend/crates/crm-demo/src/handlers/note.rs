@@ -108,6 +108,7 @@ pub async fn handle_note_save(ctx: HandlerContext) -> ActionResult {
             },
             db: ctx.db.clone(),
             session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
         };
         super::contact::handle_contact_form(new_ctx).await
     } else if let Some(cid) = data.company_id {
@@ -121,6 +122,7 @@ pub async fn handle_note_save(ctx: HandlerContext) -> ActionResult {
             },
             db: ctx.db.clone(),
             session: ctx.session.clone(),
+            extensions: marionette::Extensions::new(),
         };
         super::company::handle_company_form(new_ctx).await
     } else {
